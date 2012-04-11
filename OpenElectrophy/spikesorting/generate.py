@@ -1,1 +1,147 @@
  
+
+
+import numpy as np
+import quantities as pq
+
+import neo
+
+
+
+def generate_block_for_sorting(
+                nb_segment = 5,
+                nb_recordingchannel = 4,
+                sampling_rate = 10.e3 * pq.Hz,
+                duration = 6.*pq.s,
+                
+                nb_spiketrain = 6,
+                spikerate_range = [.5*pq.Hz, 12*pq.Hz],
+                
+                t_start = 0.*pq.s,
+                
+                
+                noise_ratio = 0.2,
+                ):
+
+
+
+    bl = neo.Block()
+    
+    for s in range(nb_segment):
+        bl.segments.append(neo.Segment(name = 'Segment {}'.format(s)))
+    
+    rcg = neo.RecordingChannelGroup(name = 'polytrode',)
+    rcg.block = bl
+    bl.recordingchannelgroups.append( rcg )
+    for r in range(nb_recordingchannel):
+        rc = neo.RecordingChannel(name = 'RC {}'.format(r), index = r)
+        rcg.recordingchannels.append(rc)
+        rc.recordingchannelgroups.append(rcg)
+    
+    # generate spiketrain with noisy waveforms
+    for seg in bl.segments:
+        for sp in range(nb_spiketrain):
+            spikerate = np.random.rand()*np.diff(spikerate_range)+spikerate_range[0].magnitude
+            sptr = neo.SpikeTrain( np.random.rand(int((spikerate*(duration-50.*pq.ms)).simplified))*duration , t_start = t_start, t_stop = t_start+duration)
+            sptr.waveforms = stupid_waveform_generator(sptr.size, nb_recordingchannel, sampling_rate)
+            
+            seg.spiketrains.append(sptr)
+
+
+
+    
+    # generate signal = noise + spike waveform
+    for i, seg in enumerate(bl.segments):
+        for j,rc in enumerate(rcg.recordingchannels):
+            sig_size = (duration*sampling_rate).simplified
+            anasig = neo.AnalogSignal(signal = noise_ratio*np.random.randn(sig_size), units = 'V', sampling_rate = sampling_rate, t_start = t_start)
+            seg.analogsignals.append(anasig)
+            rc.analogsignals.append(anasig)
+            
+            for sptr in seg.spiketrains:
+                for k,time in enumerate(sptr):
+                    wf = sptr.waveforms[k,j,:]
+                    pos = int(((time-t_start)*sampling_rate).simplified)
+                    #~ print pos, wf.shape, anasig.shape
+                    anasig[pos:pos+wf.size] += wf*pq.V
+                    
+            
+            
+            
+            
+        
+    
+    
+    return bl
+    
+    
+    
+
+
+def stupid_waveform_generator(n, trodness, sampling_rate):
+    parameter_range = dict(
+                                amp1 = [1., 1.5],
+                                mu1 = [ 0.9e-3, 1.1e-3],
+                                sigma1 = [3e-4, 4e-4],
+                                
+                                mu2 = [ 1.9e-3, 1.1e-3],
+                                sigma2 = [5e-4, 6e-4],
+                                amp2 = [-2., -1.5],
+                                )
+    
+    t = np.arange(0,4.e-3,(1./sampling_rate).rescale(pq.s).magnitude )
+    
+    waveforms = np.empty((n,trodness, t.size))
+    for i in range(trodness):
+        centers = { }
+        for p, r in parameter_range.items():
+            val = np.random.rand()*np.diff(r)+r[0]
+            centers[p] = val
+        for j in range(n):
+            params = { }
+            params.update(centers)
+            for p, r in parameter_range.items():
+                params[p] = params[p] + np.diff(r)/20. * np.random.randn()
+            waveforms[j,i,:] = params['amp1']*np.exp(-(t-params['mu1'])**2/params['sigma1']**2) + params['amp2']* np.exp(-(t-params['mu2'])**2/params['sigma2']**2)
+    
+    return waveforms
+
+
+
+#~ def test1():
+    
+    #~ from matplotlib import pyplot
+
+
+    #~ trodness = 4
+
+    #~ fig = pyplot.figure()
+    #~ axs = [ ]
+    #~ for i in range(trodness):
+        #~ ax = fig.add_subplot(trodness,1,1+i)
+        #~ axs.append(ax)
+    
+
+    #~ n = 100
+    #~ colors = 'rybkcm'
+    #~ sampling_rate = 10*pq.kHz
+    
+    #~ t = np.arange(0,4.e-3,(1./sampling_rate).rescale(pq.s).magnitude )
+    
+    #~ for c in range(5):
+        #~ wavefoms = stupid_waveform_generator(n, trodness, sampling_rate)
+    
+        #~ for i in range(trodness):
+            #~ for j in range(n):
+                #~ axs[i].plot(t, wavefoms[j,i,:], color = colors[c%len(colors)])
+
+
+    #~ pyplot.show()
+
+
+#~ test1()
+
+
+
+
+    

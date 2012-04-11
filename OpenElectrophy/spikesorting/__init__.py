@@ -1,7 +1,9 @@
 from spikesorter import SpikeSorter
 
-from filter import ButterworthFilter
-from detection import StdThreshold
-from waveform import AlignWaveformOnPeak
-from feature import PcaFeature
-from sorting import SklearnGaussianMixtureEm
+from filter import *
+from detection import *
+from waveform import *
+from feature import *
+from sorting import *
+
+from generate import generate_block_for_sorting

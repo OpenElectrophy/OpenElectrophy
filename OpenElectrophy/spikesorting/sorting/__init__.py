@@ -1,1 +1,1 @@
-from gmmsklearn import SklearnGaussianMixtureEm
+from gmm_em import SklearnGaussianMixtureEm

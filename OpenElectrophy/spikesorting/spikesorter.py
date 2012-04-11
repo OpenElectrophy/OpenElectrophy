@@ -51,6 +51,8 @@ SpikeSorter must be well adapted both to script and GUI.
 """
 
 import copy
+import datetime
+import numpy as np
 
 class SpikeSorter():
     """
@@ -66,11 +68,11 @@ class SpikeSorter():
         spikesorter = SpikeSorter(recordingChannelGroup, initialState='fullBandSignal')
         
         # Apply a chain
-        spikesorting.computeStep( ButterworthFilter, f_low = 300.)
-        spikesorting.computeStep( StdThreshold,sign= '-', std_thresh = 5)
-        spikesorting.computeStep(AlignWaveformOnPeak   , left_sweep = 2*pq.ms , right_sweep = 5*pq.ms)
-        spikesorting.computeStep(PcaFeature   , ndim = 5)
-        spikesorting.computeStep(SklearnGaussianMixtureEm   , )
+        spikesorting.runStep( ButterworthFilter, f_low = 300.)
+        spikesorting.runStep( MedianThresholdDetection,sign= '-', std_thresh = 5)
+        spikesorting.runStep(AlignWaveformOnPeak   , left_sweep = 2*pq.ms , right_sweep = 5*pq.ms)
+        spikesorting.runStep(PcaFeature   , ndim = 5)
+        spikesorting.runStep(SklearnGaussianMixtureEm   , )
         
         
         
@@ -84,6 +86,11 @@ class SpikeSorter():
         
         """
         self.recordingChannelGroup=recordingChannelGroup
+        
+        # for convinience
+        self.recordingChannels = recordingChannelGroup.recordingchannels
+        self.segments = recordingChannelGroup.block.segments
+        
         self.state=initialState
         self.history=[ ]
         
@@ -97,6 +104,8 @@ class SpikeSorter():
         # 1. Full band raw signals
         self.fullBandAnaSig=None # 2D numpy array of objects that points towards neo.AnalogSignal
                                             # shape = (NbRC, NbSeg) 
+        self.signalSamplingRate = None
+        
         # 2. Filtered signals
         self.filteredBandAnaSig=None # 2D numpy array of objects that points towards neo.AnalogSignal
                                             # shape = (NbRC, NbSeg) 
@@ -151,13 +160,20 @@ class SpikeSorter():
         
     def initializeState(self,recordingChannelGroup, state):
         if state=='fullBandSignal':
-            pass # self.fullBandAnaSig = TODO...
+            self.fullBandAnaSig = np.empty( (len(self.recordingChannels), len(self.segments)), dtype = object)
+            for i, rc in enumerate(self.recordingChannels):
+                for j, seg in enumerate(self.segments):
+                    self.fullBandAnaSig[i,j] = self.recordingChannels[i].analogsignals[j].magnitude
+            self.signalSamplingRate = self.recordingChannels[0].analogsignals[0].sampling_rate
+            
+            
+            
         elif state=='filteredBandSignal':
             pass # self.filteredBandAnaSig = TODO...
         # And so on
     
     
-    def computeStep(self, methodClass, **kargs):
+    def runStep(self, methodClass, **kargs):
         """
         
         Arguments:
@@ -180,7 +196,7 @@ class SpikeSorter():
         self.history.append(step)
         
         
-        methodInstance.compute(spikesorter = self, **kargs)
+        methodInstance.run(spikesorter = self, **kargs)
         
         
         step['end_time'] = datetime.datetime.now()
@@ -193,7 +209,7 @@ class SpikeSorter():
     def applyHistoryToOther(self, other):
         
         for step in history:
-            other.computeStep(step['methodInstance'].__class__, **step['arguments'])
+            other.runStep(step['methodInstance'].__class__, **step['arguments'])
             
             
         
