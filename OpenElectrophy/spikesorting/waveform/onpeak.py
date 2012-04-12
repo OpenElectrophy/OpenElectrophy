@@ -3,7 +3,7 @@
 import quantities as pq
 import numpy as np
 
-from tools import initialize_waveform, get_following_peak
+from tools import initialize_waveform, get_following_peak, remove_limit_spikes
 
 class AlignWaveformOnPeak:
     """
@@ -24,6 +24,10 @@ class AlignWaveformOnPeak:
         #~ print swL, (left_sweep*sr)
         wsize = swL + swR + 1
         trodness = s.filteredBandAnaSig.shape[0]
+        
+        # clean
+        remove_limit_spikes(spikesorter, swL, swR)
+        
         
         # Initialize
         initialize_waveform(spikesorter, wsize)

@@ -28,8 +28,21 @@ def initialize_waveform(spikesorter, wisze):
     spikesorter.segmentToSpikesMembership = { }
     for seg, ind in enumerate(spikesorter.spikeIndexArray):
         stop = start + ind.size
-        spikesorter.segmentToSpikesMembership[spikesorter.segments[seg]] = slice(start, stop)
+        spikesorter.segmentToSpikesMembership[seg] = slice(start, stop)
         start = stop
     n_spike = start
     
     spikesorter.spikeWaveforms = np.empty((n_spike, trodness, wisze), dtype = float)
+
+
+def remove_limit_spikes(spikesorter, swL, swR):
+    """
+    Remove spikes wich waveform cannot be extracted from sig because of limits.
+    swL, swR : sweep size in point
+    """
+    for seg, segment in enumerate(spikesorter.segments):
+        sig_size = spikesorter.filteredBandAnaSig[0,seg].size
+        ind = spikesorter.spikeIndexArray[seg]
+        mask = (ind>swL+1) & (ind<sig_size-swR-3)
+        spikesorter.spikeIndexArray[seg] = ind[mask]
+    

@@ -59,26 +59,31 @@ class SpikeSorter():
     
     
     Example::
-    
-        from OpenElectrophy.spikesorting import (generate_dataset, SpikeSorter,
-                           ButterworthFiltering , StdThreshold, AlignWaveformOnPeak,
-                            PcaProjection, GaussianMixtureEm)
+        
+        import quantitites as pq
+        from OpenElectrophy.spikesorting import (generate_block_for_sorting, SpikeSorter,
+                           ButterworthFiltering , MedianThresholdDetection, AlignWaveformOnDetection,
+                            PcaFeature, SklearnGaussianMixtureEm)
             
-        recordingChannelGroup = generate_dataset()
+        bl = generate_block_for_sorting(nb_unit = 6,
+                                                            duration = 5.*pq.s,
+                                                            noise_ratio = 0.2,
+                                                            )
+        recordingChannelGroup = bl.recordingchannelgroups[0]
         spikesorter = SpikeSorter(recordingChannelGroup, initialState='fullBandSignal')
-        
+
+
         # Apply a chain
-        spikesorting.runStep( ButterworthFilter, f_low = 300.)
-        spikesorting.runStep( MedianThresholdDetection,sign= '-', std_thresh = 5)
-        spikesorting.runStep(AlignWaveformOnPeak   , left_sweep = 2*pq.ms , right_sweep = 5*pq.ms)
-        spikesorting.runStep(PcaFeature   , ndim = 5)
-        spikesorting.runStep(SklearnGaussianMixtureEm   , )
-        
-        
-        
-        
-        
-    
+        spikesorter.runStep( ButterworthFilter, f_low = 200.)
+        spikesorter.runStep( MedianThresholdDetection,sign= '-', median_thresh = 6,
+                                                        sweep_clean_method = 'fast',
+                                                        sweep_clean_size = 0.8*pq.ms,
+                                                        consistent_across_channels = True,
+                                                        consistent_across_segments = True,
+                                                        )
+        spikesorter.runStep(AlignWaveformOnDetection   , left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
+        spikesorter.runStep(PcaFeature   , n_components = 6)
+        spikesorter.runStep(SklearnGaussianMixtureEm   ,n_cluster = 12, n_iter = 200 )
     
     """
     def __init__(self,recordingChannelGroup,initialState='fullBandSignal'):

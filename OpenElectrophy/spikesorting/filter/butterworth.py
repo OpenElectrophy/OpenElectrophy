@@ -24,8 +24,8 @@ class ButterworthFilter:
         b,a = signal.iirfilter(N, Wn, btype = 'high', analog = 0, ftype = 'butter', output = 'ba')
         
         for rc, seg in np.ndindex(s.fullBandAnaSig.shape):
-            #~ print rc, seg
             anasig = s.fullBandAnaSig[ rc, seg]
-            s.filteredBandAnaSig[ rc, seg] = signal.lfilter(b, a, anasig, zi = None)
+            s.filteredBandAnaSig[ rc, seg] = signal.filtfilt(b, a, anasig)
+            
 
     

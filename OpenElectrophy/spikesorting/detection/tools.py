@@ -17,13 +17,30 @@ def get_all_crossing_threshold(sig, thresh, front):
     return pos_spike
 
 
-def window_cleaning_in_segment(pos_spikes, signals, win_size):
+def sweep_clean_in_segment(spike_indexes, signals, sweep_size, method = 'fast'):
+    """
+    A spike can be detected in several electrode.
+    We need an inter electrode clean.
+    
+    spike_indexes is array of size trdoness that contain array of spike index
+    
+    """
+    if method == 'noclean':
+        all = np.unique(np.concatenate(spike_indexes.tolist()))
+        return all
+        
+    if method == 'fast':
+        # fast and dirty
+        all = np.unique(np.concatenate(spike_indexes.tolist()))
+        for i, ind in enumerate(all):
+            all[abs(all - ind)<=sweep_size] = ind
+        return np.unique(all)
     
     
-    cleaned = pos_spikes
-    
-    return cleaned
-    
+    if method == 'keep biggest peak':
+        #TODO : something like in OE2
+        all = np.unique(np.concatenate(spike_indexes.tolist()))
+        return all
     
     
     

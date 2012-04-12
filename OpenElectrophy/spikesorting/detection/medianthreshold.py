@@ -1,8 +1,9 @@
 
 
 import numpy as np
+import quantities as pq
 
-from .tools import (get_all_crossing_threshold, window_cleaning_in_segment)
+from .tools import (get_all_crossing_threshold, sweep_clean_in_segment)
 
 class MedianThresholdDetection:
     """
@@ -17,7 +18,8 @@ class MedianThresholdDetection:
     def run(self, spikesorter, sign = '-', median_thresh = 5.,
                         consistent_across_channels = False,
                         consistent_across_segments = True,
-                        reject_other_spike_in_sweep = None,
+                        sweep_clean_method = 'fast',
+                        sweep_clean_size = 0.8*pq.ms,
                         ):
         s = spikesorter
         
@@ -47,16 +49,11 @@ class MedianThresholdDetection:
             all_pos_spikes[rc, seg] = pos_spike
         
         # Window cleaning
-        s.spikeIndexArray = np.empty(len(s.segments), dtype = object)
-        if reject_other_spike_in_sweep:
-            win_size = int(s.signalSamplingRate*reject_other_spike_in_sweep)
-            for seg in range(s.fullBandAnaSig.shape[1]):
-                s.spikeIndexArray[seg] = window_cleaning_in_segment(all_pos_spikes[:,seg] , s.filteredBandAnaSig[:, seg], win_size)
-        else:
-            for seg in range(s.fullBandAnaSig.shape[1]):
-                pos = np.unique(np.concatenate(all_pos_spikes[:,seg].tolist() ))
-                pos.sort()
-                s.spikeIndexArray[seg] = pos
+        s.spikeIndexArray = np.empty( len(s.segments), dtype = object)
+        sweep_size = int((s.signalSamplingRate*sweep_clean_size).simplified)
+        for seg in range(len(s.segments)):
+            s.spikeIndexArray[seg] = sweep_clean_in_segment(all_pos_spikes[:,seg], s.filteredBandAnaSig[:, seg],
+                                            sweep_size, method = sweep_clean_method)
             
             
             
