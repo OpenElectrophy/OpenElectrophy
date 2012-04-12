@@ -25,6 +25,7 @@ spikesorter = SpikeSorter(recordingChannelGroup, initialState='fullBandSignal')
 spikesorter.runStep( ButterworthFilter, f_low = 200.)
 print spikesorter.filteredBandAnaSig.shape
 print
+spikesorter.filteredBandAnaSig = spikesorter.fullBandAnaSig
 spikesorter.runStep( MedianThresholdDetection,sign= '-', median_thresh = 6,
                                                 sweep_clean_method = 'fast',
                                                 sweep_clean_size = 0.8*pq.ms,
@@ -41,7 +42,7 @@ spikesorter.runStep(AlignWaveformOnPeak   , left_sweep = 2*pq.ms , right_sweep =
 print spikesorter.segmentToSpikesMembership
 print spikesorter.spikeWaveforms.shape
 print
-spikesorter.runStep(PcaFeature   , n_components = 6)
+spikesorter.runStep(PcaFeature   , n_components = 3)
 print spikesorter.spikeWaveformFeatures.shape
 print spikesorter.featureNames
 print

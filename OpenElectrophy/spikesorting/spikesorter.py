@@ -48,6 +48,40 @@ All spike sorting steps can be traced and applied directly to another RecordingC
 
 SpikeSorter must be well adapted both to script and GUI.
 
+
+
+
+Worst memory scenario
+------------------------------------
+I want to filter, detect extract and sort all at once this:
+
+128 electrode
+10 kHz sampling
+24h recording
+4 unit (=neuron) per channel
+each unit have a rate of 10 hz
+
+Theses are th bigest and need to be on disk (memmap or hdf5) :
+fullBandAnaSig with dtype (float32) = 4*128*10e3*3600*24/1.e9 = 442 Go 
+filteredBandAnaSig with dtype (float32) = 4*128*10e3*3600*24/1.e9 = 442 Go 
+
+Theses can be in memory I think:
+spikeIndexArray (int64) = 8 * 128*10*3600*24/1.e9 = .88 Go
+spikeWaveformFeatures(float32) = 4 * 128*10*3600*24*30/1.e9 = 1.7 Go
+spikeClusters ( int32)  = 4*128*10*3600*24/1.e9 = .44 Go
+
+This I do not know memory :
+spikeWaveforms (float32) = 4 * 128*10*3600*24*30/1.e9 = 13 Go
+
+
+So disk need is about 1To.
+And memory nedd is about 16Go.
+
+Note that some algo do filtering+detection9+extraction on the fly so you do not need filteredBandAnaSig (442 Go)
+
+
+
+
 """
 
 import copy
@@ -180,13 +214,9 @@ class SpikeSorter():
     
     def runStep(self, methodClass, **kargs):
         """
-        
         Arguments:
             * methodClass: one of the class offered by the framework
             * **kargs: parameter specific to that class
-        
-        
-        
         """
         
         methodInstance = methodClass()
