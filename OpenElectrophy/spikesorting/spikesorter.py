@@ -88,49 +88,59 @@ import copy
 import datetime
 import numpy as np
 
-class SpikeSorter():
+from methods import all_methods
+all_method_names = dict([ (method.__name__, method) for method in all_methods ])
+
+
+class SpikeSorter(object):
     """
     
     
     Example::
         
         import quantitites as pq
-        from OpenElectrophy.spikesorting import (generate_block_for_sorting, SpikeSorter,
-                           ButterworthFiltering , MedianThresholdDetection, AlignWaveformOnDetection,
-                            PcaFeature, SklearnGaussianMixtureEm)
+        from OpenElectrophy.spikesorting import (generate_block_for_sorting, SpikeSorter)
             
+        # read or create datasets
         bl = generate_block_for_sorting(nb_unit = 6,
-                                                            duration = 5.*pq.s,
-                                                            noise_ratio = 0.2,
-                                                            )
+                                    duration = 5.*pq.s,
+                                    noise_ratio = 0.2,
+                                    )
         recordingChannelGroup = bl.recordingchannelgroups[0]
-        spikesorter = SpikeSorter(recordingChannelGroup, initialState='fullBandSignal')
+        spikesorter = SpikeSorter(recordingChannelGroup,
+                                initialState='fullBandSignal')
 
 
         # Apply a chain
-        spikesorter.runStep( ButterworthFilter, f_low = 200.)
-        spikesorter.runStep( MedianThresholdDetection,sign= '-', median_thresh = 6,
-                                                        sweep_clean_method = 'fast',
-                                                        sweep_clean_size = 0.8*pq.ms,
-                                                        consistent_across_channels = True,
-                                                        consistent_across_segments = True,
-                                                        )
-        spikesorter.runStep(AlignWaveformOnDetection   , left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
-        spikesorter.runStep(PcaFeature   , n_components = 6)
-        spikesorter.runStep(SklearnGaussianMixtureEm   ,n_cluster = 12, n_iter = 200 )
+        spikesorter.ButterworthFilter( f_low = 200.)
+        # equivalent to
+        # spikesorter.run_step(ButterworthFilter, f_low = 200.)
+        
+        
+        spikesorter.MedianThresholdDetection(sign= '-',
+                                            median_thresh = 6,
+                                            sweep_clean_method = 'fast',
+                                            sweep_clean_size = 0.8*pq.ms,
+                                            consistent_across_channels = True,
+                                            consistent_across_segments = True,
+                                            )
+        spikesorter.AlignWaveformOnDetection(left_sweep = 1*pq.ms ,
+                                                right_sweep = 2*pq.ms)
+        spikesorter.PcaFeature(n_components = 6)
+        spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 200 )
     
     """
-    def __init__(self,recordingChannelGroup,initialState='fullBandSignal'):
+    def __init__(self,rcg,initial_state='fullBandSignal'):
         """
         
         """
-        self.recordingChannelGroup=recordingChannelGroup
+        self.rcg = rcg
         
         # for convinience
-        self.recordingChannels = recordingChannelGroup.recordingchannels
-        self.segments = recordingChannelGroup.block.segments
+        self.rcs = rcg.recordingchannels
+        self.segs = rcg.block.segments
         
-        self.state=initialState
+        
         self.history=[ ]
         
         # Each state comes with its own variables:
@@ -141,15 +151,15 @@ class SpikeSorter():
         # NbClus : number of cluster
         
         # 1. Full band raw signals
-        self.fullBandAnaSig=None # 2D numpy array of objects that points towards neo.AnalogSignal
+        self.full_band_sigs=None # 2D numpy array of objects that points towards neo.AnalogSignal
                                             # shape = (NbRC, NbSeg) 
-        self.signalSamplingRate = None
+        self.sig_sampling_rate = None
         
         # 2. Filtered signals
-        self.filteredBandAnaSig=None # 2D numpy array of objects that points towards neo.AnalogSignal
+        self.filtered_sigs=None # 2D numpy array of objects that points towards neo.AnalogSignal
                                             # shape = (NbRC, NbSeg) 
         # 3. Detected spike times
-        self.spikeIndexArray = None # 1D np.array of object that point themself to np.array of indices, int64
+        self.spike_index_array = None # 1D np.array of object that point themself to np.array of indices, int64
                                                         #shape = (NbSeg,)
         
         # After that point data are concatenated in compact arrays
@@ -157,22 +167,22 @@ class SpikeSorter():
         # so we need a dictionnary of size NbSeg that have key=neo.Segment and value=a slice
         # to go back from the compact array (spikeWaveforms,spikeWaveformFeatures, spikeClusters, ...)
         # to individual segments
-        self.segmentToSpikesMembership = None
+        self.seg_spike_slices = None
         
         # 4. Aligned spike waveforms
-        self.spikeWaveforms = None # 3D np.array (dtype float) that concatenate all detected spikes waveform
+        self.spike_waveforms = None # 3D np.array (dtype float) that concatenate all detected spikes waveform
                                                          # shape = (NbSpk, trodness, nb_point)
                                                          # this can be sliced by self.spikeMembership for splitting back to original neo.Segment
-        self.waveformSamplingRate = None # samplingrate of theses waveform
-        self.leftSweep = None # nb point on left for that sweep
-        self.rightSweep = None # nb point on right for that sweep (this could be a propertis!)
+        self.wf_sampling_rate = None # samplingrate of theses waveform
+        self.left_sweep = None # nb point on left for that sweep
+        self.right_sweep = None # nb point on right for that sweep (this could be a propertis!)
         # self.spikeWaveforms.shape[2] = self.leftSweep+ 1 + self.rightSweep
         
         
         # 5. Projected spike waveforms
-        self.spikeWaveformFeatures = None # 2D np.array (dtype=float) to handle typical PCA or wavelet projecttion
+        self.waveform_features = None # 2D np.array (dtype=float) to handle typical PCA or wavelet projecttion
                                                             # shape = (NbSpk, ndimension)
-        self.featureNames = None # an np.array (dtype = unicode) that handle label of each feature
+        self.feature_names = None # an np.array (dtype = unicode) that handle label of each feature
                                                     # ex: ['pca1', 'pca2', 'pca3', 'pca4'] or ['max_amplitude', 'peak_to valley', ]
                                                     # shape = (ndimension, )
         
@@ -182,47 +192,87 @@ class SpikeSorter():
         # this is method dependant and to be discuss
         
         # 7. Spikes (all) attributed to clusters
-        self.spikeClusters = None # 1D np.array (dtype in) to handle wich spijke belong to wich cluster
+        self.spike_clusters = None # 1D np.array (dtype in) to handle wich spijke belong to wich cluster
                                                     # shape = (NbSpk, )
-        self.clusterNames = { } # a dict of possible clusters ( keys = unique(self.spikeClusters)
+        self.cluster_names = { } # a dict of possible clusters ( keys = unique(self.spikeClusters)
         
         # 8. Spike are attributed probalistically to clusters
-        self.spikeClustersProbabilistic = None # A 2D that give for each spike the probality to belong to a cluster
+        self.spike_clusters_probabilistic = None # A 2D that give for each spike the probality to belong to a cluster
                                                                     #shape = ( NbSpk, NbClus)
         
+        self.initialize_state(rcg,state=initial_state)
         
-        
-        self.initializeState(self.recordingChannelGroup, self.state)
-        
+    
+    aliases = { 'recordingchannels'  : 'rcs',
+                'segments' : 'segs',
+                'recordingchannelgroup' : 'rcg',
+                }
+    
+    def __setattr__(self, name, value):
+        """
+        Do aliases
+        """
+        name = self.aliases.get(name, name)
+        object.__setattr__(self, name, value)
 
+    def __getattr__(self, name):
+        """
+        Do aliases
+        and auto run step
+        
+        Ex::
+            spikesorter.PcaFeature(n_components = 6)
+            #is equivalent to
+            spikesorter.run_step(PcaFeature, n_components = 6)
+            
+        """
+        if name in all_method_names:
+            class step_caller(object):
+                def __init__(self, spikesorter, name):
+                    self.method = all_method_names[name]
+                    self.spikesorter = spikesorter
+                
+                def __call__(self, **kargs):
+                    self.spikesorter.run_step(self.method, **kargs)
+            return step_caller(self, name)
         
         
-    def initializeState(self,recordingChannelGroup, state):
-        if state=='fullBandSignal':
-            self.fullBandAnaSig = np.empty( (len(self.recordingChannels), len(self.segments)), dtype = object)
-            for i, rc in enumerate(self.recordingChannels):
-                for j, seg in enumerate(self.segments):
-                    self.fullBandAnaSig[i,j] = self.recordingChannels[i].analogsignals[j].magnitude
-            self.signalSamplingRate = self.recordingChannels[0].analogsignals[0].sampling_rate
+        if name == "aliases":
+            raise AttributeError
+        name = self.aliases.get(name, name)
+        return object.__getattribute__(self, name)
+    
+    def initialize_state(self,recordingChannelGroup, state):
+        self.state=state
+        
+        if state=='full_band_signal':
+            self.full_band_sigs = np.empty( (len(self.rcs), len(self.segs)),
+                                                dtype = object)
+            for i, rc in enumerate(self.rcs):
+                for j, seg in enumerate(self.segs):
+                    self.full_band_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
+            self.sig_sampling_rate = self.rcs[0].analogsignals[0].sampling_rate
             
             
             
-        elif state=='filteredBandSignal':
+        elif state=='filtered_band_signal':
             pass # self.filteredBandAnaSig = TODO...
         # And so on
     
     
-    def runStep(self, methodClass, **kargs):
+    def run_step(self, method, **kargs):
         """
         Arguments:
             * methodClass: one of the class offered by the framework
             * **kargs: parameter specific to that class
         """
         
-        methodInstance = methodClass()
+        method_instance = method()
         
         step = dict(
-                        methodInstance = methodInstance,# we keep trace of the instance because some method need to be continued like  MCMC (10000 loop, a view, 5000 loop a second viwe...)
+                        # we keep trace of the instance because some method need
+                        # to be continued like  MCMC (10000 loop, a view, 5000 loop a second viwe...)
+                        methodInstance = method_instance,
                         
                         arguments = copy.deepcopy(kargs), 
                         starting_time = datetime.datetime.now()
@@ -231,7 +281,7 @@ class SpikeSorter():
         self.history.append(step)
         
         
-        methodInstance.run(spikesorter = self, **kargs)
+        method_instance.run(spikesorter = self, **kargs)
         
         
         step['end_time'] = datetime.datetime.now()
@@ -241,13 +291,14 @@ class SpikeSorter():
     def purge_histort(self):
         self.history = [ ]
         
-    def applyHistoryToOther(self, other):
+    def apply_history_to_other(self, other):
         
         for step in history:
-            other.runStep(step['methodInstance'].__class__, **step['arguments'])
+            other.run_step(step['methodInstance'].__class__, **step['arguments'])
             
             
         
         
+
 
 

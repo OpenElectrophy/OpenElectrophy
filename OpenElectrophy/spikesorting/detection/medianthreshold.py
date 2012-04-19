@@ -5,7 +5,7 @@ import quantities as pq
 
 from .tools import (get_all_crossing_threshold, sweep_clean_in_segment)
 
-class MedianThresholdDetection:
+class MedianThresholdDetection(object):
     """
     This medthod detect spikes with estimation of the threshold
     with a median of the signal.
@@ -21,17 +21,17 @@ class MedianThresholdDetection:
                         sweep_clean_method = 'fast',
                         sweep_clean_size = 0.8*pq.ms,
                         ):
-        s = spikesorter
+        sps = spikesorter
         
         # Use 'sign' to set sign of threshold
         median_thresh = abs(median_thresh)
         
         # Threshold
-        thresholds = np.zeros(s.fullBandAnaSig.shape, dtype = float)
-        for rc, seg in np.ndindex(s.fullBandAnaSig.shape):
+        thresholds = np.zeros(sps.filtered_sigs.shape, dtype = float)
+        for c, s in np.ndindex(sps.filtered_sigs.shape):
             #~ print rc, seg
-            sig = s.filteredBandAnaSig[ rc, seg]
-            thresholds[rc, seg] = median_thresh * np.median(abs(sig)) / .6745
+            sig = sps.filtered_sigs[c, s]
+            thresholds[c, s] = median_thresh * np.median(abs(sig)) / .6745
         
         if consistent_across_channels:
             thresholds[:] = np.mean(thresholds, axis=0)[np.newaxis,:]
@@ -43,23 +43,19 @@ class MedianThresholdDetection:
             thresholds = -thresholds
         
         # Detection
-        all_pos_spikes = np.empty(s.fullBandAnaSig.shape, dtype = object)
-        for rc, seg in np.ndindex(s.fullBandAnaSig.shape):
-            pos_spike = get_all_crossing_threshold( s.filteredBandAnaSig[ rc, seg], thresholds[rc, seg], sign)
-            all_pos_spikes[rc, seg] = pos_spike
+        all_pos_spikes = np.empty(sps.filtered_sigs.shape, dtype = object)
+        for c, s in np.ndindex(sps.filtered_sigs.shape):
+            pos_spike = get_all_crossing_threshold( sps.filtered_sigs[c, s],
+                                                thresholds[c, s], sign)
+            all_pos_spikes[c, s] = pos_spike
         
         # Window cleaning
-        s.spikeIndexArray = np.empty( len(s.segments), dtype = object)
-        sweep_size = int((s.signalSamplingRate*sweep_clean_size).simplified)
-        for seg in range(len(s.segments)):
-            s.spikeIndexArray[seg] = sweep_clean_in_segment(all_pos_spikes[:,seg], s.filteredBandAnaSig[:, seg],
-                                            sweep_size, method = sweep_clean_method)
+        sps.spike_index_array = np.empty( len(sps.segs), dtype = object)
+        sweep_size = int((sps.sig_sampling_rate*sweep_clean_size).simplified)
+        for s in range(len(sps.segs)):
+            sps.spike_index_array[s] = sweep_clean_in_segment(
+                                        all_pos_spikes[:,s],
+                                        sps.filtered_sigs[:, s],
+                                        sweep_size,
+                                        method = sweep_clean_method)
             
-            
-            
-        
-        
-        
-        
-
-

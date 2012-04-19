@@ -17,38 +17,40 @@ bl = generate_block_for_sorting(nb_unit = 6,
                                                     #use_memmap_path = './', # Alvaro uncomment this to test
                                                                                             # big big arrays with disk acces
                                                     )
-recordingChannelGroup = bl.recordingchannelgroups[0]
-spikesorter = SpikeSorter(recordingChannelGroup, initialState='fullBandSignal')
+rcg = bl.recordingchannelgroups[0]
+spikesorter = SpikeSorter(rcg, initial_state='full_band_signal')
 
 
 # Apply a chain
-spikesorter.runStep( ButterworthFilter, f_low = 200.)
-print spikesorter.filteredBandAnaSig.shape
+spikesorter.ButterworthFilter( f_low = 200.)
+print spikesorter.filtered_sigs.shape
 print
-spikesorter.filteredBandAnaSig = spikesorter.fullBandAnaSig
-spikesorter.runStep( MedianThresholdDetection,sign= '-', median_thresh = 6,
-                                                sweep_clean_method = 'fast',
-                                                sweep_clean_size = 0.8*pq.ms,
-                                                consistent_across_channels = True,
-                                                consistent_across_segments = True,
-                                                )
 
-print spikesorter.spikeIndexArray.shape
-print spikesorter.spikeIndexArray[0].shape
+spikesorter.MedianThresholdDetection(sign= '-',
+                                    median_thresh = 6,
+                                    sweep_clean_method = 'fast',
+                                    sweep_clean_size = 0.8*pq.ms,
+                                    consistent_across_channels = True,
+                                    consistent_across_segments = True,
+                                    )
+print spikesorter.spike_index_array.shape
+print spikesorter.spike_index_array[0].shape
 print
-spikesorter.runStep(AlignWaveformOnPeak   , left_sweep = 2*pq.ms , right_sweep = 3*pq.ms)
-#~ spikesorter.runStep(AlignWaveformOnDetection   , left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
 
-print spikesorter.segmentToSpikesMembership
-print spikesorter.spikeWaveforms.shape
+spikesorter.AlignWaveformOnDetection(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
+
+print spikesorter.seg_spike_slices
+print spikesorter.spike_waveforms.shape
 print
-spikesorter.runStep(PcaFeature   , n_components = 3)
-print spikesorter.spikeWaveformFeatures.shape
-print spikesorter.featureNames
+## spikesorter.run_step(PcaFeature   , n_components = 3)
+spikesorter.PcaFeature(n_components = 3)
+
+print spikesorter.waveform_features.shape
+print spikesorter.feature_names
 print
-spikesorter.runStep(SklearnGaussianMixtureEm   ,n_cluster = 12, n_iter = 200 )
-print spikesorter.spikeClusters.shape
-print spikesorter.clusterNames
+spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 200 )
+print spikesorter.spike_clusters.shape
+print spikesorter.cluster_names
 
 
 
@@ -65,27 +67,24 @@ for i in range(10):
 
 
 fig1 = pyplot.figure()
-nseg = len(spikesorter.segments)
-nrc = len(spikesorter.recordingChannels)
+nseg = len(spikesorter.segs)
+nrc = len(spikesorter.rcs)
 for s in range(nseg):
     ax = None
     for c in range(nrc):
         ax = fig1.add_subplot(nrc,nseg,c*nseg+s+1, sharex = ax)
-        ax.plot(spikesorter.filteredBandAnaSig[c,s], color = 'k')
+        ax.plot(spikesorter.filtered_sigs[c,s], color = 'k')
         #~ ax.plot(spikesorter.fullBandAnaSig[c,s], color = 'k')
         
         
-        pos_on_sig = spikesorter.spikeIndexArray[s]
-        seg_slice = spikesorter.segmentToSpikesMembership[s]
-        clusters = spikesorter.spikeClusters[seg_slice]
+        pos_on_sig = spikesorter.spike_index_array[s]
+        seg_slice = spikesorter.seg_spike_slices[s]
+        clusters = spikesorter.spike_clusters[seg_slice]
         
-        for cluster in spikesorter.clusterNames.keys():
+        for cluster in spikesorter.cluster_names.keys():
             mask = clusters == cluster
-            #~ print cluster
-            ax.plot(pos_on_sig[mask], spikesorter.filteredBandAnaSig[c,s][pos_on_sig[mask]],
+            ax.plot(pos_on_sig[mask], spikesorter.filtered_sigs[c,s][pos_on_sig[mask]],
                                 color = colors[cluster%len(colors)], ls = 'None', marker = 'o')
-
-
 
 
 # Plot waveform and features
@@ -96,17 +95,17 @@ for c in range(nrc):
     ax2s.append(ax2)
 fig3 = pyplot.figure()
 ax3 = fig3.add_subplot(1,1,1)
-clusters = spikesorter.spikeClusters
-for cluster in spikesorter.clusterNames.keys():
+clusters = spikesorter.spike_clusters
+for cluster in spikesorter.cluster_names.keys():
     color = colors[cluster%len(colors)]
     mask = clusters == cluster
     for c in range(nrc):
-        wf = spikesorter.spikeWaveforms[mask, c, :]
+        wf = spikesorter.spike_waveforms[mask, c, :]
         m = np.mean(wf, axis=0)
         sd = np.std(wf, axis=0)
         ax2s[c].plot(m,color = color )
         ax2s[c].fill_between(np.arange(m.size), m-sd,m+sd, alpha = .01, color = color )
-        ax3.plot(spikesorter.spikeWaveformFeatures[mask, 0], spikesorter.spikeWaveformFeatures[mask, 1],
+        ax3.plot(spikesorter.waveform_features[mask, 0], spikesorter.waveform_features[mask, 1],
                                 ls = 'None', marker = '.', color = color)
 
 pyplot.show()

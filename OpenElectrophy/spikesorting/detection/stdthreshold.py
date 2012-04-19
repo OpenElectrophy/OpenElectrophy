@@ -1,5 +1,5 @@
 
 
 
-class StdThresholdDetection:
+class StdThresholdDetection(object):
     name = ''
