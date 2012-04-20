@@ -2,18 +2,33 @@
 
 import numpy as np
 
+import numexpr
 
 
-
-def get_all_crossing_threshold(sig, thresh, front):
+def get_all_crossing_threshold(sig, thresh, front, use_numexpr = True):
     """
     Simple crossing threshold detection
-    """
-    if front == '+':
-        pos_spike,  = np.where( (sig[:-1] <= thresh) & ( sig[1:]>thresh) )
-    elif front == '-':
-        pos_spike,  = np.where( (sig[:-1] >= thresh) & ( sig[1:]<thresh) )
     
+    params:
+        * sig: a numpy.array
+        * front: {'+' or '-' }
+        * use_numexpr is speculative for the moment need more benchmark
+    
+    """
+    sig1 = sig[:-1]
+    sig2 = sig[1:]
+    
+    if use_numexpr:
+        if front == '+':
+            pos_spike, = np.where(numexpr.evaluate( '(sig1<=thresh) & ( sig2>thresh)'))
+        elif front == '-':
+            pos_spike, = np.where(numexpr.evaluate( '(sig1>=thresh) & ( sig2<thresh)'))
+    else :
+        if front == '+':
+            pos_spike,  = np.where( (sig1 <= thresh) & ( sig2>thresh) )
+        elif front == '-':
+            pos_spike,  = np.where( (sig1 >= thresh) & ( sig2<thresh) )
+
     return pos_spike
 
 

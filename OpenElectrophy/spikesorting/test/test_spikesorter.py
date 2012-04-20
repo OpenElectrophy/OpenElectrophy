@@ -1,3 +1,4 @@
+# This for the moment not a test but a basic example.
 
 
 # TO BE REMOVE
@@ -12,8 +13,9 @@ import numpy as np
 
 # generate dataset
 bl = generate_block_for_sorting(nb_unit = 6,
-                                                    duration = 5.*pq.s,
+                                                    duration = 10.*pq.s,
                                                     noise_ratio = 0.2,
+                                                    nb_segment = 2,
                                                     #use_memmap_path = './', # Alvaro uncomment this to test
                                                                                             # big big arrays with disk acces
                                                     )
@@ -37,6 +39,7 @@ print spikesorter.spike_index_array.shape
 print spikesorter.spike_index_array[0].shape
 print
 
+
 spikesorter.AlignWaveformOnDetection(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
 
 print spikesorter.seg_spike_slices
@@ -48,7 +51,10 @@ spikesorter.PcaFeature(n_components = 3)
 print spikesorter.waveform_features.shape
 print spikesorter.feature_names
 print
-spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 200 )
+spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 500 )
+#~ spikesorter.SklearnKMeans(n_cluster = 16)
+#~ spikesorter.SklearnMiniBatchKMeans(n_cluster = 16)
+#~ spikesorter.SklearnMeanShift()
 print spikesorter.spike_clusters.shape
 print spikesorter.cluster_names
 
@@ -91,7 +97,8 @@ for s in range(nseg):
 fig2 = pyplot.figure()
 ax2s = [ ];ax2 = None;
 for c in range(nrc):
-    ax2 =  fig2.add_subplot(nrc, 1,c+1, sharex = ax2)
+    #~ ax2 =  fig2.add_subplot(nrc, 1,c+1, sharex = ax2)
+    ax2 =  fig2.add_subplot(1, nrc,c+1, sharex = ax2)
     ax2s.append(ax2)
 fig3 = pyplot.figure()
 ax3 = fig3.add_subplot(1,1,1)

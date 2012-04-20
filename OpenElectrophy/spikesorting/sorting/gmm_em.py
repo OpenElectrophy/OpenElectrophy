@@ -24,7 +24,7 @@ class SklearnGaussianMixtureEm(object):
         sps = spikesorter
         # FIXME whiten
         
-        if version.LooseVersion(sklearn.__version__) < '0.10':
+        if version.LooseVersion(sklearn.__version__) <= '0.10':
             classifier = GMM(n_components=n_cluster, cvtype='full')
         else:
             classifier = GMM(n_components=n_cluster, covariance_type='full')
