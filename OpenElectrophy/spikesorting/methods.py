@@ -29,7 +29,7 @@ from filter.butterworth import ButterworthFilter
 from detection.medianthreshold import MedianThresholdDetection 
 from detection.stdthreshold import StdThresholdDetection
 from detection.manualthreshold import ManualThresholdDetection
-from detection.MTEO import MTEODetection
+from detection.mteo import MTEODetection
 from waveform.ondetection import AlignWaveformOnDetection
 from waveform.onpeak import AlignWaveformOnPeak
 from feature.pcafeature import PcaFeature
