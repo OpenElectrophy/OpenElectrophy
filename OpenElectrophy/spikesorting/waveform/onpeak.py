@@ -3,7 +3,9 @@
 import quantities as pq
 import numpy as np
 
-from tools import initialize_waveform, get_following_peak, remove_limit_spikes
+from tools import initialize_waveform, remove_limit_spikes
+
+from ..detection.tools import get_following_peak_multi_channel
 
 class AlignWaveformOnPeak(object):
     """
@@ -38,7 +40,8 @@ class AlignWaveformOnPeak(object):
         # take individual waveform
         n = 0
         for s, indexes in enumerate(sps.spike_index_array):
-            peak_indexes = get_following_peak(indexes, sign)
+            peak_indexes = get_following_peak_multi_channel(indexes, sps.filtered_sigs[:,s], sign,
+                                                    method = 'biggest_amplitude')
             for ind in peak_indexes :
                 for c in range(len(sps.rcs)):
                     sig = sps.filtered_sigs[c, s]

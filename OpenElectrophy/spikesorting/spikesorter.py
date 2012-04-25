@@ -288,17 +288,12 @@ class SpikeSorter(object):
         
         return step
 
-    def purge_histort(self):
+    def purge_history(self):
         self.history = [ ]
         
     def apply_history_to_other(self, other):
-        
-        for step in history:
+        for step in self.history:
+            print step
             other.run_step(step['methodInstance'].__class__, **step['arguments'])
-            
-            
-        
-        
-
 
 
