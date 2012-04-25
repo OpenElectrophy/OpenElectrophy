@@ -26,9 +26,9 @@ Here a wish list of what we plan to implement:
 
 
 from filter.butterworth import ButterworthFilter
-from filter.MTEO import MTEOFilter
 from detection.medianthreshold import MedianThresholdDetection 
 from detection.stdthreshold import StdThresholdDetection
+from detection.MTEO import MTEODetection
 from waveform.ondetection import AlignWaveformOnDetection
 from waveform.onpeak import AlignWaveformOnPeak
 from feature.pcafeature import PcaFeature
@@ -38,9 +38,9 @@ from sorting.minibatchkmeans import SklearnMiniBatchKMeans
 from sorting.meanshift import SklearnMeanShift
 
 all_methods = [ ButterworthFilter,
-                MTEOFilter,
                 StdThresholdDetection,
                 MedianThresholdDetection,
+                MTEODetection,
                 AlignWaveformOnDetection,
                 AlignWaveformOnPeak,
                 PcaFeature,

@@ -12,31 +12,36 @@ from spikesorting import *
 import numpy as np
 
 # generate dataset
-bl = generate_block_for_sorting(nb_unit = 6,
+bl = generate_block_for_sorting(nb_unit = 2,
                                                     duration = 10.*pq.s,
-                                                    noise_ratio = 0.2,
+                                                    noise_ratio = .2,
                                                     nb_segment = 2,
                                                     #use_memmap_path = './', # Alvaro uncomment this to test
                                                                                             # big big arrays with disk acces
                                                     )
 rcg = bl.recordingchannelgroups[0]
+
+print bl.segments[0].spiketrains[0]
+#~ exit()
+
 spikesorter = SpikeSorter(rcg, initial_state='full_band_signal')
 
 
 # Apply a chain
 spikesorter.ButterworthFilter( f_low = 200.)
-print spikesorter.filtered_sigs.shape
+#~ spikesorter.MTEOFilter( k_inc=2,k_max=5)
+print "filter shape: ",spikesorter.filtered_sigs.shape
 print
 
 spikesorter.MedianThresholdDetection(sign= '-',
-                                    median_thresh = 6,
+                                    median_thresh = 6.,
                                     sweep_clean_method = 'fast',
                                     sweep_clean_size = 0.8*pq.ms,
                                     consistent_across_channels = True,
                                     consistent_across_segments = True,
                                     )
-print spikesorter.spike_index_array.shape
-print spikesorter.spike_index_array[0].shape
+print "spike_index shape: ",spikesorter.spike_index_array.shape
+print "spike_index_array[0].shape: ",spikesorter.spike_index_array[0].shape
 print
 
 
@@ -92,6 +97,9 @@ for s in range(nseg):
             ax.plot(pos_on_sig[mask], spikesorter.filtered_sigs[c,s][pos_on_sig[mask]],
                                 color = colors[cluster%len(colors)], ls = 'None', marker = 'o')
 
+print spikesorter.waveform_features.shape
+print spikesorter.spike_clusters
+print spikesorter.cluster_names
 
 # Plot waveform and features
 fig2 = pyplot.figure()
