@@ -30,8 +30,8 @@ print
 
 #spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6,)
 #~ spikesorter.StdThresholdDetection(sign= '-', std_thresh = 6,)
-spikesorter.ManualThresholdDetection(sign= '-', threshold = -3.5,)
-
+#~ spikesorter.ManualThresholdDetection(sign= '-', threshold = -3.5,)
+spikesorter.MTEODetection(k_inc=1,k_max=5, median_thresh = 6.,)
 
 print spikesorter.spike_index_array.shape
 print spikesorter.spike_index_array[0].shape
