@@ -1,119 +1,71 @@
-# This for the moment not a test but a basic example.
+# -*- coding: utf-8 -*- 
+from __future__ import division
 
+import unittest
 
-# TO BE REMOVE
-import sys
-sys.path.append('../..')
-#
-
-
-import quantities as pq
-from spikesorting import *
 import numpy as np
+import quantities as pq
+import neo
 
-# generate dataset
-bl = generate_block_for_sorting(nb_unit = 6,
-                                                    duration = 10.*pq.s,
-                                                    noise_ratio = 0.2,
-                                                    nb_segment = 2,
-                                                    #use_memmap_path = './', # Alvaro uncomment this to test
-                                                                                            # big big arrays with disk acces
-                                                    )
-rcg = bl.recordingchannelgroups[0]
-spikesorter = SpikeSorter(rcg, initial_state='full_band_signal')
-
-
-# Apply a chain
-spikesorter.ButterworthFilter( f_low = 200.)
-print spikesorter.filtered_sigs.shape
-print
-
-spikesorter.MedianThresholdDetection(sign= '-',
-                                    median_thresh = 6,
-                                    sweep_clean_method = 'fast',
-                                    sweep_clean_size = 0.8*pq.ms,
-                                    consistent_across_channels = True,
-                                    consistent_across_segments = True,
-                                    )
-print spikesorter.spike_index_array.shape
-print spikesorter.spike_index_array[0].shape
-print
-
-
-spikesorter.AlignWaveformOnDetection(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
-
-print spikesorter.seg_spike_slices
-print spikesorter.spike_waveforms.shape
-print
-## spikesorter.run_step(PcaFeature   , n_components = 3)
-spikesorter.PcaFeature(n_components = 3)
-
-print spikesorter.waveform_features.shape
-print spikesorter.feature_names
-print
-spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 500 )
-#~ spikesorter.SklearnKMeans(n_cluster = 16)
-#~ spikesorter.SklearnMiniBatchKMeans(n_cluster = 16)
-#~ spikesorter.SklearnMeanShift()
-print spikesorter.spike_clusters.shape
-print spikesorter.cluster_names
+from OpenElectrophy.spikesorting import (SpikeSorter, generate_block_for_sorting,\
+             ButterworthFilter  )
 
 
 
-
-# Plot signals
-from matplotlib import pyplot
-from matplotlib.cm import get_cmap
-
-#colors = 'rybcm'
-cmap = get_cmap('jet' , 10)
-colors = [ ]
-for i in range(10):
-    colors.append(cmap(i+2) )
+    
 
 
-fig1 = pyplot.figure()
-nseg = len(spikesorter.segs)
-nrc = len(spikesorter.rcs)
-for s in range(nseg):
-    ax = None
-    for c in range(nrc):
-        ax = fig1.add_subplot(nrc,nseg,c*nseg+s+1, sharex = ax)
-        ax.plot(spikesorter.filtered_sigs[c,s], color = 'k')
-        #~ ax.plot(spikesorter.fullBandAnaSig[c,s], color = 'k')
+class BasicTest(unittest.TestCase):
+    def setUp(self):
+        bl = generate_block_for_sorting(nb_unit = 3, duration = 1.*pq.s,
+                                                    noise_ratio = 0.2, nb_segment = 2,)
+        rcg = bl.recordingchannelgroups[0]
+        self.sps = SpikeSorter(rcg, initial_state='full_band_signal')
         
+    def tearDown(self):
+        pass
+    
         
-        pos_on_sig = spikesorter.spike_index_array[s]
-        seg_slice = spikesorter.seg_spike_slices[s]
-        clusters = spikesorter.spike_clusters[seg_slice]
+    def test_getattr_aliases(self):
+        self.assertIs(self.sps.segs, self.sps.segments)
+        self.assertRaises(AttributeError, getattr, self.sps, 'i_love_my_mother')
+    
+    def test_getattr_runstep(self):
+        self.sps.ButterworthFilter( f_low = 200.)
+        self.assertIsInstance(self.sps.history[-1]['methodInstance'], ButterworthFilter)
+    
+    def test_one_standart_pipeline(self):
+        self.sps.ButterworthFilter( f_low = 200.)
+        self.assertIsNotNone(self.sps.filtered_sigs)
+
+        self.sps.MedianThresholdDetection(sign= '-', median_thresh = 6,)
+        self.assertIsNotNone(self.sps.spike_index_array)
+
+        self.sps.AlignWaveformOnDetection(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
+        self.assertIsNotNone(self.sps.seg_spike_slices)
+        self.assertIsNotNone(self.sps.spike_waveforms)
+        self.assertIsNotNone(self.sps.left_sweep)
+        self.assertIsNotNone(self.sps.right_sweep)
         
-        for cluster in spikesorter.cluster_names.keys():
-            mask = clusters == cluster
-            ax.plot(pos_on_sig[mask], spikesorter.filtered_sigs[c,s][pos_on_sig[mask]],
-                                color = colors[cluster%len(colors)], ls = 'None', marker = 'o')
+        self.sps.PcaFeature(n_components = 3)
+        self.assertIsNotNone(self.sps.waveform_features)
+
+        self.sps.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 500 )
+        self.assertIsNotNone(self.sps.spike_clusters)
+        self.assertIsNotNone(self.sps.cluster_names)
+    
+    def test_apply_history_to_other(self):
+        sps2 = SpikeSorter(self.sps.rcg, initial_state='full_band_signal')
+        self.sps.apply_history_to_other(sps2)
+        
+    
 
 
-# Plot waveform and features
-fig2 = pyplot.figure()
-ax2s = [ ];ax2 = None;
-for c in range(nrc):
-    #~ ax2 =  fig2.add_subplot(nrc, 1,c+1, sharex = ax2)
-    ax2 =  fig2.add_subplot(1, nrc,c+1, sharex = ax2)
-    ax2s.append(ax2)
-fig3 = pyplot.figure()
-ax3 = fig3.add_subplot(1,1,1)
-clusters = spikesorter.spike_clusters
-for cluster in spikesorter.cluster_names.keys():
-    color = colors[cluster%len(colors)]
-    mask = clusters == cluster
-    for c in range(nrc):
-        wf = spikesorter.spike_waveforms[mask, c, :]
-        m = np.mean(wf, axis=0)
-        sd = np.std(wf, axis=0)
-        ax2s[c].plot(m,color = color )
-        ax2s[c].fill_between(np.arange(m.size), m-sd,m+sd, alpha = .01, color = color )
-        ax3.plot(spikesorter.waveform_features[mask, 0], spikesorter.waveform_features[mask, 1],
-                                ls = 'None', marker = '.', color = color)
+class TestConstructor(unittest.TestCase):
+    pass
+    
+    
+    
 
-pyplot.show()
-
+if __name__ == '__main__':
+    unittest.main()

@@ -6,7 +6,7 @@ spikes and oscillations.
 
 OpenElectrophy has three main goals:
  * to be a good storage management compatible with huge datasets procuded in neuroscience labs
- * to be a quick, click’n play, intuitive user interface with wich experimentalists can explore their data
+ * to be a quick, click n play, intuitive user interface with wich experimentalists can explore their data
  * to be a quality toolbox to design analysis scripts
 
  

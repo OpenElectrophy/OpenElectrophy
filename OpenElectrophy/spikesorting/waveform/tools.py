@@ -2,17 +2,8 @@
 
 import numpy as np
 
+import numexpr
 
-
-def get_following_peak(ind_spike, sign):
-    """
-    Give the following peak after a point.
-    """
-    # TODO
-    ind_peaks = ind_spike+2
-    
-    
-    return ind_peaks
 
 
 def initialize_waveform(spikesorter, wisze):
