@@ -1,4 +1,5 @@
 import numpy as np
+import numexpr as ne
 import quantities as pq
 from scipy import hamming
 from .tools import threshold_detection_multi_channel_multi_segment
@@ -23,7 +24,7 @@ class MTEODetection(object):
     """
     
     name = 'MTEO detection'
-    
+
     def run(self, spikesorter, 
                         k_max=1,
                         k_inc=1,
@@ -36,37 +37,37 @@ class MTEODetection(object):
                         ):
                         
         sps = spikesorter
-        print "start"
 
         # What is the source signal?
         if (from_fullband or (sps.filtered_sigs is None)):
             MTEO_sigs = np.empty( sps.full_band_sigs.shape, dtype = object)
             sigs=sps.full_band_sigs
-            print "a"
         else:
             MTEO_sigs = np.empty( sps.filtered_sigs.shape, dtype = object)
             sigs=sps.filtered_sigs
-            print "b"
 
         # Compute MTEO signals
         for c,s in np.ndindex(sigs.shape) :  
             sig = sigs[c, s]
-            for k in range(1,k_max+1,k_inc): #compute all k-TEO, inclunding k_max if possible
-                print "k ",k
+            kTEO_sig=np.zeros(sig.size)
+            #compute all k-TEO, including k_max if possible
+            for k in range(1,k_max+1,k_inc): 
                 s1 = sig[0:-2*k]
                 s2 = sig[k:-k]
                 s3 = sig[2*k:]
-                kTEO_sig=s2**2-s1*s3 # standard kTEO signal
-                kTEO_sig=np.r_[np.zeros(k),kTEO_sig,np.zeros(k)] # extend the filtered sig to match the original size
+                # standard kTEO signal
+                kTEO_sig[k:-k]=ne.evaluate("s2**2-s1*s3") 
                 hamm = hamming(4*(k+1)+1)#smoothing window
                 norm=np.sqrt(3*(hamm**2.)+(hamm.sum())**2.)
-                hamm = hamm/norm # normalization of the window proposed by Choi et al. to prevent excess of false detections at small k
+                hamm = hamm/norm # normalization of the window 
+                #proposed by Choi et al. to prevent excess of false detections at small k
                 kTEO_sig=np.convolve(kTEO_sig,hamm,'same')
                 if k==1:
                     MTEO_sig=kTEO_sig.copy()
                 else:
-                    MTEO_sig=np.c_[MTEO_sig,kTEO_sig].max(axis=1) #take the max over all kTEO iteratively
-            
+                    #take the max over all kTEO iteratively
+                    MTEO_sig=ne.evaluate("where(MTEO_sig<kTEO_sig,kTEO_sig,MTEO_sig)") 
+                        
             MTEO_sigs[c,s]=MTEO_sig
 
         # Threshold estimation
