@@ -21,7 +21,7 @@ bl = generate_block_for_sorting(nb_unit = 6,
                                                     noise_ratio = 0.2,
                                                     nb_segment = 1,
                                                     nb_recordingchannel = 1,
-                                                    #use_memmap_path = './', # Alvaro uncomment this to test
+                                                    #use_memmap_path = './', #  Alvaro uncomment this to test
                                                                                             # big big arrays with disk acces
                                                     )
 rcg = bl.recordingchannelgroups[0]
