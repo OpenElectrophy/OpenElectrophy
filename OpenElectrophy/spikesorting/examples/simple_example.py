@@ -17,12 +17,9 @@ import numpy as np
 
 # generate dataset
 bl = generate_block_for_sorting(nb_unit = 6,
-                                                    duration = 100.*pq.s,
+                                                    duration = 10.*pq.s,
                                                     noise_ratio = 0.2,
-                                                    nb_segment = 1,
-                                                    nb_recordingchannel = 1,
-                                                    #use_memmap_path = './', #  Alvaro uncomment this to test
-                                                                                            # big big arrays with disk acces
+                                                    nb_segment = 2,
                                                     )
 rcg = bl.recordingchannelgroups[0]
 spikesorter = SpikeSorter(rcg, initial_state='full_band_signal')
