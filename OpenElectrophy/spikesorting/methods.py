@@ -33,6 +33,15 @@ from detection.mteo import MTEODetection
 from waveform.ondetection import AlignWaveformOnDetection
 from waveform.onpeak import AlignWaveformOnPeak
 from feature.pcafeature import PcaFeature
+from feature.icafeature import IcaFeature
+from feature.combine import CombineFeature
+from feature.allpeak import AllPeak
+from feature.peaktovalley import PeakToValley
+from feature.haarwavelet import HaarWaveletFeature
+
+
+
+
 from sorting.gmm_em import SklearnGaussianMixtureEm
 from sorting.kmeans import SklearnKMeans
 from sorting.minibatchkmeans import SklearnMiniBatchKMeans
@@ -45,7 +54,12 @@ all_methods = [ ButterworthFilter,
                 MTEODetection,
                 AlignWaveformOnDetection,
                 AlignWaveformOnPeak,
+                CombineFeature, 
+                AllPeak,
+                PeakToValley,
                 PcaFeature,
+                IcaFeature,
+                HaarWaveletFeature,
                 SklearnGaussianMixtureEm,
                 SklearnKMeans,
                 SklearnMiniBatchKMeans,

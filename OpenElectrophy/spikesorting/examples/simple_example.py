@@ -28,32 +28,37 @@ spikesorter.ButterworthFilter( f_low = 200.)
 print spikesorter.filtered_sigs.shape
 print
 
-#spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6,)
+spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6,)
 #~ spikesorter.StdThresholdDetection(sign= '-', std_thresh = 6,)
 #~ spikesorter.ManualThresholdDetection(sign= '-', threshold = -3.5,)
-spikesorter.MTEODetection(k_inc=1,k_max=5, median_thresh = 6.,)
+#~ spikesorter.MTEODetection(k_inc=1,k_max=5, median_thresh = 6.,)
 
 print spikesorter.spike_index_array.shape
 print spikesorter.spike_index_array[0].shape
 print
 
 
-spikesorter.AlignWaveformOnDetection(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
-#~ spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
+#~ spikesorter.AlignWaveformOnDetection(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms)
+spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
 
 
 print spikesorter.seg_spike_slices
 print spikesorter.spike_waveforms.shape
 print
 ## spikesorter.run_step(PcaFeature   , n_components = 3)
-spikesorter.PcaFeature(n_components = 3)
+#~ spikesorter.PcaFeature(n_components = 3)
+#~ spikesorter.IcaFeature(n_components = 3)
+#~ spikesorter.AllPeak(sign = '-')
+#~ spikesorter.PeakToValley()
+#~ spikesorter.HaarWaveletFeature(n_components = 3, level = 4, std_restrict = 3.)
+spikesorter.CombineFeature(use_peak = True, use_peak_to_valley = True, n_pca = 3, n_ica = 3, n_haar = 3, sign = '-')
 
 print spikesorter.waveform_features.shape
 print spikesorter.feature_names
 print
-spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 500 )
+#~ spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 500 )
 #~ spikesorter.SklearnKMeans(n_cluster = 16)
-#~ spikesorter.SklearnMiniBatchKMeans(n_cluster = 16)
+spikesorter.SklearnMiniBatchKMeans(n_cluster = 16)
 #~ spikesorter.SklearnMeanShift()
 print spikesorter.spike_clusters.shape
 print spikesorter.cluster_names
