@@ -36,9 +36,12 @@ class GaussianMixtureMCMC(object):
             time_vector=np.empty(sps.waveform_features.shape[0])
             time_shift=0.*pq.s
             for s, ind in enumerate(sps.spike_index_array):
-                time_vector[sps.seg_spike_slices[s]]=1.*ind/((sps.sig_sampling_rate).simplified)+time_shift
-                time_shift=(time_vector[sps.seg_spike_slices[s]][-1]+1.)*pq.s # add one empty second between segments
+                time_vector[sps.seg_spike_slices[s]]=1.*ind/sps.sig_sampling_rate+time_shift
+                time_shift=(time_vector[sps.seg_spike_slices[s]][-1]+1.)*pq.s # shift by the end of last segment
                 # this may cause small problems to classify spikes close to the segment edges
+                # and assume ISI distribution is stationary accross segments
+                while np.min(np.diff(time_vector))==0.0: # this prevents null ISI (mixture's loglike evaluation would fail) 
+                    time_vector[np.r_[False,np.diff(time_vector)==0.]]=time_vector[np.diff(time_vector)==0.]+1e-10
             dict_data['time_vector']=time_vector
         
         # Choose the model

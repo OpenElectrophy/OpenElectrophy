@@ -53,10 +53,9 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
     '''
     
     features=dict_data['features']
-    
+
     # Initializations
     prior_mean = features.mean(0)
-    sigma0 = np.diag([1., 1.])
     c0 = np.cov(features.T)
     thetas = []
     covs = []
@@ -65,17 +64,20 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
 
     for j in range(nprior):# for all the mixtures
     
-        cov = pm.InverseWishart('C_%d' % j, n=4 , Tau=c0 ) # to get a  symetric and semidefinite positive matrix for the covariance
+        cov = pm.InverseWishart('C_%d' % j, n=features.shape[1]+2 , Tau=c0 ) # to get a  symetric and semidefinite positive matrix for the covariance
         theta = pm.MvNormalCov('theta_%d' % j, mu=prior_mean, C=cov) #theta is the mean
         covs.append(cov)
         thetas.append(theta)
         
         #ISI
         if use_ISI:
-            sigma = pm.Uniform('sigma_%d' %j, lower = 0.1, upper = 3)
-            s = pm.Uniform('s_%d' %j, lower = 0.005, upper =3)
+            sigma = pm.Uniform('sigma_%d' %j, lower = 0., upper = 10)
+            s = pm.Uniform('s_%d' %j, lower = -8., upper =2.)
             sigmas.append(sigma)
             S.append(s)
+        else:
+            S=None
+            sigmas=None
 
     alpha0 = 1.*np.ones(nprior) / nprior
     if adapt_weights:
@@ -83,9 +85,9 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
         labels=dist.Categorical('labels', p=weights,size=features.shape[0])
     else:
         labels=dist.Categorical('labels', p=alpha0,size=features.shape[0])
-    
-    @pm.stochastic(observed=True)
-    def mixture(value = 1, thetas = thetas, covs = covs, labels = labels,sigmas = sigmas, S = S):
+            
+    @pm.stochastic(observed=True,dtype=object)
+    def mixture(value = dict_data, thetas = thetas, covs = covs, labels = labels,sigmas = sigmas, S = S):
         '''
         Return the loglike value of the gaussians parameters and of the parameters of the ISI distributions
         '''		
@@ -94,18 +96,17 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
         for j, (theta, cov) in enumerate(zip(thetas, covs)):
             
             cluster_points = labels == j
-            this_features = features[cluster_points]
+            this_features = value['features'][cluster_points]
 
             ch = np.linalg.cholesky(cov)
             loglike += pm.mv_normal_chol_like(this_features, theta, ch)
 
             if sigmas is not None:
-                sigma = sigmas[j]
-                s = S[j]           
-                this_time = dict_data['time_vector'][cluster_points]
+                this_time = value['time_vector'][cluster_points]
                 isi = np.diff(this_time)
-                loglike += pm.lognormal_like(isi, mu = s, tau = sigma)
-
+                if isi.size>0:
+                    loglike += pm.lognormal_like(isi, mu = S[j], tau = sigmas[j])
+            
         return loglike
             
     dict_stochastics={'covs':covs,'thetas':thetas,'labels':labels,'mixture':mixture}
@@ -116,10 +117,6 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
     if use_ISI:
         dict_stochastics['S']=S
         dict_stochastics['sigmas']=sigmas
-    else:
-        S=None
-        sigmas=None
-
 
     return dict_stochastics
 
