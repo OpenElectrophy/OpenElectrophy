@@ -10,16 +10,16 @@ import quantities as pq
 
 import neo
 
-sig_size = 1e8
+sig_size = 1e3
 nb_sig = 4
 nb_block = 1
 nb_seg = 3
 
-mega_point = nb_block * nb_seg * sig_size / (1024**2)
+mega_point_per_block =  nb_seg * nb_sig * sig_size / (1024**2)
 
 
-url_mysql = 'mysql://test_dev:test_dev@localhost/test_dev_1'
-#~ url_mysql = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_1'
+#~ url_mysql = 'mysql://test_dev:test_dev@localhost/test_dev_1'
+url_mysql = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_1'
 
 url_sqlite = 'sqlite:///test_db_1.sqlite'
 
@@ -65,9 +65,10 @@ def create_big_neo_block(name='a block'):
         bl.segments.append(seg)
         for a in range(nb_sig):
             #~ print '  a', a
-            ana = neo.AnalogSignal(signal = np.empty(sig_size)*pq.mV, sampling_rate = 10*pq.kHz, t_start = -2.*pq.s,
+            #~ ana = neo.AnalogSignal(signal = np.empty(sig_size)*pq.mV, sampling_rate = 10*pq.kHz, t_start = -2.*pq.s,
+                                #~ name = 'signal {}'.format(a), description = 'this is a big signal')
+            ana = neo.AnalogSignal(signal = np.random.rand(sig_size)*pq.mV, sampling_rate = 10*pq.kHz, t_start = -2.*pq.s,
                                 name = 'signal {}'.format(a), description = 'this is a big signal')
-            #~ ana = AnalogSignal(signal = np.random.rand(sig_size)*pq.mV, sampling_rate = 10*pq.kHz, t_start = -2.*pq.s)
             seg.analogsignals.append(ana)
             rcg.recordingchannels[a].analogsignals.append(ana)
         
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     erase_all_hdf5()
     erase_sqlite()
 
-    print 'nb point ', mega_point, 'M'
+    print 'nb point ', mega_point_per_block, 'M'
     
     # writing
     for b in range(nb_block):
@@ -99,7 +100,7 @@ if __name__ == '__main__':
         w.write_block(bl)
         w.close()
         t2 = time.time()
-        print 'time  for writing hdf5 block',(t2-t1),mega_point/(t2-t1), 'Mpts/s'
+        print 'time  for writing hdf5 block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
         
         
         # OE MySQL
@@ -108,16 +109,16 @@ if __name__ == '__main__':
         oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
         oebl.save()
         t2 = time.time()
-        print 'time for writing mysql block',(t2-t1),mega_point/(t2-t1), 'Mpts/s'
+        print 'time for writing mysql block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
         
-        #~ bl = create_big_neo_block(name='block num {}'.format(b))
+        bl = create_big_neo_block(name='block num {}'.format(b))
         # OE sqlite
         mapperInfo = open_db(url_sqlite, myglobals = globals(), compress = True)
         t1 = time.time()
         oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
         oebl.save()
         t2 = time.time()
-        print 'time for writing sqlite block',(t2-t1),mega_point/(t2-t1), 'Mpts/s'
+        print 'time for writing sqlite block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 
 
     # reading
@@ -132,7 +133,7 @@ if __name__ == '__main__':
                 s = anasig.shape
                 print anasig.name,s
         t2 = time.time()
-        print 'time for reading hdf5 block',(t2-t1),mega_point/(t2-t1), 'Mpts/s'
+        print 'time for reading hdf5 block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
         
         
         # OE MySQL
@@ -147,7 +148,7 @@ if __name__ == '__main__':
                 s = anasig.shape
                 print anasig.name,s
         t2 = time.time()
-        print 'time for reading mysql block',(t2-t1),mega_point/(t2-t1), 'Mpts/s'
+        print 'time for reading mysql block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 
 
         # OE SQlite
@@ -162,7 +163,7 @@ if __name__ == '__main__':
                 s = anasig.shape
                 print anasig.name,s
         t2 = time.time()
-        print 'time for reading SQlite block',(t2-t1),mega_point/(t2-t1), 'Mpts/s'
+        print 'time for reading SQlite block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 
 
     

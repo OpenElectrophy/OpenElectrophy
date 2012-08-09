@@ -95,8 +95,8 @@ There are ways for playing with object in databases
   2. The sqlalchemy way play with session by our own::
 
         url = 'sqlite:///myfirstdb.sqlite'
-        mapperInfo = open_db(url, use_global_session=False, myglobals = globals())
-        Session = mapperInfo.Session # this is a session generator in sqlalchemy land.
+        dbinfo = open_db(url, use_global_session=False, myglobals = globals())
+        Session = dbinfo.Session # this is a session generator in sqlalchemy land.
         
         # create a session
         session = Session()
@@ -131,8 +131,8 @@ Ex::
 
 is equivalent to::
 
-    mapperInfo= open_db(url)
-    locals().update(mapperInfo.mapped_classes)
+    dbinfo= open_db(url)
+    locals().update(dbinfo.mapped_classes)
 
 You also inject in globals() for standart scripting and interactive environement (ipython)::
 
@@ -227,7 +227,7 @@ Reference
 
 .. autofunction:: execute_sql
 
-.. autoclass:: SQLMapperInfo
+.. autoclass:: DataBaseConnectionInfo
 
 
 """
@@ -239,16 +239,19 @@ import migrate.changeset
 from sqlalchemy import orm
 
 from sqlalchemy import create_engine  , MetaData
-from sqlalchemy import Table, Column, Integer, String, Float,  Text, LargeBinary, DateTime, FLOAT
+from sqlalchemy import Table, Column, Integer, String, Float,  Text, UnicodeText, LargeBinary, DateTime, FLOAT
 from sqlalchemy import ForeignKey
 from sqlalchemy import Index
 from sqlalchemy import event
+from sqlalchemy.orm import object_session
 
 import os
 import quantities as pq
 from datetime import datetime
 import numpy as np
+
 import zlib
+import blosc
 
 from base import OEBase
 
@@ -258,14 +261,15 @@ from base import OEBase
 MAX_BINARY_SIZE = 2**30
 
 
-python_to_sa_conversion = { str : Text,
-                                int : Integer,
-                                datetime : DateTime,
-                                float : Float,
-                            }
-sa_to_python_conversion = { }
-for k,v in python_to_sa_conversion.items():
-    sa_to_python_conversion[v] = k
+python_to_sa_conversion = { 
+                                                        str : Text,
+                                                        int : Integer,
+                                                        datetime : DateTime,
+                                                        float : Float,
+                                                        }
+#~ sa_to_python_conversion = { }
+#~ for k,v in python_to_sa_conversion.items():
+    #~ sa_to_python_conversion[v] = k
 
 
 global globalsesession
@@ -308,8 +312,8 @@ def create_one_to_many_relationship_if_not_exists(parenttable, childtable):
     if parenttable.name.lower()+'_id' in childtable.columns: return
     col=  Column(parenttable.name.lower()+'_id', Integer)#, ForeignKey(parenttable.name+'.id'))
     col.create( childtable)
-    #~ ind = Index('ix_'+childtable.name.lower()+'_'+parenttable.name.lower(), col , unique = False)+'_id'
-    #~ ind.create()
+    ind = Index('ix_'+childtable.name.lower()+'_'+parenttable.name.lower()+'_id', col , unique = False)
+    ind.create()
 
 def create_many_to_many_relationship_if_not_exists(table1, table2, metadata):
     xref1 = table1.name+'XREF'+table2.name
@@ -336,8 +340,10 @@ def create_table_from_class(oeclass, metadata):
     :param metadata: sqlalchemy metadata
     
     """
-    columns = [ Column('id', Integer, primary_key=True, index = True) ,]
-    table =  Table(oeclass.tablename, metadata, *columns  )
+    #~ columns = [ Column('id', Integer, primary_key=True, index = True) ,]
+    #~ table =  Table(oeclass.tablename, metadata, *columns  , mysql_charset='utf8', mysql_engine='InnoDB',)
+    table =  Table(oeclass.tablename, metadata, Column('id', Integer, primary_key=True, index = True)  , mysql_charset='utf8', mysql_engine='InnoDB',)
+    #~ table =  Table(oeclass.tablename, metadata, Column('id', Integer, primary_key=True, index = True)  , mysql_engine='InnoDB',)
     table.create()
     for attrname, attrtype in oeclass.usable_attributes.items():
         create_column_if_not_exists(table,  attrname, attrtype)
@@ -360,12 +366,12 @@ def create_or_update_database_schema(engine, oeclasses, max_binary_size = MAX_BI
     metadata.reflect()
 
     class_by_name = { }
-    for class_ in oeclasses:
-        class_by_name[class_.__name__] = class_
+    for oeclass in oeclasses:
+        class_by_name[oeclass.__name__] = oeclass
     
     # check all tables
     for oeclass in oeclasses:
-        tablename = class_.tablename
+        tablename = oeclass.tablename
         
         if tablename not in metadata.tables.keys() :
             # create table that are not present in db from class_names list
@@ -415,8 +421,8 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
     
     """
     class_by_name = { }
-    for class_ in oeclasses:
-        class_by_name[class_.__name__] = class_
+    for oeclasse in oeclasses:
+        class_by_name[oeclasse.__name__] = oeclasse
     
     tablename_to_oeclass = { }
     for oeclass in oeclasses:
@@ -478,13 +484,12 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
                 #done in_blob
             else:
                 # when metadat.reflect() return the highest level type (Ex: sa.DATETIME and not sa.DateTime)
-                # so we must go up in class inheritance (__base__)
-                if  type(col.type).__base__ in  sa_to_python_conversion:
-                    t = sa_to_python_conversion[ type(col.type).__base__ ]
-                else:
-                    t =None
+                # so we must go up in class inheritance
+                t = None
+                for ptype, satype in python_to_sa_conversion.items():
+                    if issubclass(type(col.type), satype):
+                        t = ptype
                 genclass.usable_attributes[col.name] = t
-        
         generated_classes.append(genclass)
 
 
@@ -516,10 +521,9 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
 
 
 
-
-class ArrayField():
+class NumpyArrayPropertyLoader():
     """ 
-    Class to manage property of numpy field in mapped classes
+    Class to manage property of numpy.ndarray attribute in mapped classes.
     
     :params arraytype: np.ndarray or pq.Quantity
     """
@@ -533,7 +537,9 @@ class ArrayField():
         self.min_size_memmap = min_size_memmap
         self.compress = compress
     
-    def getfield(self , inst):
+    def fget(self , inst):
+        #~ print object_session(inst)
+        
         if hasattr(inst, self.name+'_array') :
             return getattr(inst, self.name+'_array')
 
@@ -570,7 +576,9 @@ class ArrayField():
             blob = getattr(inst, self.name+'_blob')
             if compressed:
                 #~ print 'uncomop'
-                blob = zlib.decompress(blob)
+                #~ blob = zlib.decompress(blob)
+                blob = blosc.decompress(blob)
+                
             if np.prod(shape)==0:
                 if len(blob) != 0:
                     arr = np.frombuffer( blob , dtype = dt)
@@ -595,7 +603,7 @@ class ArrayField():
         return arr
 
 
-    def setfield(self, inst, value):
+    def fset(self, inst, value):
         if value is None:
             setattr(inst, self.name+'_shape',    None)
             setattr(inst, self.name+'_dtype',    None)
@@ -622,8 +630,13 @@ class ArrayField():
         
         
         blob = np.getbuffer(value)
+        #~ if self.compress:
+            #~ blob = zlib.compress(blob)
         if self.compress:
-            blob = zlib.compress(blob)
+            blob = blosc.compress(value.tostring(), typesize = value.dtype.itemsize, clevel= 9)
+
+
+        
         setattr(inst, self.name+'_blob', blob)
         
         if self.arraytype == pq.Quantity:
@@ -634,6 +647,14 @@ class ArrayField():
     def get_memmap_filename(self, inst):
         fname = '{} {} {}'.format(inst.tablename, inst.id, self.name)
         return os.path.join(self.memmap_path, fname)
+
+    
+    def fdel(self, inst):
+        if hasattr(inst, self.name+'_array') :
+            delattr(inst, self.name+'_array') 
+        setattr(inst, self.name+'_dtype', None)
+        setattr(inst, self.name+'_shape', None)
+        setattr(inst, self.name+'_blob', None)
 
 
 
@@ -722,8 +743,8 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
         # magic reconstruction for  np.ndarray pq.Quantity (pq.Quantity scalar)
         for attrname, attrtype in genclass.usable_attributes.items():
             if attrtype == np.ndarray or attrtype == pq.Quantity:
-                setattr(genclass, attrname, property( ArrayField(attrname, arraytype =attrtype, memmap_path = memmap_path, compress = compress).getfield , 
-                                                    ArrayField(attrname, arraytype = attrtype, memmap_path = memmap_path, compress= compress).setfield) )
+                np_dyn_load = NumpyArrayPropertyLoader(attrname, arraytype =attrtype, memmap_path = memmap_path, compress = compress)
+                setattr(genclass, attrname, property( fget = np_dyn_load.fget,  fset = np_dyn_load.fset, fdel = np_dyn_load.fdel))
         
     return metadata
 
@@ -767,7 +788,7 @@ class EventLoadListennerForCache:
 
 
 
-class SQLMapperInfo(object):
+class DataBaseConnectionInfo(object):
     """
     This is a simple class used when open_db and that have theses attributes :
         * url
@@ -806,7 +827,7 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     :param max_binary_size: max size for BLOB column depend of engine (SQLite limited to 2Go, MySQL need some configs, ...)
     
     
-    :rtype: :py:class:`SQLMapperInfo` object with url, mapped classes, metadata. See 
+    :rtype: :py:class:`DataBaseConnectionInfo` object with url, mapped classes, metadata. See 
     
     Usage in script mode:
         >>> url = 'sqlite://mydatabase.sqlite'
@@ -815,14 +836,14 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     
     Advanced usage for GUI or multiprocessing:
         >>> url = 'sqlite://mydatabase.sqlite'
-        >>> mapperInfo = open_db(url, myglobals =None,  use_global_session = False  )
-        >>> session = mapperInfo.Session()
-        >>> print mapperInfo.mapped_classes
+        >>> dbinfo = open_db(url, myglobals =None,  use_global_session = False  )
+        >>> session = dbinfo.Session()
+        >>> print dbinfo.mapped_classes
     
     
     
     """
-    engine = create_engine(url, echo=False)
+    engine = create_engine(url, echo=False, convert_unicode = True)
     
     if predefined_classes is None:
         from OpenElectrophy.core import oeclasses
@@ -842,8 +863,8 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     if object_number_in_cache:
         cache = MyBasicCache(maxsize = object_number_in_cache)
         l = EventLoadListennerForCache(cache = cache)
-        for classname, class_ in generated_classes.items():
-            event.listen(class_, 'load', l)
+        for genclass in generated_classes:
+            event.listen(genclass, 'load', l)
     else:
         cache = None
     
@@ -859,10 +880,10 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
         global globalsesession
         globalsesession = Session()
     
-    mapperInfo = SQLMapperInfo( url =url,mapped_classes = generated_classes,Session = Session,
+    dbinfo = DataBaseConnectionInfo( url =url,mapped_classes = generated_classes,Session = Session,
                                                 metadata = metadata, cache = cache,memmap_path = memmap_path,)
     
-    return mapperInfo
+    return dbinfo
     
 
 def execute_sql(query ,session = None, column_split = True, 

@@ -64,7 +64,7 @@ class OEBase(object):
         return session.query(cls).get(id)
     
     @classmethod
-    def from_neo(cls, neoinstance, mapped_classes, cascade =False,keep_link_to_neo = False):
+    def from_neo(cls, neoinstance, mapped_classes, cascade =False):
         """
         Create a generic OE instance from a neo object.
         Util for inseritng in db.
@@ -125,8 +125,9 @@ class OEBase(object):
                     if not hasattr(neoparent, 'OEinstance'):
                         setattr(OEinstance, parentname, OEBase.from_neo(neoparent, mapped_classes, cascade = True))
         
-        if not keep_link_to_neo:
-            delattr(neoinstance, 'OEinstance')
+        # TODO: find a system to remove OEinstance to all neo obj when cascade
+        #~ if not keep_link_to_neo:
+            #~ delattr(neoinstance, 'OEinstance')
         return OEinstance
 
     def to_neo(self):
