@@ -10,8 +10,8 @@ import quantities as pq
 
 import neo
 
-sig_size = 1e3
-nb_sig = 4
+sig_size = 1e7
+nb_sig = 8
 nb_block = 1
 nb_seg = 3
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         
         
         # OE MySQL
-        mapperInfo = open_db(url_mysql, myglobals = globals(), compress = True)
+        mapperInfo = open_db(url_mysql, myglobals = globals(), compress = 'blosc')
         t1 = time.time()
         oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
         oebl.save()
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         
         bl = create_big_neo_block(name='block num {}'.format(b))
         # OE sqlite
-        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress = True)
+        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress ='blosc')
         t1 = time.time()
         oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
         oebl.save()
@@ -131,37 +131,37 @@ if __name__ == '__main__':
         for seg in bl.segments:
             for anasig in seg.analogsignals:
                 s = anasig.shape
-                print anasig.name,s
+                #~ print anasig.name,s
         t2 = time.time()
         print 'time for reading hdf5 block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
         
         
         # OE MySQL
-        mapperInfo = open_db(url_mysql, myglobals = globals(), compress = True)
+        mapperInfo = open_db(url_mysql, myglobals = globals(), compress = 'blosc')
         session = mapperInfo.Session()
         t1 = time.time()
         bl = session.query(Block).filter_by(name = 'block num {}'.format(b)).one()
         for seg in bl.segments:
             for oeanasig in seg.analogsignals:
-                print oeanasig.signal.shape
+                #~ print oeanasig.signal.shape
                 anasig = oeanasig.to_neo()
                 s = anasig.shape
-                print anasig.name,s
+                #~ print anasig.name,s
         t2 = time.time()
         print 'time for reading mysql block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 
 
         # OE SQlite
-        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress = True)
+        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress = 'blosc')
         session = mapperInfo.Session()
         t1 = time.time()
         bl = session.query(Block).filter_by(name = 'block num {}'.format(b)).one()
         for seg in bl.segments:
             for oeanasig in seg.analogsignals:
-                print oeanasig.signal.shape
+                #~ print oeanasig.signal.shape
                 anasig = oeanasig.to_neo()
                 s = anasig.shape
-                print anasig.name,s
+                #~ print anasig.name,s
         t2 = time.time()
         print 'time for reading SQlite block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 

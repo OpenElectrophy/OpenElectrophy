@@ -29,11 +29,11 @@ def create_and_open():
         #~ os.remove('test_db_1.sqlite')
     
     
-    #~ url =  'sqlite:///big_sqlite.sqlite'
+    url =  'sqlite:///big_sqlite.sqlite'
 
     #~ url = 'mysql://OE3_dev:OE3_dev@localhost/test_dev_1'
     #~ url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_1'
-    url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'
+    #~ url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'
 
 
     #~ if True:
@@ -48,7 +48,6 @@ def create_and_open():
     return open_db(url, myglobals = globals(),
                                                                 use_global_session = False, 
                                                                 object_number_in_cache = 3000,
-                                                                memmap_path = './memmap1',
                                                                 #~ memmap_path = None,
                                                                 relationship_lazy = 'select', 
                                                                 #~ relationship_lazy = 'dynamic', 

@@ -15,17 +15,17 @@ import quantities as pq
 
 #~ url = 'mysql://test_dev:test_dev@localhost/test_dev_1'
 url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_1'
-#~ if True:
-    #~ engine = create_engine(url, echo=False)
-    #~ metadata = MetaData(bind = engine)
-    #~ Session = orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True)
-    #~ session = Session()
-    #~ for table, in session.execute("Show tables"  ).fetchall():
-        #~ session.execute(" DROP TABLE %s" % ( table )   )
+
+if True:
+    engine = create_engine(url, echo=False)
+    metadata = MetaData(bind = engine)
+    metadata.reflect()
+    metadata.drop_all()
 
 
 
 mapperInfo = open_db(url, myglobals = globals(), )
+
 
 
 seg = Segment(name = 'first seg')
@@ -71,7 +71,6 @@ rcg2.save()
 id_rcg = rcg1.id
 
 # loading
-
 seg = Segment.load(id_seg)
 print seg
 #or

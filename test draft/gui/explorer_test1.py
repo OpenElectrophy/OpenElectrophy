@@ -23,25 +23,26 @@ from sqlalchemy.sql.expression import asc, desc
 
 
 
-url = 'sqlite:///test_db_1.sqlite'
+#~ url = 'sqlite:///test_db_1.sqlite'
+url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'
 
 def test1():
     """
     simple test
     """
-    mapperInfo = open_db(url, mylocals = locals(),
+    dbinfo = open_db(url, myglobals = globals(),
                                                                 use_global_session = False, 
                                                                 object_number_in_cache = 3000,
                                                                 relationship_lazy = 'dynamic', 
                                                                 )
     
-    session = mapperInfo.Session()
+    session = dbinfo.Session()
 
     app = QApplication([ ])
     settings = PickleSettings(applicationname = 'testOE3')
     #~ settings = None
     
-    w = MainExplorer(mapperInfo = mapperInfo, settings = settings)
+    w = MainExplorer(dbinfo = dbinfo, settings = settings)
     ok = w.show()
     app.exec_()
 

@@ -290,17 +290,25 @@ def create_column_if_not_exists(table, attrname, attrtype):
     colnames = [ col.name for col in table.columns ]
     
     
-    if attrtype == np.ndarray or attrtype == pq.Quantity :
-        if attrname+'_blob' not in colnames:
-            col =  Column(attrname+'_shape', String(128))
+    #~ if attrtype == np.ndarray or attrtype == pq.Quantity :
+        #~ if attrname+'_blob' not in colnames:
+            #~ col =  Column(attrname+'_shape', String(128))
+            #~ col.create( table)
+            #~ col =  Column(attrname+'_dtype', String(128))
+            #~ col.create( table)
+            #~ col =  Column(attrname+'_blob', LargeBinary(MAX_BINARY_SIZE))
+            #~ col.create( table)
+            #~ if attrtype == pq.Quantity :
+                #~ col =  Column(attrname+'_units', String(128))
+                #~ col.create( table)
+    if attrtype == np.ndarray :
+        if attrname+'_numpy_id' not in colnames:
+            col =  Column(attrname+'_numpy_id', Integer)
             col.create( table)
-            col =  Column(attrname+'_dtype', String(128))
+    elif attrtype == pq.Quantity :
+        if attrname+'_quantity_id' not in colnames:
+            col =  Column(attrname+'_quantity_id', Integer)
             col.create( table)
-            col =  Column(attrname+'_blob', LargeBinary(MAX_BINARY_SIZE))
-            col.create( table)
-            if attrtype == pq.Quantity :
-                col =  Column(attrname+'_units', String(128))
-                col.create( table)
     elif attrtype in python_to_sa_conversion:
         if attrname not in colnames:
             col = Column(attrname, python_to_sa_conversion[attrtype])
@@ -382,6 +390,19 @@ def create_or_update_database_schema(engine, oeclasses, max_binary_size = MAX_BI
             for attrname, attrtype in oeclass.usable_attributes.items():
                 create_column_if_not_exists(table,  attrname, attrtype)
     
+    if 'NumpyArrayTable' not in metadata.tables.keys() :
+        c1 =  Column('id', Integer, primary_key=True, index = True)
+        c2 = Column('dtype', String(128))
+        c3 = Column('shape', String(128))
+        c4 = Column('compress', String(16))
+        c5 = Column('units', String(128))
+        c6 =  Column('blob', LargeBinary(MAX_BINARY_SIZE))
+        #~ c7 = Column('tablename',  String(128))
+        #~ c8 = Column('attributename',  String(128))
+        #~ c9 = Column('parent_id',  Integer)
+        table =  Table('NumpyArrayTable', metadata, c1,c2,c3,c4,c5,c6)
+        table.create()
+    
     # check all relationship
     for oeclass in oeclasses:
         # one to many
@@ -437,6 +458,9 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
     
     all_many_to_many = { }
     for tablename, table in metadata.tables.items() :
+        if tablename == 'NumpyArrayTable':
+            continue
+        
         # detect many_to_many_relationship
         if 'XREF' in tablename:
             table1, table2 = tablename.split('XREF')
@@ -467,20 +491,28 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
         for col in table.columns:
             if col.name =='id':
                 pass
+            
+            elif col.name.endswith('_numpy_id'):
+                arrayname = col.name.replace('_numpy_id', '')
+                genclass.usable_attributes[arrayname] = np.ndarray
+            elif col.name.endswith('_quantity_id'):
+                arrayname = col.name.replace('_quantity_id', '')
+                genclass.usable_attributes[arrayname] = pq.Quantity
             elif col.name.endswith('_id'):
                 pass
-            elif col.name.endswith('_blob'):
-                arrayname = col.name.replace('_blob' , '')
-                if  ( arrayname+'_shape' in table.columns) and \
-                    ( arrayname+'_dtype' in table.columns):
-                    if ( arrayname+'_units' in table.columns):
-                        genclass.usable_attributes[arrayname] = pq.Quantity
-                    else:
-                        genclass.usable_attributes[arrayname] = np.ndarray
-            elif col.name.endswith('_dtype') or \
-                    col.name.endswith('_shape') or\
-                    col.name.endswith('_units'):
-                pass
+                
+            #~ elif col.name.endswith('_blob'):
+                #~ arrayname = col.name.replace('_blob' , '')
+                #~ if  ( arrayname+'_shape' in table.columns) and \
+                    #~ ( arrayname+'_dtype' in table.columns):
+                    #~ if ( arrayname+'_units' in table.columns):
+                        #~ genclass.usable_attributes[arrayname] = pq.Quantity
+                    #~ else:
+                        #~ genclass.usable_attributes[arrayname] = np.ndarray
+            #~ elif col.name.endswith('_dtype') or \
+                    #~ col.name.endswith('_shape') or\
+                    #~ col.name.endswith('_units'):
+                #~ pass
                 #done in_blob
             else:
                 # when metadat.reflect() return the highest level type (Ex: sa.DATETIME and not sa.DateTime)
@@ -527,91 +559,84 @@ class NumpyArrayPropertyLoader():
     
     :params arraytype: np.ndarray or pq.Quantity
     """
-    def __init__(self, name, arraytype = np.ndarray, 
-                                    memmap_path = None, min_size_memmap = 2,
-                                    compress = False,):
+    def __init__(self, name, arraytype = np.ndarray, compress = 'blosc', NumpyArrayTableClass = None):
         assert arraytype == np.ndarray or arraytype == pq.Quantity
         self.name = name
         self.arraytype = arraytype
-        self.memmap_path = memmap_path
-        self.min_size_memmap = min_size_memmap
         self.compress = compress
-    
+        if arraytype == np.ndarray:
+            self.id_name = self.name+'_numpy_id'
+        elif arraytype == pq.Quantity:
+            self.id_name = self.name+'_quantity_id'
+        self.NumpyArrayTableClass = NumpyArrayTableClass
+        
     def fget(self , inst):
-        #~ print object_session(inst)
         
         if hasattr(inst, self.name+'_array') :
             return getattr(inst, self.name+'_array')
-
-        if getattr(inst, self.name+'_shape') is None or \
-            getattr(inst, self.name+'_dtype') is None:# or \
-            #~ getattr(inst, self.name+'_blob') is None:
+        
+        nprow = getattr(inst, 'NumpyArrayTable__'+self.name)
+        
+        
+        #~ print 'fget',self.name,  nprow, inst.id
+        
+        
+        if nprow is None or nprow.shape is None or nprow.dtype is None:
             return None
         
-        if getattr(inst, self.name+'_shape') =='':
+        if nprow.shape =='':
             shape = ()
         else:
-            shape = tuple([ int(v) for v in getattr(inst, self.name+'_shape').split(',') ])
+            shape = tuple([ int(v) for v in  nprow.shape.split(',') ])
         
-        dt = str(getattr(inst, self.name+'_dtype'))
-        compressed = dt.startswith('Z')
-        if compressed: dt = dt[1:]
-        dt = np.dtype(dt)
+        dt = np.dtype(nprow.dtype)
         
-        do_create_memmap = False
-        arr = None
-        if self.memmap_path:
-            f = self.get_memmap_filename(inst)
-            if os.path.exists(f):
-                # do not load take from file
-                #~ print 'la'
-                arr = np.memmap(f, dtype = dt, mode = 'r+', offset = 0,
-                                        shape = shape, )
-            else:
-                # create if array is big
-                do_create_memmap = np.prod(shape)>=self.min_size_memmap
-                
-        if arr is None:
+        if nprow.compress == 'blosc':
+            buf = blosc.decompress(nprow.blob)
+        elif nprow.compress == 'zlib':
+            buf = zlib.decompress(nprow.blob)
+        elif nprow.compress is None:
+            buf = nprow.blob
             
-            blob = getattr(inst, self.name+'_blob')
-            if compressed:
-                #~ print 'uncomop'
-                #~ blob = zlib.decompress(blob)
-                blob = blosc.decompress(blob)
-                
-            if np.prod(shape)==0:
-                if len(blob) != 0:
-                    arr = np.frombuffer( blob , dtype = dt)
-                else:
-                    arr= np.empty( shape, dtype = dt )
-            else:
-                arr = np.frombuffer( blob , dtype = dt)
-                arr.flags.writeable = True
-                arr = arr.reshape(shape)
             
-            if do_create_memmap:
-                arr2 = np.memmap(f, dtype = dt, mode = 'w+', offset = 0,
-                                        shape = shape, )
-                arr2[:] = arr[:]
-                arr = arr2
-
+        if np.prod(shape)==0:
+            if len(blob) != 0:
+                arr = np.frombuffer( buf , dtype = dt)
+            else:
+                arr= np.empty( shape, dtype = dt )
+        else:
+            arr = np.frombuffer( buf , dtype = dt)
+            arr.flags.writeable = True
+            arr = arr.reshape(shape)
+        
         if self.arraytype == pq.Quantity:
-            arr = pq.Quantity(arr, units = getattr(inst, self.name+'_units'), copy =False)
+            arr = pq.Quantity(arr, units = nprow.units, copy =False)
         
         # next access will be direct
         setattr(inst, self.name+'_array', arr)
+        
+        #~ delattr(inst, 'NumpyArrayTable__'+self.name)
+        
         return arr
 
 
     def fset(self, inst, value):
+        
+        nprow = getattr(inst, 'NumpyArrayTable__'+self.name)
+        #~ print 'fset',self.name,  nprow, value
+        
+        if nprow is None:
+            nprow = self.NumpyArrayTableClass()
+            setattr(inst, 'NumpyArrayTable__'+self.name, nprow)
+        
         if value is None:
-            setattr(inst, self.name+'_shape',    None)
-            setattr(inst, self.name+'_dtype',    None)
-            setattr(inst, self.name+'_blob',    None)
-            if self.arraytype == pq.Quantity:
-                setattr(inst, self.name+'_units',    None)
             if hasattr(inst, self.name+'_array') :
                 delattr(inst, self.name+'_array')
+            nprow.shape = None
+            nprow.dtype = None
+            nprow.blob = None
+            nprow.units = None
+            nprow.compress = None
             return 
         
         if self.arraytype == np.ndarray:
@@ -621,41 +646,24 @@ class NumpyArrayPropertyLoader():
         
         shape = str(value.shape).replace('(','').replace(')','').replace(' ','')
         if shape.endswith(',') : shape = shape[:-1]
-        setattr(inst, self.name+'_shape',    shape)
+        nprow.shape = shape
         
-        if self.compress:
-            setattr(inst, self.name+'_dtype', 'Z'+value.dtype.str)
-        else:
-            setattr(inst, self.name+'_dtype', value.dtype.str)
+        nprow.dtype = value.dtype.str
         
-        
-        blob = np.getbuffer(value)
-        #~ if self.compress:
-            #~ blob = zlib.compress(blob)
-        if self.compress:
+        if self.compress == 'blosc':
             blob = blosc.compress(value.tostring(), typesize = value.dtype.itemsize, clevel= 9)
-
-
-        
-        setattr(inst, self.name+'_blob', blob)
+        elif self.compress == 'zlib':
+            blob = zlib.compress(np.getbuffer(value))
+        else :
+            blob = np.getbuffer(value)
+        nprow.compress = self.compress
+        nprow.blob = blob
         
         if self.arraytype == pq.Quantity:
-            setattr(inst, self.name+'_units',    value.dimensionality.string)
+            nprow.units = value.dimensionality.string
         
         setattr(inst, self.name+'_array', value)
-    
-    def get_memmap_filename(self, inst):
-        fname = '{} {} {}'.format(inst.tablename, inst.id, self.name)
-        return os.path.join(self.memmap_path, fname)
-
-    
-    def fdel(self, inst):
-        if hasattr(inst, self.name+'_array') :
-            delattr(inst, self.name+'_array') 
-        setattr(inst, self.name+'_dtype', None)
-        setattr(inst, self.name+'_shape', None)
-        setattr(inst, self.name+'_blob', None)
-
+        
 
 
 def map_generated_classes(engine, generated_classes, relationship_lazy = 'select', 
@@ -684,6 +692,10 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
     metadata = MetaData(bind = engine)
     metadata.reflect()
     
+    nptable = metadata.tables['NumpyArrayTable']
+    NumpyArrayTableClass = type('NumpyArrayTableClass', (object,), {})
+    orm.mapper(NumpyArrayTableClass , nptable , properties = { 'blob':orm.deferred( nptable.c['blob'])  })
+    
     # class by tablename
     tablename_to_class = { }
     for genclass in generated_classes:
@@ -694,7 +706,17 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
         table = metadata.tables[genclass.tablename]
         for parentname in genclass.many_to_one_relationship :
             table.c[parentname.lower()+'_id'].append_foreign_key( ForeignKey(parentname+'.id') ) 
-
+        
+        for attrname, attrtype in genclass.usable_attributes.items():
+            if attrtype == np.ndarray or attrtype == pq.Quantity:
+                if attrtype == np.ndarray: id_name = '_numpy_id'
+                elif attrtype ==  pq.Quantity: id_name = '_quantity_id'
+                table.c[attrname+id_name].append_foreign_key( ForeignKey('NumpyArrayTable.id') ) 
+        
+        
+    
+    
+    
 
     for genclass in generated_classes:
     #~ for classname, class_ in generated_classes.items():
@@ -702,13 +724,13 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
         
         properties = { }
         # deferred loading for numpy or Quantities fields
-        for attrname, attrtype in genclass.usable_attributes.items():
-            if attrtype == np.ndarray or attrtype == pq.Quantity:
+        #~ for attrname, attrtype in genclass.usable_attributes.items():
+            #~ if attrtype == np.ndarray or attrtype == pq.Quantity:
                 # FIXME: think about this : _shape defered or not
                 #~ properties[attrname+'_shape'] = orm.deferred( table.columns[attrname+'_shape'] , group = attrname)
                 #~ properties[attrname+'_dtype'] = orm.deferred( table.columns[attrname+'_dtype'] , group = attrname)
                 #properties[attrname+'_blob'] = orm.deferred( table.columns[attrname+'_blob'] , group = attrname)
-                properties[attrname+'_blob'] = orm.deferred( table.columns[attrname+'_blob'] , )
+                #~ properties[attrname+'_blob'] = orm.deferred( table.columns[attrname+'_blob'] , )
                 #~ if  attrtype == pq.Quantity:
                     #~ properties[attrname+'_units'] = orm.deferred( table.columns[attrname+'_units'] , group = attrname)
         
@@ -724,7 +746,7 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
                                                                 #FIXME:
                                                                 lazy = relationship_lazy,
                                                                 )
-        
+        # many to many relationship
         for tablename2 in genclass.many_to_many_relationship:
             xref = table.name+'XREF'+tablename2
             if xref not in metadata.tables:
@@ -738,13 +760,32 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
                                                                                         foreign_keys = [xreftable.c[table.name.lower()+'_id'],  xreftable.c[tablename2.lower()+'_id']],
                                                                                         )
             
+            # one to one relationship with NumpyArrayTable
+        for attrname, attrtype in genclass.usable_attributes.items():
+            if attrtype == np.ndarray or attrtype == pq.Quantity:
+                if attrtype == np.ndarray: id_name = '_numpy_id'
+                elif attrtype ==  pq.Quantity: id_name = '_quantity_id'
+                
+                
+                properties['NumpyArrayTable__'+attrname] = orm.relationship(NumpyArrayTableClass, 
+                                                                                                                                            primaryjoin = nptable.c.id == table.c['{}{}'.format(attrname, id_name)],
+                                                                                                                                            cascade="all, delete",
+                                                                                                                                            #~ lazy = 'select',
+                                                                                                                                            #~ lazy = 'immediate',
+                                                                                                                                            lazy = 'joined',
+                                                                                                                                            #~ lazy = 'dynamic',# invalid
+                                                                                                                                            
+                                                                                                                                            uselist=False,
+                                                                                                                                            #~ foreign_keys = nptable.c.id,
+                                                                                                                                            )
+        
         orm.mapper(genclass , table , properties = properties , )
     
         # magic reconstruction for  np.ndarray pq.Quantity (pq.Quantity scalar)
         for attrname, attrtype in genclass.usable_attributes.items():
             if attrtype == np.ndarray or attrtype == pq.Quantity:
-                np_dyn_load = NumpyArrayPropertyLoader(attrname, arraytype =attrtype, memmap_path = memmap_path, compress = compress)
-                setattr(genclass, attrname, property( fget = np_dyn_load.fget,  fset = np_dyn_load.fset, fdel = np_dyn_load.fdel))
+                np_dyn_load = NumpyArrayPropertyLoader(attrname, arraytype =attrtype, compress = compress, NumpyArrayTableClass = NumpyArrayTableClass)
+                setattr(genclass, attrname, property( fget = np_dyn_load.fget,  fset = np_dyn_load.fset ))
         
     return metadata
 
@@ -804,7 +845,7 @@ class DataBaseConnectionInfo(object):
 
 
 def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_session = True, 
-                        object_number_in_cache = None, memmap_path = None, min_size_memmap = 2, compress = True,
+                        object_number_in_cache = None, compress = 'blosc',
                         relationship_lazy = 'select', predefined_classes = None, max_binary_size = MAX_BINARY_SIZE,):
     """
     Hight level function from playing with a database: this function create sqlalchemy engine, inspect database, create classes, map then and create caches.
@@ -854,11 +895,9 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
                                                 suffix_for_class_name = suffix_for_class_name,
                                                 )
     
-    if memmap_path == 'auto':
-        memmap_path = './'#TODO
 
     metadata = map_generated_classes(engine, generated_classes, relationship_lazy = relationship_lazy,
-                                    memmap_path = memmap_path, compress = compress )
+                                    compress = compress )
 
     if object_number_in_cache:
         cache = MyBasicCache(maxsize = object_number_in_cache)
@@ -881,7 +920,7 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
         globalsesession = Session()
     
     dbinfo = DataBaseConnectionInfo( url =url,mapped_classes = generated_classes,Session = Session,
-                                                metadata = metadata, cache = cache,memmap_path = memmap_path,)
+                                                metadata = metadata, cache = cache)
     
     return dbinfo
     

@@ -131,7 +131,7 @@ class TreeItem(object):
                     if xref not in treedescription.dbinfo.metadata.tables:
                         xref =childname+'XREF'+self.tablename
                     q = select(columns = [ childname+'.id'],
-                                    whereclause = '{}.id = {}.{}_id'.format(childname, xref, self.tablename.lower(), self.id),
+                                    whereclause = '{}.id = {}.{}_id AND {}.{}_id = {}'.format(childname, xref,childname.lower(), xref, self.tablename.lower(), self.id),
                                     from_obj = [childname, xref],
                                     order_by = order_by,
                                     )
