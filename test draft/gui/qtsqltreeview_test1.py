@@ -31,6 +31,8 @@ def create_and_open():
     
     url =  'sqlite:///big_sqlite.sqlite'
 
+    #~ url =  'sqlite:///big_hybrid.sqlite'
+
     #~ url = 'mysql://OE3_dev:OE3_dev@localhost/test_dev_1'
     #~ url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_1'
     #~ url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'

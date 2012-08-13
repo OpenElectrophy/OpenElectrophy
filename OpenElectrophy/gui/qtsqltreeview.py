@@ -35,7 +35,7 @@ class TreeDescription(object):
                             dbinfo = None,
                             table_children = { },
                             columns_to_show = { },
-                            table_on_top = 'block',
+                            table_on_top = 'Block',
                             table_order = { },
                         ):
         object.__init__(self)
@@ -58,9 +58,10 @@ class TreeDescription(object):
     
     def check_and_complete(self, dbinfo):
         mapped_classes = dbinfo.mapped_classes
-        tablename_to_class = { }
-        for mapped_class in mapped_classes:
-            tablename_to_class[mapped_class.tablename] = mapped_class
+        tablename_to_class = dict( [(c.tablename, c) for c in dbinfo.mapped_classes ] )
+        #~ tablename_to_class = { }
+        #~ for mapped_class in mapped_classes:
+            #~ tablename_to_class[mapped_class.tablename] = mapped_class
 
         for mapped_class in mapped_classes:
             if mapped_class.tablename not in self.columns_to_show :

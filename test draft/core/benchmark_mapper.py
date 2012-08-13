@@ -11,7 +11,7 @@ import quantities as pq
 import neo
 
 sig_size = 1e7
-nb_sig = 8
+nb_sig = 4
 nb_block = 1
 nb_seg = 3
 
@@ -22,6 +22,10 @@ mega_point_per_block =  nb_seg * nb_sig * sig_size / (1024**2)
 url_mysql = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_1'
 
 url_sqlite = 'sqlite:///test_db_1.sqlite'
+
+
+url_sqlite_h5 = 'sqlite:///test_hybrid.sqlite'
+file_h5 = 'test_hybrid.h5'
 
 
 
@@ -40,9 +44,19 @@ def erase_all_hdf5():
 def erase_sqlite():
     url = 'sqlite:///test_db_1.sqlite'
     filename = url_sqlite.replace('sqlite:///','')
-    print filename
     if os.path.exists(filename):
         os.remove(filename)
+
+def erase_hybrid():
+    #~ url = url_sqlite_h5
+    filename = url_sqlite_h5.replace('sqlite:///','')
+    if os.path.exists(filename):
+        os.remove(filename)
+    filename = file_h5
+    if os.path.exists(filename):
+        os.remove(filename)
+
+
 
 
 
@@ -86,6 +100,7 @@ if __name__ == '__main__':
     erase_all_table_mysql(url_mysql)
     erase_all_hdf5()
     erase_sqlite()
+    erase_hybrid()
 
     print 'nb point ', mega_point_per_block, 'M'
     
@@ -104,12 +119,12 @@ if __name__ == '__main__':
         
         
         # OE MySQL
-        mapperInfo = open_db(url_mysql, myglobals = globals(), compress = 'blosc')
-        t1 = time.time()
-        oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
-        oebl.save()
-        t2 = time.time()
-        print 'time for writing mysql block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
+        #~ mapperInfo = open_db(url_mysql, myglobals = globals(), compress = 'blosc')
+        #~ t1 = time.time()
+        #~ oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
+        #~ oebl.save()
+        #~ t2 = time.time()
+        #~ print 'time for writing mysql block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
         
         bl = create_big_neo_block(name='block num {}'.format(b))
         # OE sqlite
@@ -119,6 +134,18 @@ if __name__ == '__main__':
         oebl.save()
         t2 = time.time()
         print 'time for writing sqlite block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
+        
+
+        bl = create_big_neo_block(name='block num {}'.format(b))
+        # OE hybrid sqlite+hdf5
+        mapperInfo = open_db(url_sqlite_h5, myglobals = globals(), numpy_storage_engine = 'hdf5', hdf5_filename = file_h5)
+        t1 = time.time()
+        oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
+        oebl.save()
+        t2 = time.time()
+        print 'time for writing sqlite+hdf5 block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
+
+        
 
 
     # reading
@@ -131,24 +158,21 @@ if __name__ == '__main__':
         for seg in bl.segments:
             for anasig in seg.analogsignals:
                 s = anasig.shape
-                #~ print anasig.name,s
         t2 = time.time()
         print 'time for reading hdf5 block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
         
         
         # OE MySQL
-        mapperInfo = open_db(url_mysql, myglobals = globals(), compress = 'blosc')
-        session = mapperInfo.Session()
-        t1 = time.time()
-        bl = session.query(Block).filter_by(name = 'block num {}'.format(b)).one()
-        for seg in bl.segments:
-            for oeanasig in seg.analogsignals:
-                #~ print oeanasig.signal.shape
-                anasig = oeanasig.to_neo()
-                s = anasig.shape
-                #~ print anasig.name,s
-        t2 = time.time()
-        print 'time for reading mysql block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
+        #~ mapperInfo = open_db(url_mysql, myglobals = globals(), compress = 'blosc')
+        #~ session = mapperInfo.Session()
+        #~ t1 = time.time()
+        #~ bl = session.query(Block).filter_by(name = 'block num {}'.format(b)).one()
+        #~ for seg in bl.segments:
+            #~ for oeanasig in seg.analogsignals:
+                #~ anasig = oeanasig.to_neo()
+                #~ s = anasig.shape
+        #~ t2 = time.time()
+        #~ print 'time for reading mysql block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 
 
         # OE SQlite
@@ -158,13 +182,22 @@ if __name__ == '__main__':
         bl = session.query(Block).filter_by(name = 'block num {}'.format(b)).one()
         for seg in bl.segments:
             for oeanasig in seg.analogsignals:
-                #~ print oeanasig.signal.shape
                 anasig = oeanasig.to_neo()
                 s = anasig.shape
-                #~ print anasig.name,s
         t2 = time.time()
         print 'time for reading SQlite block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 
+        # OE SQlite+HDF5
+        mapperInfo = open_db(url_sqlite_h5, myglobals = globals(), numpy_storage_engine = 'hdf5', hdf5_filename = file_h5)
+        session = mapperInfo.Session()
+        t1 = time.time()
+        bl = session.query(Block).filter_by(name = 'block num {}'.format(b)).one()
+        for seg in bl.segments:
+            for oeanasig in seg.analogsignals:
+                anasig = oeanasig.to_neo()
+                s = anasig.shape
+        t2 = time.time()
+        print 'time for reading  sqlite+hdf5 block',(t2-t1),mega_point_per_block/(t2-t1), 'Mpts/s'
 
     
 

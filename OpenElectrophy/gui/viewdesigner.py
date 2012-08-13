@@ -40,7 +40,7 @@ class ViewDesigner(QDialog) :
     """
     def __init__(self  , parent = None ,
                             treedescription = None,
-                            mapperInfo = None,
+                            dbinfo = None,
                             settings = None,
                             ):
         QDialog.__init__(self, parent)
@@ -50,7 +50,7 @@ class ViewDesigner(QDialog) :
         #~ self.treedescription = treedescription
         
         
-        self.mapperInfo = mapperInfo
+        self.dbinfo = dbinfo
         self.settings = settings
         
         self.setWindowTitle(self.tr('Table view designer'))
@@ -154,19 +154,18 @@ class ViewDesigner(QDialog) :
     
     def refresh(self):
         self.listPossibleTable.clear()
-        self.listPossibleTable.addItems( [ name for name in self.mapperInfo.mapped_classes ] )
+        self.listPossibleTable.addItems( [ genclass.tablename  for genclass in self.dbinfo.mapped_classes ] )
         
         self.lineName.setText(self.treedescription.name)
-        table_to_class = dict([ (k.lower(),v)  for k,v in self.mapperInfo.mapped_classes.items() ])
-        classnames =[ table_to_class[self.treedescription.table_on_top].__name__ ]
-        #~ print
-        #~ print self.treedescription.table_children
-        #~ print 
+
+        tablename_to_class = dict( [(c.tablename, c) for c in self.dbinfo.mapped_classes ] )
+        
+        classnames =[ self.treedescription.table_on_top ]
         
         for tablename, children in self.treedescription.table_children.items():
-            classname =  table_to_class[tablename].__name__
+            classname =  tablename_to_class[tablename].__name__
             for child in children:
-                classname =  table_to_class[child].__name__
+                classname =  tablename_to_class[child].__name__
                 if classname not in classnames:
                     classnames.append(classname)
         #~ print self.treedescription.table_children
@@ -188,23 +187,23 @@ class ViewDesigner(QDialog) :
         
     
     def getTreeDescription(self):
-        tablenames = [ str(self.listDisplayedTable.item(n).text()).lower() for n in range(self.listDisplayedTable.count()) ]
-        table_to_class = dict([ (k.lower(),v)  for k,v in self.mapperInfo.mapped_classes.items() ])
-        #~ children = construct_children(table_to_class , tablenames, self.treedescription.table_on_top)
+        tablenames = [ str(self.listDisplayedTable.item(n).text()) for n in range(self.listDisplayedTable.count()) ]
+        tablename_to_class = dict( [(c.tablename, c) for c in self.dbinfo.mapped_classes ] )
+        #~ children = construct_children(tablename_to_class , tablenames, self.treedescription.table_on_top)
         #~ print 'tablenames', tablenames
         
         td = self.treedescription
         td.table_children = { }
         td.table_parents = { }
-        for tablename in table_to_class:
+        for tablename in tablename_to_class:
             td.table_children[tablename] = [ ]
         for tablename in tablenames:
-            for parentname in table_to_class[tablename].many_to_one_relationship:
+            for parentname in tablename_to_class[tablename].many_to_one_relationship:
                 if tablename not in td.table_children[parentname] and parentname in tablenames:
                     td.table_children[parentname].append(tablename)
                     td.table_parents[tablename] = parentname
         for tablename in tablenames:
-            for parentname in table_to_class[tablename].many_to_many_relationship:
+            for parentname in tablename_to_class[tablename].many_to_many_relationship:
                 if tablename not in td.table_children[parentname] and parentname in tablenames and\
                     tablename not in td.table_parents:
                     td.table_children[parentname].append(tablename)
@@ -226,7 +225,7 @@ class ViewDesigner(QDialog) :
                 break
             else:
                 ok = False
-        td.check_and_complete(self.mapperInfo.mapped_classes)
+        td.check_and_complete(self.dbinfo)
         
         self.treedescription.name = str(self.lineName.text())
         return self.treedescription
@@ -241,7 +240,7 @@ class ViewDesigner(QDialog) :
         #~ self.treedescription.table_on_top = name.lower()
 
         #~ tablenames = [ str(self.listDisplayedTable.item(n).text()).lower() for n in range(self.listDisplayedTable.count()) ]
-        #~ table_to_class = dict([ (k.lower(),v)  for k,v in self.mapperInfo.mapped_classes.items() ])
+        #~ tablename_to_class = dict( [(c.tablename, c) for c in self.dbinfo.mapped_classes ] )
         
         #~ self.getTreeDescription()
         #~ self.refresh()
@@ -265,7 +264,7 @@ class ViewDesigner(QDialog) :
         name =  str(self.listDisplayedTable.item(row).text())
         
         tablename = name.lower()
-        d = FieldListdesigner(class_ = self.mapperInfo.mapped_classes[name],
+        d = FieldListdesigner(class_ = self.dbinfo.mapped_classes[name],
                                     columns_to_show = self.treedescription.columns_to_show[tablename])
         if d.exec_():
             self.treedescription.columns_to_show[tablename] = d.getColumnToShow()
@@ -273,7 +272,8 @@ class ViewDesigner(QDialog) :
     def editOrderBy(self):
         name = str(self.listDisplayedTable.currentItem().text())
         possible_columns = [ 'id' , ]
-        for attrname, attrtype in self.mapperInfo.mapped_classes[name].usable_attributes.items() :
+        tablename_to_class = dict( [(c.tablename, c) for c in self.dbinfo.mapped_classes ] )
+        for attrname, attrtype in tablename_to_class[name].usable_attributes.items() :
             if attrtype != np.ndarray and attrtype != pq.Quantity :
                 possible_columns += [attrname]
         

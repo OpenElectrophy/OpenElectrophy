@@ -4,13 +4,11 @@
 SQL mapper
 ============
 
-Hi Chris. Thank you to read this. This will the fondation of OE3. It is imprtant to be OK.
-
 
 Concepts
 -------------------
 
-This module is on top of sqlalchemy and offer the user the abbility to play with databases with few knownledges.
+This module is on top of sqlalchemy (and optionally PyTables) and offer the user the abbility to play with databases with few knownledges.
 
 The model object is based on neo 0.2 enhanced with some classes (Oscillation, respiratorySignal, imageSerie, ImageMask, LickTrain)
 
@@ -19,9 +17,8 @@ Main possibilities of this mapper are:
         and normally all sqlalchemy backends)
   * Create for the user new tables and its relationship (Ex Animal on top of Block)
   * when openning a databse explore all tables schema to also map new columns and new tables.
-  * map transparently numpy.ndarray and quantities.Quantity in 3 or 4 SQL columns
+  * map transparently numpy.ndarray and quantities.Quantity in SQL table or in a HDF5 separated file.
   * cache loaded object in fixed size queue to avoid reloding when accing several times
-  * cache big numpy.arrays on the the local disk with memmap to avoid long network transfert.
 
 
 Conversion
@@ -30,14 +27,14 @@ Conversion
 
 Rules of conversions:
     * standart python are converted naturally to one column with sqlalchemy types (str>Text, int>Integer, datetime>DateTime,  float > Float)
-    * np.array attributes are split in 3 SQL columns (buffer BLOB, shape TEXT, dtype TEXT)
-    * Quantity attributes are split in 4 SQL columns (buffer BLOB, shape TEXT, dtype TEXT, units TEXT)
-    * Classes that inerit in neo Quantities have 4 columns = like Quantities attrbiutes (AnalogSIgnal.signal, SpikeTrain.times, ...)
+    * np.array and pq.Quantity attributes are manage in 2 possible ways:
+        * in a separated SQL table: 'NumpyArrayTable'
+        * in a separate HDF5 file with PyTbales
+    * Classes that inerit in neo Quantities are manage with attributes (AnalogSIgnal.signal, SpikeTrain.times, ...)
     
 Notes:
     * all numpy.array and pq.Quantity are deffered loaded. (They are load only when used)
-    * np.array can be memmap cached.
-    * np.array can be compressed with zlib
+    * np.array can be compressed with zlib or blosc this can speed R/W
 
 Rules of relationship:
     * one_to_many and many_to_one : the child name have a column (Interger) which is also Index construct with: *parentname.lower()*+'_id'
@@ -53,11 +50,6 @@ Example1 : Creating a db, the first opening  create the schema::
 
     url = 'sqlite:///myfirstdb.sqlite'
     open_db(url)
-
-
-
-   
-
 
 
 
@@ -121,18 +113,18 @@ Mapped classes
 
 Classes in OE are generated on the fly when openning a db.
 
-Each time a new db is opened (with open_db) each time the classes are re created (in a dict)
+Each time a new db is opened (with open_db) each time the classes are re created by reflection of table.
 
 When scripting, you can injected this mapped_classes dict in your locals() or globals() to use direectly object : Block, Segment, AnalogSignal, ...
 
 Ex::
 
-    open_db(url, myglobals= locals())
+    open_db(url, myglobals= globals())
 
 is equivalent to::
 
     dbinfo= open_db(url)
-    locals().update(dbinfo.mapped_classes)
+    globals().update(dbinfo.mapped_classes)
 
 You also inject in globals() for standart scripting and interactive environement (ipython)::
 
@@ -157,7 +149,7 @@ Mapped classes are not directly neo classes because:
   * Some neo classes directly inherits numpy.array that force the mapper to load all BLOB columns
   * free attributes are dealt with annotations dict in neo they are standart mapped attributes in OE.
 
-In short neo.Block is not a Block of OpenElectrophy but it behave the same (relationship, attributes).
+In short neo.Block is not a OpenElectrophy.Block  but it behaves the same (relationship, attributes).
 
 
 You can convert objects from neo to OE with OEbase.to_neo method for all object.
@@ -200,24 +192,6 @@ Example::
         ana  = AnalogSignal(id = id)
 
 
-Memmap cache for numpy.array
--------------------------------------------------------------
-
-numpy.array and quantity attributes can be heavy and you cannot keep them all in memory.
-The mapper offer a memmaped cache system for this attributes.
-The behavior is simple: when they are loaded the first time the BLOB (raw binary part) is directly copied in a files in 
-memmaped_path with its objetc name+id+attributes name.
-
-The following load for this attributes will be take directly in the path avoiding load from the db.
-
-This is the user responsability to clear the path (delete files) to keep and keep synchronize with the db.
-Take care of this when you play with a db from several computers and when you modify a numpy.array attributes.
-Other computer will not see the change. But in general case, this is usefull enougth because:
-  * you rarelly modify numpy.array but often read them.
-  * you are alone to analyse your datasets.
-
-
-
 
 Reference
 -----------------------
@@ -228,6 +202,11 @@ Reference
 .. autofunction:: execute_sql
 
 .. autoclass:: DataBaseConnectionInfo
+
+   
+
+
+
 
 
 """
@@ -252,6 +231,7 @@ import numpy as np
 
 import zlib
 import blosc
+import tables
 
 from base import OEBase
 
@@ -553,11 +533,10 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
 
 
 
-class NumpyArrayPropertyLoader():
+class SQL_NumpyArrayPropertyLoader():
     """ 
-    Class to manage property of numpy.ndarray attribute in mapped classes.
-    
-    :params arraytype: np.ndarray or pq.Quantity
+    Class to manage property of numpy.ndarray attribute in mapped classe.
+    SQL table way.
     """
     def __init__(self, name, arraytype = np.ndarray, compress = 'blosc', NumpyArrayTableClass = None):
         assert arraytype == np.ndarray or arraytype == pq.Quantity
@@ -666,8 +645,153 @@ class NumpyArrayPropertyLoader():
         
 
 
+
+
+
+class HDF5_NumpyArrayPropertyLoader():
+    """ 
+    Class to manage property of numpy.ndarray attribute in mapped classe.
+    HDF5 (PyTable) table way.
+    """
+    def __init__(self, name, arraytype = np.ndarray, hfile = None):
+        assert arraytype == np.ndarray or arraytype == pq.Quantity
+        self.name = name
+        self.arraytype = arraytype
+        self.hfile = hfile
+        
+    def fget(self , inst):
+        if hasattr(inst, self.name+'_array') :
+            return getattr(inst, self.name+'_array')
+        else:
+            arr = load_array_from_hdf5_file(self.hfile, inst, self.name, self.arraytype)
+            setattr(inst, self.name+'_array', arr)
+            return arr
+
+    def fset(self, inst, value):
+        setattr(inst, self.name+'_array', value)
+
+
+def load_array_from_hdf5_file(hfile, inst, arrayname, arraytype):
+    where = '/'
+    arrname =  '{}_{}_{}'.format(inst.tablename, arrayname, inst.id)
+    
+    if not where+arrname in hfile:
+        return None
+    else:
+        arr = hfile.getNode(where, arrname)
+        arr = arr.read()
+    
+    if arraytype == pq.Quantity:
+        unitsname =  '{}_{}_{}_units'.format(inst.tablename, arrayname, inst.id)
+        units = hfile.getNodeAttr(where, unitsname)
+        arr = pq.Quantity(arr, units = units, copy =False)
+    
+    return arr
+
+def save_array_to_hdf5_file(hfile, inst, arrayname, arraytype, value):
+    where = '/'
+    arrname =  '{}_{}_{}'.format(inst.tablename,arrayname, inst.id)
+    
+    atom = tables.Atom.from_dtype(value.dtype)
+    
+    if arraytype == pq.Quantity:
+        unitsname =  '{}_{}_{}_units'.format(inst.tablename, arrayname, inst.id)
+        #~ print 'unitsname', unitsname, inst.tablename, inst.id
+    
+    # FIXME delete an array
+    if  where+arrname in hfile:
+        #~ print 'deja!!!!'
+        hfile.removeNode('/', arrname)
+        
+    if arraytype == pq.Quantity and where+unitsname in hfile:
+            hfile.delNodeAttr('/', unitsname)
+    
+    if value is None: return
+    
+    if value.ndim ==0:
+        #~ if arraytype == np.ndarray:
+            #~ hfile.setNodeAttr('/', arrname, value)
+        #~ elif arraytype == pq.Quantity:
+            #~ hfile.setNodeAttr('/', arrname, value.magnitude)
+        
+        if arraytype == np.ndarray:
+            hfile.createArray(where, arrname, value)
+        elif arraytype == pq.Quantity:
+            hfile.createArray(where, arrname, value.magnitude)
+        #~ print 'ndim 0', arrayname, value
+            
+    elif np.prod(value.shape)==0:
+        #~ print type(inst), arrayname,  value.shape
+        a = hfile.createEArray(where,arrname, atom, value.shape)
+    else:
+        #~ print type(inst), arrayname,  value.shape
+        a = hfile.createCArray(where,arrname, atom, value.shape)
+        
+        a[:] = value[:]
+
+    if arraytype == pq.Quantity:
+        units = value.dimensionality.string
+        #~ atom = tables.StringAtom(itemsize=128)
+        #~ unitsname =  '{}_{}_{}_units'.format(inst.tablename, arrname, inst.id)
+        #~ a = hfile.createCArray(where,arrname, atom, (1,) )
+        #~ a[:] = units
+        hfile.setNodeAttr('/', unitsname, units)
+        #~ print 'ici', unitsname, units
+    
+    hfile.flush()
+
+
+
+class EventOnHdf5Load:
+    def __init__(self, hfile = None):
+        self.hfile = hfile
+    def __call__(self, target, context):
+        #~ print 'EventOnHdf5Load', target.tablename, target.id
+        for attrname, attrtype in target.usable_attributes.items():
+            if attrtype == np.ndarray or attrtype == pq.Quantity:
+                arr = load_array_from_hdf5_file(self.hfile, target, attrname, attrtype)
+                #~ print 'in load', type(target), attrname, arr
+                if  arr is not None:
+                    setattr(target, attrname+'_array', arr)
+
+class EventOnHdf5AfterInsert:
+    def __init__(self, hfile = None):
+        self.hfile = hfile
+    def __call__(self, mapper, connection, target):
+        #~ print 'EventOnHdf5AfterInsert', target.tablename, target.id
+        for attrname, attrtype in target.usable_attributes.items():
+            if attrtype == np.ndarray or attrtype == pq.Quantity:
+                if not hasattr(target, attrname+'_array' ): continue
+                arr = getattr(target, attrname+'_array' )
+                if  arr is not None:
+                    save_array_to_hdf5_file(self.hfile, target, attrname, attrtype, arr)
+
+
+class EventOnHdf5AfterUpdate:
+    def __init__(self, hfile = None):
+        self.hfile = hfile
+    def __call__(self, mapper, connection, target):
+        #~ print 'EventOnHdf5AfterUpdate', target.tablename, target.id
+        for attrname, attrtype in target.usable_attributes.items():
+            if attrtype == np.ndarray or attrtype == pq.Quantity:
+                if not hasattr(target, attrname+'_array' ): continue
+                arr = getattr(target, attrname+'_array' )
+                if  arr is not None:
+                    save_array_to_hdf5_file(self.hfile, target, attrname, attrtype, arr)
+
+class EventOnHdf5AfterDelete:
+    def __init__(self, hfile = None):
+        self.hfile = hfile
+    def __call__(self, mapper, connection, target):
+        print 'EventOnHdf5AfterDelete', target.tablename, target.id, 'TODO'
+
+
+
+
+
+
 def map_generated_classes(engine, generated_classes, relationship_lazy = 'select', 
-                                                memmap_path = None,  compress = False):
+                                                numpy_storage_engine =  'sqltable',  compress = False, hfile = None):
     """
     This function map all classes to the db connected with engine.
     
@@ -682,11 +806,9 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
             * genclass.many_to_one_relationship
             * genclass.many_to_many_relationship
     
-    :param relationship_lazy: sqlalchemy option for relationship (default 'select') 
-                            Can be 'select', 'immediate', dynamic'
-                            See http://docs.sqlalchemy.org/en/latest/orm/relationships.html?highlight=lazy
-    
-    :param memmap_path: a path where numpy.array can be memmaped and cached to avoid long reload.
+    :param relationship_lazy: see open_db
+    :param numpy_storage_engine: see open_db
+    :param compress: see open_db
     
     """
     metadata = MetaData(bind = engine)
@@ -784,8 +906,14 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
         # magic reconstruction for  np.ndarray pq.Quantity (pq.Quantity scalar)
         for attrname, attrtype in genclass.usable_attributes.items():
             if attrtype == np.ndarray or attrtype == pq.Quantity:
-                np_dyn_load = NumpyArrayPropertyLoader(attrname, arraytype =attrtype, compress = compress, NumpyArrayTableClass = NumpyArrayTableClass)
+                if numpy_storage_engine ==  'sqltable':
+                    np_dyn_load = SQL_NumpyArrayPropertyLoader(attrname, arraytype =attrtype, compress = compress, NumpyArrayTableClass = NumpyArrayTableClass)
+                elif numpy_storage_engine ==  'hdf5':
+                    np_dyn_load = HDF5_NumpyArrayPropertyLoader(attrname, arraytype =attrtype, hfile = hfile)
+                    
                 setattr(genclass, attrname, property( fget = np_dyn_load.fget,  fset = np_dyn_load.fset ))
+                    
+                
         
     return metadata
 
@@ -837,7 +965,6 @@ class DataBaseConnectionInfo(object):
         * Session
         * metadata
         * cache
-        * memmap_path
     
     """
     def __init__(self, **kargs):
@@ -845,7 +972,8 @@ class DataBaseConnectionInfo(object):
 
 
 def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_session = True, 
-                        object_number_in_cache = None, compress = 'blosc',
+                        object_number_in_cache = None,  numpy_storage_engine = 'sqltable', compress = 'blosc',
+                        hdf5_filename = None,
                         relationship_lazy = 'select', predefined_classes = None, max_binary_size = MAX_BINARY_SIZE,):
     """
     Hight level function from playing with a database: this function create sqlalchemy engine, inspect database, create classes, map then and create caches.
@@ -856,11 +984,12 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     :param use_global_session: True by default. True is convinient for easy script mode there is a global session for all object. Do not do this for multiprocessing or GUI.
     :param object_number_in_cache: default=None. use a basic memory cache with a fixed object length to avoid to reload objects from db each time you need them.
                                                             If None do not cache anything.
-    :param memmap_path: default=None. all attributes are np.array like (Quantities, ...) can be cached on the disk in a directory with numpy.memmap system.
-                                            If None do not cache memmap array.
-                                            If 'auto' the path is in HOME user dir.
-    :param min_size_memmap: when use memmap define the minimum size of an array to be cached
-    :param compress: do compress with zlib all BLOB for np.array (save disk space and band width)
+    :param numpy_storage_engine: 'sqltable' or 'hdf5' all numpy.array ( and pq.Quantity) can be stored directly in sql tables or separated hdf5.
+                                                                    'sqltable': great because your database is consistent but this is slow, SQL is not optimized for for big binaries object.
+                                                                    'hdf5': great because this is faster but you need to provide a separated file than url for storage.
+    :param compress: 'blosc', 'zlib' or None do compress with all BLOB for np.array (save disk space and band width)
+                                            Note that compression include a memory overhead (beauause np.array buffer + compress buffer)
+    :param hdf5_filename: if numpy_storage_engine is hdf5 you need to provide the filename.
     :param relationship_lazy: sqlalchemy option for relationship (default 'select') 
                             Can be 'select', 'immediate', dynamic'
                             See http://docs.sqlalchemy.org/en/latest/orm/relationships.html?highlight=lazy
@@ -895,9 +1024,22 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
                                                 suffix_for_class_name = suffix_for_class_name,
                                                 )
     
-
+    # TODO check if hdf5_filename and numpy_storage_engine ara consistent
+    if numpy_storage_engine ==  'sqltable':
+        hfile = None
+    elif numpy_storage_engine ==  'hdf5':
+        hfile =  tables.openFile(hdf5_filename, mode = "a", filters = tables.Filters(complevel=9, complib=compress,))
+    
     metadata = map_generated_classes(engine, generated_classes, relationship_lazy = relationship_lazy,
-                                    compress = compress )
+                                    numpy_storage_engine = numpy_storage_engine, compress = compress, hfile = hfile )
+    
+    if numpy_storage_engine ==  'hdf5':
+        for genclass in generated_classes:
+            #~ event.listen(genclass, 'load', EventOnHdf5Load(hfile = hfile) )
+            event.listen(genclass, 'after_insert', EventOnHdf5AfterInsert(hfile = hfile))
+            event.listen(genclass, 'after_update', EventOnHdf5AfterUpdate(hfile = hfile))
+            event.listen(genclass, 'after_delete', EventOnHdf5AfterDelete(hfile = hfile))
+
 
     if object_number_in_cache:
         cache = MyBasicCache(maxsize = object_number_in_cache)
@@ -944,7 +1086,7 @@ def execute_sql(query ,session = None, column_split = True,
     """
     if session is None:
         session = globalsesession
-    assert session is not None, 'You must give a session for loading {}'.format(cls.__classname__)
+    assert session is not None, 'You must give a session for execute_sql'
     
     pres = session.execute(query, kargs)
     res = pres.fetchall()

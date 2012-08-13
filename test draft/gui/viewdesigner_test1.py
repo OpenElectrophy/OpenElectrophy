@@ -25,17 +25,17 @@ url = 'sqlite:///test_db_1.sqlite'
 
 def test1():
     # new one
-    mapperInfo = open_db(url, mylocals = locals(),
+    dbinfo = open_db(url, myglobals = globals(),
                                                                 use_global_session = False, 
                                                                 object_number_in_cache = 3000,
-                                                                relationship_lazy = 'dynamic', 
+                                                                relationship_lazy = 'select', 
                                                                 )
-    session = mapperInfo.Session()
+    session = dbinfo.Session()
     
     app = QApplication([ ])
-    td = TreeDescription( mapped_classes = mapperInfo.mapped_classes,)
+    td = TreeDescription( dbinfo = dbinfo,)
 
-    w = ViewDesigner(mapperInfo= mapperInfo, treedescription = td)
+    w = ViewDesigner(dbinfo= dbinfo, treedescription = td)
     ok = w.show()
     app.exec_()
     
@@ -43,18 +43,18 @@ def test1():
 
 def test2():
     # modify
-    mapperInfo = open_db(url, mylocals = locals(),
+    dbinfo = open_db(url,  myglobals = globals(),
                                                                 use_global_session = False, 
                                                                 object_number_in_cache = 3000,
-                                                                relationship_lazy = 'dynamic', 
+                                                                relationship_lazy = 'select', 
                                                                 )
     
-    session = mapperInfo.Session()
+    session = dbinfo.Session()
     
     td = None
 
     app = QApplication([ ])
-    w = ViewDesigner(mapperInfo= mapperInfo, treedescription = td)
+    w = ViewDesigner(dbinfo= dbinfo, treedescription = td)
     ok = w.show()
     app.exec_()
 

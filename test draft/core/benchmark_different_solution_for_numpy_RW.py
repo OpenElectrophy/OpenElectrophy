@@ -144,8 +144,23 @@ class AllInOneHDF5:
     
     def write_one(self, arr, n):
         self.hdf = tables.openFile(self.filename, mode = "a")
-        self.hdf.createArray('/', 'array_{}'.format(n), arr)
+        #~ self.hdf.createArray('/', 'array_{}'.format(n), arr)
+        
+        # CArray
+        atom = tables.Atom.from_dtype(arr.dtype)
+        a = self.hdf.createCArray('/', 'array_{}'.format(n), atom, arr.shape)
+        a[:] = arr[:]
+        
+        # EArray
+        #~ atom = tables.Atom.from_dtype(arr.dtype)
+        #~ a = self.hdf.createEArray('/', 'array_{}'.format(n), atom, arr.shape)
+        #~ a[:] = arr[:]
+        
+        #~ self.hdf.createEArray('/', 'array_{}'.format(n), arr)
+        
+        
         self.hdf.close()
+        
     def read_one(self, n):
         self.hdf = tables.openFile(self.filename, mode = "r")
         a = self.hdf.getNode('/', 'array_{}'.format(n)).read()

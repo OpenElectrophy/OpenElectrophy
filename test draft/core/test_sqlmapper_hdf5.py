@@ -44,14 +44,18 @@ mapperInfo = open_db(url, myglobals = globals(), numpy_storage_engine = 'hdf5', 
 
 
 seg = Segment(name = 'first seg')
-
+seg.save()
 for i in range(3):
     ana = AnalogSignal( )
+    seg.analogsignals.append(ana)
+    ana.save()
     ana.name = 'from attr {}'.format(i)
     ana.signal = pq.Quantity( [1.,2.,3.], units = 'mV')
     ana.t_start = 50.23 * pq.s
-    seg.analogsignals.append(ana)
-
+    ana.sampling_rate = 1000. * pq.Hz
+    ana.save()
+    
+    
 
 for i in range(1):
     ana = AnalogSignal(   signal = pq.Quantity( [1.,2.,3.], units = 'mV'),
@@ -85,6 +89,9 @@ rcg1.save()
 rcg2.save()
 id_rcg = rcg1.id
 
+
+mapperInfo = open_db(url, myglobals = globals(), numpy_storage_engine = 'hdf5', hdf5_filename = hdf5_filename)
+
 # loading
 seg = Segment.load(id_seg)
 print seg
@@ -95,6 +102,9 @@ seg = Segment(id = id_seg)
 print seg
 for ana in seg.analogsignals:
     print ana
+    #~ print ana.sampling_rate, ana.sampling_rate.shape
+    ana.to_neo()
+    
 for ev in seg.eventarrays:
     print ev
 
