@@ -1,0 +1,4 @@
+.tox
+*.pyc
+*.h5
+*.sqlite
