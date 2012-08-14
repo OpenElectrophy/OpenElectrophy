@@ -46,9 +46,9 @@ class ParamWidget(QWidget):
 
             h = QHBoxLayout()
             self.mainLayout.addLayout(h)
-            h.addStretch(0)
+            h.addStretch(1)
             self.comboParam = QComboBox()
-            h.addWidget(self.comboParam)
+            h.addWidget(self.comboParam, 3)
             
             self.refreshCombo()
             self.comboParam.currentIndexChanged.connect(self.comboParamChanged)
