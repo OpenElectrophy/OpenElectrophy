@@ -28,7 +28,7 @@ class Delete(MenuItem):
     table = None
     mode = 'homogeneous'
     icon = ':/user-trash.png'
-    def execute(self, session, treeview, explorer,ids, tablenames,  treedescription, **kargs):
+    def execute(self, session, treeview, explorer,ids, tablename,  treedescription, **kargs):
         for warn in  [  'Do you want to delete this and all of its descendants?',
                                 'Are you sure?',
                                 'Are you really sure?',
@@ -38,7 +38,7 @@ class Delete(MenuItem):
                     QMessageBox.NoButton)
             if mb == QMessageBox.Cancel : return
         
-        for id, tablename in zip(ids, tablenames) :
+        for id  in ids :
             class_ = treedescription.tablename_to_class[tablename]
             # this do not work in cascade because it is directly SQL
             #~ session.query(OEclass).filter_by(id=id).delete()
@@ -53,11 +53,12 @@ class Edit(MenuItem):
     table = None
     mode = 'unique'
     icon = ':/view-form.png'
-    def execute(self, session,treeview, id, tablename,treedescription,  **kargs):
+    def execute(self, session,treeview, id, tablename,treedescription, explorer,  **kargs):
         class_ = treedescription.tablename_to_class[tablename]
         instance = session.query(class_).get(id)
         w= EditFieldsDialog(parent = treeview, session = session, instance = instance)
-        w.exec_()
+        if w.exec_():
+            explorer.refresh()
 
 
 class ChangeParent(MenuItem):
@@ -68,7 +69,7 @@ class ChangeParent(MenuItem):
     def execute(self, session,explorer, ids, treeview, treedescription,tablename, **kargs):
         class_ = treedescription.tablename_to_class[tablename]
         w= ChangeParentDialog(parent = treeview, session = session, ids = ids, 
-                            class_ = class_, mapped_classes = treedescription.mapped_classes )
+                            class_ = class_, mapped_classes = treedescription.dbinfo.mapped_classes )
         if w.exec_():
             explorer.refresh()
 

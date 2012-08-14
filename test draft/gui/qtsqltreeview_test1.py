@@ -163,10 +163,11 @@ def test3():
     url = 'sqlite://'
     
     
+    
     dbinfo = open_db(url, 
                         object_number_in_cache = 3000,
-                        #~ memmap_path = './memmap1',
-                        #~ memmap_path = None,
+                        use_global_session = False,
+                        compress = None,
                         )
     session = dbinfo.Session()
     
@@ -180,21 +181,22 @@ def test3():
     create_many_to_one_relationship(bl)
     populate_RecordingChannel(bl)
     bl2 = OEBase.from_neo(bl, dbinfo.mapped_classes, cascade = True)
-    
     session.add(bl2)
+    session.commit()
+    print bl2
     
     treedescription1 = TreeDescription(
-                            mapped_classes =  dbinfo.mapped_classes,
+                            dbinfo =  dbinfo,
                             table_children = { 
                                                     'Block' : ['Segment' ],
                                                     'Segment' : [ 'AnalogSignal'],
                                                     },
                             columns_to_show = { },
                             table_on_top = 'Block',
-                            table_order = None,
+                            #~ table_order = None,
                             )
     treedescription2 = TreeDescription(
-                            mapped_classes =  dbinfo.mapped_classes,
+                            dbinfo =  dbinfo,
                             table_children = { 
                                                     'Block' : ['RecordingChannelGroup' ],
                                                     'RecordingChannelGroup' : [ 'RecordingChannel', ],
@@ -202,14 +204,15 @@ def test3():
                                                     },
                             columns_to_show = { },
                             table_on_top = 'Block',
-                            table_order = None,
-                            context_menu = None,
+                            #~ table_order = None,
                             )
     
     app = QApplication([ ])
     
-    w1 = QtSqlTreeView(session = session, treedescription = treedescription1)
-    w2 = QtSqlTreeView(session = session, treedescription = treedescription2)
+    from OpenElectrophy.gui.contextmenu import context_menu
+    
+    w1 = QtSqlTreeView(session = session, treedescription = treedescription1,  context_menu = context_menu)
+    w2 = QtSqlTreeView(session = session, treedescription = treedescription2,  context_menu = context_menu)
     w1.show()
     w2.show()
     sys.exit(app.exec_())
@@ -281,7 +284,7 @@ def test5():
 
 if __name__ == '__main__' :
     #~ test1()
-    test2()
+    #~ test2()
     #~ test3()
     #~ test4()
-    #~ test5()
+    test5()

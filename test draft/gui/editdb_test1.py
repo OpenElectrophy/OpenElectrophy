@@ -23,13 +23,13 @@ def test1():
     """
     EditFields
     """
-    mapperInfo = open_db(url, mylocals = globals(),
+    dbinfo = open_db(url, myglobals = globals(),
                                         use_global_session = False, 
                                         object_number_in_cache = 3000,
                                         relationship_lazy = 'dynamic', 
                                         )
     
-    session = mapperInfo.Session()
+    session = dbinfo.Session()
 
     app = QApplication([ ])
     
@@ -37,26 +37,28 @@ def test1():
     
     bl = session.query(Block).first()
     print bl.name
+    print bl
     
     w = EditFieldsDialog( session = session,
                             instance = bl,
                             )
     #~ ok = w.show()
     w.exec_()
-    app.exec_()
+    #~ app.exec_()
+    print bl
 
 
 def test2():
     """
     ChangeParent
     """
-    mapperInfo = open_db(url, mylocals = globals(),
+    dbinfo = open_db(url, myglobals = globals(),
                                 use_global_session = False, 
                                 object_number_in_cache = 3000,
                                 relationship_lazy = 'dynamic', 
                                 )
     
-    session = mapperInfo.Session()
+    session = dbinfo.Session()
 
     app = QApplication([ ])
     
@@ -64,7 +66,7 @@ def test2():
     w = ChangeParentDialog( session = session,
                             ids =[ ],
                             class_ = AnalogSignal,
-                            mapped_classes = mapperInfo.mapped_classes,
+                            mapped_classes = dbinfo.mapped_classes,
                             )
     w.exec_()
 
@@ -72,13 +74,13 @@ def test3():
     """
     EditRecordingChannelGroupsDialog
     """
-    mapperInfo = open_db(url, mylocals = globals(),
+    dbinfo = open_db(url, myglobals = globals(),
                             use_global_session = False, 
                             object_number_in_cache = 3000,
                             relationship_lazy = 'dynamic', 
                             )
     
-    session = mapperInfo.Session()
+    session = dbinfo.Session()
 
     app = QApplication([ ])
     
@@ -92,13 +94,13 @@ def test3():
         for rc in rcg.recordingchannels:
             print '   ' , rc.index
         print
-    w = EditRecordingChannelGroupsDialog( Session = mapperInfo.Session, block = bl,
-                            mapped_classes = mapperInfo.mapped_classes)
+    w = EditRecordingChannelGroupsDialog( Session = dbinfo.Session, block = bl,
+                            mapped_classes = dbinfo.mapped_classes)
     if w.exec_():
         pass
         
     
-    session = mapperInfo.Session()
+    session = dbinfo.Session()
     bl = session.query(Block).first()
     print 'after', bl.id
     for rcg in bl.recordingchannelgroups:

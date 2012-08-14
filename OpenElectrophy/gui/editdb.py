@@ -73,6 +73,7 @@ class EditFieldsDialog(QDialog):
             setattr(self.instance, attrname, getattr(self.params.dataset, attrname))
         self.session.commit()
         self.close()
+        self.accept()
 
 
 
@@ -87,14 +88,11 @@ class ChangeParentDialog(QDialog):
         self.session = session
         self.ids = ids
         self.class_ = class_
-        self.mapped_classes = mapped_classes
         
         self.mainLayout = QVBoxLayout()
         self.setLayout(self.mainLayout)
         
-        self.tablename_to_class = { }
-        for classname, class_ in mapped_classes.items():
-            self.tablename_to_class[class_.tablename] = class_
+        self.tablename_to_class = dict( [(c.tablename, c) for c in mapped_classes ] )
         self.possible_parents =  [self.tablename_to_class[p].__name__ for p in self.class_.many_to_one_relationship]
         
         if len(self.possible_parents):
@@ -117,10 +115,10 @@ class ChangeParentDialog(QDialog):
             self.params.set()
             parentname =self.possible_parents[self.params.dataset.parentnum]
             id_parent = self.params.dataset.id
-            parentclass = self.mapped_classes[parentname]
+            parentclass = self.tablename_to_class[parentname]
             parentinstance = self.session.query(parentclass).get(id_parent)
             if parentinstance:
-                relationship = getattr(parentinstance, self.class_.tablename+'s')
+                relationship = getattr(parentinstance, self.class_.tablename.lower()+'s')
                 for id in self.ids:
                     instance = self.session.query(self.class_).get(id)
                     relationship.append(instance)
@@ -397,6 +395,9 @@ class EditRecordingChannelGroupsDialog(QDialog):
         self.session = Session()
         self.block = block
         self.mapped_classes = mapped_classes
+        
+        
+        self.tablename_to_class = dict( [(c.tablename, c) for c in mapped_classes ] )
 
         self.rcgs = []
         self.rcs = []
@@ -405,8 +406,8 @@ class EditRecordingChannelGroupsDialog(QDialog):
             for j,rc in enumerate(rcg.recordingchannels):
                 if rc not in self.rcs:
                     self.rcs.append(rc)
-        RecordingChannelGroup = self.mapped_classes['RecordingChannelGroup']
-        RecordingChannel = self.mapped_classes['RecordingChannel']
+        RecordingChannelGroup = self.tablename_to_class['RecordingChannelGroup']
+        RecordingChannel = self.tablename_to_class['RecordingChannel']
 
 
         self.mainLayout = QVBoxLayout()

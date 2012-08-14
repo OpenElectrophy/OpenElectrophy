@@ -261,10 +261,12 @@ class ViewDesigner(QDialog) :
         
     def editColumnsShown(self):
         row = self.listDisplayedTable.selectedIndexes()[0].row()
-        name =  str(self.listDisplayedTable.item(row).text())
+        tablename =  str(self.listDisplayedTable.item(row).text())
         
-        tablename = name.lower()
-        d = FieldListdesigner(class_ = self.dbinfo.mapped_classes[name],
+        #~ tablename = name.lower()
+        
+        tablename_to_class = dict( [(c.tablename, c) for c in self.dbinfo.mapped_classes ] )
+        d = FieldListdesigner(class_ =tablename_to_class[tablename],
                                     columns_to_show = self.treedescription.columns_to_show[tablename])
         if d.exec_():
             self.treedescription.columns_to_show[tablename] = d.getColumnToShow()

@@ -362,9 +362,10 @@ class QtSqlTreeView(QWidget) :
             self.setContextMenuPolicy(Qt.CustomContextMenu)
             self.customContextMenuRequested.connect(self.callContextMenu)
         
-
+    
         
     def refresh(self):
+        #~ self.layoutAboutToBeChanged.emit()
         self.model = MyModel( session = self.session,treedescription = self.treedescription,)
         self.treeview.setModel(self.model)
         self.resizeColumWidth()
@@ -429,7 +430,7 @@ class QtSqlTreeView(QWidget) :
         elif m.mode == 'all' :
             kargs['ids'] = ids
             kargs['tablenames'] = tablenames
-        
+        #~ print kargs.keys()
         m.execute( **kargs)
 
     

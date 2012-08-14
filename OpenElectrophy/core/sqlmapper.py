@@ -1013,7 +1013,7 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     
     
     """
-    engine = create_engine(url, echo=False, convert_unicode = True)
+    engine = create_engine(url, echo=False, convert_unicode = True, client_encoding='utf8')
     
     if predefined_classes is None:
         from OpenElectrophy.core import oeclasses
