@@ -27,6 +27,7 @@
 			<file alias="spike.png">png/spike.png</file>
 			<file alias="epoch.png">png/epoch.png</file>
 			<file alias="color-picker.png">png/color-picker.png</file>
+			<file alias="pytables-logo.png">png/pytables-logo.png</file>
 			<file alias="postgres.png">png/postgres.png</file>
 			<file alias="media-record.png">png/media-record.png</file>
 			<file alias="roll.png">png/roll.png</file>
@@ -49,6 +50,7 @@
 			<file alias="lasso.png">png/lasso.png</file>
 			<file alias="Filtering.png">png/Filtering.png</file>
 			<file alias="plot.png">png/plot.png</file>
+			<file alias="sqlite_hdf5.png">png/sqlite_hdf5.png</file>
 			<file alias="mysql.png">png/mysql.png</file>
 			<file alias="Extraction.png">png/Extraction.png</file>
 			<file alias="sqlite.png">png/sqlite.png</file>
