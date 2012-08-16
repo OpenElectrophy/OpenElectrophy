@@ -621,7 +621,7 @@ class SQL_NumpyArrayPropertyLoader():
         if self.arraytype == np.ndarray:
             assert (type(value) == np.ndarray) or (type(value) == np.memmap) , 'Value is not np.array or np.memmap but {}'.format(type(value))
         if self.arraytype == pq.Quantity:
-            assert type(value) == pq.Quantity , 'value is not pq.Quantity'
+            assert type(value) == pq.Quantity , '{} {} {} value is not pq.Quantity'.format(inst.class__.__name__, self.name, value)
         
         shape = str(value.shape).replace('(','').replace(')','').replace(' ','')
         if shape.endswith(',') : shape = shape[:-1]
@@ -1013,7 +1013,7 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     
     
     """
-    engine = create_engine(url, echo=False, convert_unicode = True, client_encoding='utf8')
+    engine = create_engine(url, echo=False, convert_unicode = True, encoding = 'utf8') #client_encoding='utf8'
     
     if predefined_classes is None:
         from OpenElectrophy.core import oeclasses
@@ -1056,7 +1056,9 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
             d[genclass.__name__] = genclass
         myglobals.update(d)
     
-    Session = orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True)
+    Session = orm.scoped_session(orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True))
+    #~ Session = orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True)
+    
     if use_global_session:
         global globalsesession
         globalsesession = Session()

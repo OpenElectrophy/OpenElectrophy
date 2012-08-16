@@ -167,3 +167,67 @@ class ParamDialog(QDialog):
         return self.param_widget.to_dict()
 
 
+
+
+def old_params_to_guidata(oldparams):
+    """
+    This convert old OpenElectrophy parameters style
+    to guidata.DataSet style.
+    This util for neo.io wich style use this API:
+    params is a tuple of all parameters with this king
+    
+        [
+            (paramname1  ,  dictParam1  ),
+            (paramname2  ,  dictParam2  ),
+            (paramname3  ,  dictParam3  ),
+            
+        ]
+        
+        dictParam can contains this keys:
+        
+            - default : the default param
+            - type : out type
+            - label : name to display
+            - widgettype
+            - allownone : None is lineedit give a NoneType
+            - possible: for a combobox choose list
+    """
+    
+    _convert = { int : IntItem,
+                            float : FloatItem,
+                            str : StringItem,
+                            unicode: StringItem,
+                            bool : BoolItem,
+                            }
+    
+    
+    items = { }
+    for name, dictparam in oldparams:
+        if 'label' in dictparam:
+            label = dictparam['label']
+        else:
+            label = name
+        if 'value' in dictparam:
+            default = dictparam['value']
+        else:
+            default = None
+        if 'type' in dictparam:
+            classitem = _convert[dictparam['type']]
+        else:
+            classitem = _convert[type(default)]
+        
+        if 'possible' in dictparam:
+            classitem = ChoiceItem
+            items[name] = ChoiceItem(label, dictparam['possible'])
+        else:
+            items[name] = classitem(label, default = default)
+            
+    Parameters = type('Parameters',(DataSet,), items)
+    return Parameters
+    
+    
+    
+    
+    
+    
+

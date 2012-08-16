@@ -17,12 +17,12 @@ import quantities as pq
 #~ url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_1'
 
 
-url = 'sqlite:///test_db_with_hdf5.sqlite'
-hdf5_filename = 'test_db_with_hdf5.h5'
+#~ url = 'sqlite:///test_db_with_hdf5.sqlite'
+#~ hdf5_filename = 'test_db_with_hdf5.h5'
 #~ if os.path.exists('test_db_with_hdf5.sqlite'):
     #~ os.remove('test_db_with_hdf5.sqlite')
-if os.path.exists('test_db_with_hdf5.h5'):
-    os.remove('test_db_with_hdf5.h5')
+#~ if os.path.exists('test_db_with_hdf5.h5'):
+    #~ os.remove('test_db_with_hdf5.h5')
 
 
 
@@ -35,9 +35,9 @@ if os.path.exists('test_db_with_hdf5.h5'):
 
 
 
-#~ mapperInfo = open_db(url, myglobals = globals(), )
+mapperInfo = open_db(url, myglobals = globals(), )
 
-mapperInfo = open_db(url, myglobals = globals(), numpy_storage_engine = 'hdf5', hdf5_filename = hdf5_filename)
+#~ mapperInfo = open_db(url, myglobals = globals(), numpy_storage_engine = 'hdf5', hdf5_filename = hdf5_filename)
 
 
 

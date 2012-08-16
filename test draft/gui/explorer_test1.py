@@ -42,7 +42,7 @@ def test1():
     settings = PickleSettings(applicationname = 'testOE3')
     #~ settings = None
     
-    w = MainExplorer(dbinfo = dbinfo, settings = settings)
+    w = MainExplorer(dbinfo = dbinfo, settings = settings, name = url)
     ok = w.show()
     app.exec_()
 

@@ -86,7 +86,7 @@ class DbConnectWithDBList(DbConnect):
     
     def get_opendb_kargs(self):
         url = self.half_url()+str(self.comboDbList.currentText())
-        return dict(url = url)
+        return dict(url = url, numpy_storage_engine = 'sqltable')
 
 
 
@@ -165,7 +165,7 @@ class TypeSQLite(DbConnect):
     def get_opendb_kargs(self):
         p = self.params_open.to_dict()
         url = 'sqlite:///'+p['sqlite_filename']
-        return dict(url = url)
+        return dict(url = url, numpy_storage_engine = 'sqltable')
     
     def create_a_new_db(self):
         p = self.params_create.to_dict()
@@ -191,7 +191,9 @@ class TypeSQLiteHDF5(DbConnect):
     def get_opendb_kargs(self):
         p = self.params_open.to_dict()
         return dict(url = 'sqlite:///'+p['sqlite_filename'],
-                                hdf5_filename = p['hdf5_filename'])
+                                hdf5_filename = p['hdf5_filename'],
+                                numpy_storage_engine = 'hdf5',
+                                )
         
     def create_a_new_db(self):
         p = self.params_create.to_dict()
@@ -231,10 +233,13 @@ class OpenOrCreateDB(QDialog) :
         self.mainLayout.addWidget(buttonBox)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
-
-    def get_opendb_kargs(self):
+    
+    def get_dbengine(self):
         num = self.tabEngines.currentIndex()
-        return self.opendbguis[num].get_opendb_kargs()
+        return self.opendbguis[num]
+    
+    def get_opendb_kargs(self):
+        return self.get_dbengine().get_opendb_kargs()
 
     def create_a_new_db(self):
         num = self.tabEngines.currentIndex()
