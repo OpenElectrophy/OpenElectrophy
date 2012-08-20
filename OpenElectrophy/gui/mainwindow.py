@@ -14,7 +14,7 @@ from .guiutil.picklesettings import PickleSettings
 from opendb import OpenDB, CreateDB
 from explorer import MainExplorer
 from importdata import ImportData
-#~ from tabledesign import TableDesign
+
 
 from ..core.sqlmapper import open_db, MAX_BINARY_SIZE
 from ..core.base import OEBase
@@ -153,6 +153,7 @@ class MainWindow(QMainWindow) :
             #~ max_binary_size = MAX_BINARY_SIZE
             
             dbinfo = open_db(**kargs)
+            dbinfo.kargs_reopen = kargs # for futur open if schema modified
             #TODO do this better:
             name = dbinfo.url.split('/')[-1]
             explorer = MainExplorer(dbinfo = dbinfo, settings = self.settings, name = name)

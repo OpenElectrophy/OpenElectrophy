@@ -23,18 +23,21 @@ from sqlalchemy.sql.expression import asc, desc
 
 
 
-#~ url = 'sqlite:///test_db_1.sqlite'
-url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'
+url = 'sqlite:///test_db_1.sqlite'
+#~ url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'
 
 def test1():
     """
     simple test
     """
-    dbinfo = open_db(url, myglobals = globals(),
-                                                                use_global_session = False, 
-                                                                object_number_in_cache = 3000,
-                                                                relationship_lazy = 'dynamic', 
-                                                                )
+    kargs = dict(url = url, 
+                            myglobals = globals(),
+                            use_global_session = False, 
+                            object_number_in_cache = 3000,
+                            relationship_lazy = 'dynamic', 
+                            )
+    dbinfo = open_db(**kargs)
+    dbinfo.kargs_reopen = kargs
     
     session = dbinfo.Session()
 

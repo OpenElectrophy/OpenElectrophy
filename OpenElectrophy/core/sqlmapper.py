@@ -296,6 +296,21 @@ def create_column_if_not_exists(table, attrname, attrtype):
     else:
         raise NotImplementedError
 
+
+#TODO
+#~ def remove_column(table, attrname):
+    #~ #TODO
+    #~ table = metadata.tables[oeclass.tablename]
+    #~ fieldtype = dict(oeclass.fields)[fieldname]
+    
+    #~ if fieldtype == numpy.ndarray :
+        #~ for suffix in [ '_shape' , '_dtype' , '_blob' ]:
+            #~ table.c[fieldname+suffix].drop()
+    #~ else :
+        #~ table.c[fieldname].drop()
+
+
+
 def create_one_to_many_relationship_if_not_exists(parenttable, childtable):
     if parenttable.name.lower()+'_id' in childtable.columns: return
     col=  Column(parenttable.name.lower()+'_id', Integer)#, ForeignKey(parenttable.name+'.id'))
@@ -454,7 +469,7 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
             neoclass = tablename_to_oeclass[tablename].neoclass
             classbase = tablename_to_oeclass[tablename]
         else:
-            classname = suffix_for_class_name+tablename
+            classname = str(suffix_for_class_name+tablename)
             neoclass = None
             classbase = OEBase
         genclass = type(classname,(classbase,), { })
@@ -1064,7 +1079,8 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
         globalsesession = Session()
     
     dbinfo = DataBaseConnectionInfo( url =url,mapped_classes = generated_classes,Session = Session,
-                                                metadata = metadata, cache = cache)
+                                                metadata = metadata, cache = cache, numpy_storage_engine = numpy_storage_engine,
+                                                compress = compress)
     
     return dbinfo
     
