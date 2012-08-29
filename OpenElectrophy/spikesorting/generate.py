@@ -47,12 +47,12 @@ def generate_block_for_sorting(
         for seg in bl.segments:
             spike_times.append(np.random.rand(int((spikerate*(duration)).simplified))*duration)
         n_total = np.sum( times.size for times in spike_times )
-        all_waveforms = stupid_waveform_generator(n_total, nb_recordingchannel, sampling_rate)
+        all_waveforms = stupid_waveform_generator(n_total, nb_recordingchannel, sampling_rate) * pq.mV
         
         n = 0
         for s,seg in enumerate(bl.segments):
             sptr = neo.SpikeTrain(  spike_times[s], t_start = t_start, t_stop = t_start+duration)
-            sptr.waveforms = all_waveforms[n:n+spike_times[s].size, :,:]
+            sptr.waveforms = all_waveforms[n:n+spike_times[s].size, :,:] 
             seg.spiketrains.append(sptr)
             unit.spiketrains.append(sptr)
             n += spike_times[s].size
@@ -70,7 +70,7 @@ def generate_block_for_sorting(
             else:
                 signal = noise_ratio*np.random.randn(sig_size)
             
-            anasig = neo.AnalogSignal(signal = signal, units = 'V', sampling_rate = sampling_rate, t_start = t_start)
+            anasig = neo.AnalogSignal(signal = signal, units = 'mV', sampling_rate = sampling_rate, t_start = t_start)
             seg.analogsignals.append(anasig)
             rc.analogsignals.append(anasig)
             
@@ -79,7 +79,7 @@ def generate_block_for_sorting(
                     wf = sptr.waveforms[k,j,:]
                     pos = int(((time-t_start)*sampling_rate).simplified)
                     try:
-                        anasig[pos:pos+wf.size] += wf*pq.V
+                        anasig[pos:pos+wf.size] += wf
                     except:
                         pass
 
@@ -119,7 +119,7 @@ def stupid_waveform_generator(n, trodness, sampling_rate):
                 params[p] = initial_params[p] + np.diff(r)*.02 * np.random.randn()
             waveforms[j,i,:] = params['amp1']*np.exp(-(t-params['mu1'])**2/params['sigma1']**2) + params['amp2']* np.exp(-(t-params['mu2'])**2/params['sigma2']**2)
     
-    return waveforms
+    return waveforms #* pq.V
 
 
 

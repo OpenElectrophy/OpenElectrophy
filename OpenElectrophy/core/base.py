@@ -130,13 +130,37 @@ class OEBase(object):
             #~ delattr(neoinstance, 'OEinstance')
         return OEinstance
 
-    def to_neo(self):
+    def to_neo(self, cascade = False):
         if self.neoclass is not None:
+            # attributes
             if self.neoinstance is None:
                 kargs = {}
                 for k in self.usable_attributes:
                     kargs[k] = getattr(self, k)
                 self.neoinstance = self.neoclass(**kargs)
+            
+            # cascade relationships
+            if cascade:
+                for childname in self.many_to_many_relationship:
+                    for child in getattr(self, childname.lower()+'s'):
+                        neochild = child.neoinstance
+                        if neochild is None:
+                            neochild = child.to_neo(cascade = True)
+                        if neochild is not None and neochild not in getattr(self.neoinstance, childname.lower()+'s'):
+                            getattr(self.neoinstance, childname.lower()+'s').append( neochild )
+                            getattr(neochild, self.tablename.lower()+'s').append( self.neoinstance )
+                for childname in self.one_to_many_relationship:
+                    for child in getattr(self, childname.lower()+'s'):
+                        getattr(self.neoinstance, childname.lower()+'s').append(child.to_neo(cascade = True))
+                for parentname in self.many_to_one_relationship:
+                    if hasattr(self, parentname.lower()):
+                        OEparent = getattr(self, parentname.lower())
+                        neoparent = OEparent.neoinstance
+                        if neoparent is None:
+                            neoparent = OEparent.to_neo(cascade=True)
+                        if neoparent is not None:
+                            setattr(self.neoinstance, parentname.lower(), neoparent)
+            
             return self.neoinstance
         
             

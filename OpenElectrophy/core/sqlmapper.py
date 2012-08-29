@@ -594,7 +594,7 @@ class SQL_NumpyArrayPropertyLoader():
             
             
         if np.prod(shape)==0:
-            if len(blob) != 0:
+            if len(buf) != 0:
                 arr = np.frombuffer( buf , dtype = dt)
             else:
                 arr= np.empty( shape, dtype = dt )
@@ -636,7 +636,7 @@ class SQL_NumpyArrayPropertyLoader():
         if self.arraytype == np.ndarray:
             assert (type(value) == np.ndarray) or (type(value) == np.memmap) , 'Value is not np.array or np.memmap but {}'.format(type(value))
         if self.arraytype == pq.Quantity:
-            assert type(value) == pq.Quantity , '{} {} {} value is not pq.Quantity'.format(inst.class__.__name__, self.name, value)
+            assert type(value) == pq.Quantity , '{} {} {} value is not pq.Quantity'.format(inst.__class__.__name__, self.name, value)
         
         shape = str(value.shape).replace('(','').replace(')','').replace(' ','')
         if shape.endswith(',') : shape = shape[:-1]

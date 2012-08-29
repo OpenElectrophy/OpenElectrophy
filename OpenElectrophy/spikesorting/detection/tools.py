@@ -189,7 +189,7 @@ def get_following_peak_multi_channel(ind_spike, sigs, sign, method = 'biggest_am
             ind_peaks[i] = multi_peaks[biggest,i]
             
     
-    return ind_peaks
+    return ind_peaks+1
     
     
     

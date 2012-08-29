@@ -34,8 +34,9 @@ class AlignWaveformOnPeak(object):
         # Initialize
         initialize_waveform(spikesorter, wsize)
         sps.wf_sampling_rate = sps.sig_sampling_rate
-        sps.leftSweep =swl
-        sps.rightSweep = swr
+        sps.left_sweep =swl
+        sps.right_sweep = swr
+        
         
         # take individual waveform
         n = 0

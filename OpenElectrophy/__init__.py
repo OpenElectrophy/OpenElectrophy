@@ -24,3 +24,4 @@ What is great with OpenElectrophy:
 
 from core import *
 import version
+__version__ = version.version

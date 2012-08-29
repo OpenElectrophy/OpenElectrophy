@@ -87,9 +87,14 @@ Note that some algo do filtering+detection9+extraction on the fly so you do not 
 import copy
 import datetime
 import numpy as np
+import quantities as pq
 
 from methods import all_methods
 all_method_names = dict([ (method.__name__, method) for method in all_methods ])
+
+from matplotlib.cm import get_cmap
+from matplotlib.colors import ColorConverter
+
 
 
 class SpikeSorter(object):
@@ -194,13 +199,27 @@ class SpikeSorter(object):
         # 7. Spikes (all) attributed to clusters
         self.spike_clusters = None # 1D np.array (dtype in) to handle wich spijke belong to wich cluster
                                                     # shape = (NbSpk, )
-        self.cluster_names = { } # a dict of possible clusters ( keys = unique(self.spikeClusters)
+        self.cluster_names = { } # a dict of possible clusters ( keys = unique(self.spike_clusters) )
         
         # 8. Spike are attributed probalistically to clusters
         self.spike_clusters_probabilistic = None # A 2D that give for each spike the probality to belong to a cluster
                                                                     #shape = ( NbSpk, NbClus)
         
+        
+        # Theses attributes are for plotting purpose: colors, random subselection when cluster are too big, ...
+        self.cluster_colors = { } # a dict  (keys = unique(self.spike_clusters)  and value = colors are a tuple of (r,g,b)
+        self.displayed_subset_size = 100 # undensify big cluster for plotting
+        self.cluster_displayed_subset = { } # a dict (keys = unique(self.spike_clusters) and value = vector of selected indexes
+        
+        
+        
         self.initialize_state(rcg,state=initial_state)
+        
+        
+        
+        
+        
+        
         
     
     aliases = { 'recordingchannels'  : 'rcs',
@@ -231,16 +250,51 @@ class SpikeSorter(object):
                 def __init__(self, spikesorter, name):
                     self.method = all_method_names[name]
                     self.spikesorter = spikesorter
-                
                 def __call__(self, **kargs):
                     self.spikesorter.run_step(self.method, **kargs)
             return step_caller(self, name)
-        
         
         if name == "aliases":
             raise AttributeError
         name = self.aliases.get(name, name)
         return object.__getattribute__(self, name)
+    
+    def __repr__(self):
+        t = 'SpikeSorter for: {}\n'.format(self.rcg.name)
+        t += '-'*5+'\n'
+        t += 'Nb segments: {}\n'.format(len(self.segs))
+        t += 'Trodnes (nb channel): {}\n'.format(self.trodness)
+        t += 'Initial state: "{}"\n'.format(self.state)
+        
+        if self.state == 'full_band_signal':
+            t += 'Signals are filtrered : {}\n'.format(not(self.filtered_sigs is None))
+        
+        
+        if self.spike_index_array is not None:
+            l = [len(pos) for pos in self.spike_index_array]
+            t += 'Nb spikes total : {}\n'.format(np.sum(l))
+            t += ('Nb spikes by segments : '+'{} '*len(self.segs)+'\n').format(*l)
+        if self.spike_waveforms is not None:
+            t += 'Waveform size : {}  = {} pts (={}+1+{})  \n'.format(
+                                                    (self.spike_waveforms.shape[2]/self.wf_sampling_rate).rescale(pq.ms),
+                                                    self.spike_waveforms.shape[2], 
+                                                    self.left_sweep, self.right_sweep)
+        if self.feature_names is not None:
+            t += ('Waveforms features : '+"'{}', " *len(self.feature_names)+'\n').format(*self.feature_names.tolist())
+        if len(self.cluster_names)>0:
+            t += 'Nb of cluster : {}\n'.format(len(self.cluster_names))
+            t += 'Spike by cluster : '
+            for c, name in self.cluster_names.items():
+                t+= "  '{}': {}  -".format(name, np.sum(self.spike_clusters==c))
+            t += '\n'
+        
+        t += '\n'
+        return t
+        
+    
+    @property
+    def trodness(self):
+        return len(self.rcs)
     
     def initialize_state(self,recordingChannelGroup, state):
         self.state=state
@@ -295,5 +349,44 @@ class SpikeSorter(object):
         for step in self.history:
             print step
             other.run_step(step['methodInstance'].__class__, **step['arguments'])
+
+
+    ####
+    ## Plot utilities
+    def refresh_display(self):
+        self.refresh_cluster_names()
+        self.refresh_colors()
+        self.refresh_displayed_subset(self.displayed_subset_size)
+
+    def refresh_cluster_names(self):
+        if self.spike_clusters is None:
+            self.cluster_names = { }
+            return
+        clusters = np.unique(self.spike_clusters)
+        for c in clusters:
+            if c not in self.cluster_names:
+                if c!=-1:
+                    self.cluster_names[c] = 'cluster #{}'.format(c)
+                else:
+                    self.cluster_names[-1] = 'trash'
+
+    def refresh_colors(self):
+        self.cluster_colors = { }
+        if self.spike_clusters is not None:
+            cmap = get_cmap('jet' , len(self.cluster_names)+3)
+            for i , c in enumerate(self.cluster_names.keys()):
+                self.cluster_colors[c] = ColorConverter().to_rgb( cmap(i+2) )
+        self.cluster_colors[-1] = ColorConverter().to_rgb( 'k' ) #trash
+    
+    def refresh_displayed_subset(self, displayed_subset_size = 100):
+        self.displayed_subset_size = displayed_subset_size
+        if self.spike_clusters is None: return
+        self.cluster_displayed_subset = { }
+        for i , c in enumerate(self.cluster_names.keys()):
+            ind, = np.where( self.spike_clusters ==c )
+            np.random.shuffle(ind)
+            if displayed_subset_size < ind.size:
+                ind = ind[:displayed_subset_size]
+            self.cluster_displayed_subset[c]  = ind
 
 
