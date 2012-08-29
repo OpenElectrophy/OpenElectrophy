@@ -23,8 +23,8 @@ from sqlalchemy.sql.expression import asc, desc
 
 
 
-url = 'sqlite:///test_db_1.sqlite'
-#~ url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'
+#~ url = 'sqlite:///test_db_1.sqlite'
+url = 'mysql://test_dev:test_dev@neuro001.univ-lyon1.fr/test_dev_2'
 
 def test1():
     """
