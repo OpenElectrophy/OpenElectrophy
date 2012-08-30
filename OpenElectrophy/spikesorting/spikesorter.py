@@ -169,7 +169,7 @@ class SpikeSorter(object):
         
         # After that point data are concatenated in compact arrays
         # even if they come from different segment for efficiency reason, PCA need arrays compact)
-        # so we need a dictionnary of size NbSeg that have key=neo.Segment and value=a slice
+        # so we need a dictionnary of size NbSeg that have key=segment num and value=a slice
         # to go back from the compact array (spikeWaveforms,spikeWaveformFeatures, spikeClusters, ...)
         # to individual segments
         self.seg_spike_slices = None

@@ -11,14 +11,16 @@ from guidata.dataset.dataitems import (FloatItem, IntItem, BoolItem, ChoiceItem,
                              DateTimeItem,
                              FileOpenItem, DirectoryItem, FloatArrayItem)
 from guidata.dataset.qtitemwidgets import DataSetWidget
+from guidata.dataset.datatypes import DataItem
 
 from collections import OrderedDict
 
 
 
-from guidata.dataset.qtitemwidgets import LineEditWidget
+from guidata.dataset.qtitemwidgets import LineEditWidget, AbstractDataSetWidget
 
 
+## Custum items
 class PasswordItem(StringItem):
     pass
 
@@ -26,10 +28,48 @@ class PasswordLineEditWidget(LineEditWidget):
     def __init__(self, *args, **kargs):
         super(PasswordLineEditWidget, self).__init__(*args, **kargs)
         self.edit.setEchoMode(QLineEdit.Password)
+
 DataSetEditLayout.register(PasswordItem, PasswordLineEditWidget)    
 
 
+class FloatRangeItem(DataItem):
+    def from_string(self, value):
+        try:
+            l1,l2 = unicode(value).split(',')
+            l1,l2 = float(l1), float(l2)
+            return l1,l2
+        except:
+            return None
 
+class FloatRangeEditWidget(AbstractDataSetWidget):
+    def __init__(self, item, parent_layout):
+        super(FloatRangeEditWidget, self).__init__(item, parent_layout)
+        self.edit = self.group = QLineEdit()
+        self.edit.setToolTip(item.get_help())
+
+    def get(self):
+        value = self.item.get()
+        if value:
+            self.edit.setText('{} , {}'.format(*value))
+    
+    def set(self):
+        self.item.set(self.value())
+
+    def value(self):
+        try:
+            l1,l2 = unicode(self.edit.text()).split(',')
+            l1,l2 = float(l1), float(l2)
+            return l1,l2
+        except:
+            return None
+
+    def check(self):
+        return self.value() is not None
+DataSetEditLayout.register(FloatRangeItem, FloatRangeEditWidget) 
+
+
+
+## Easy widget on top on DataSetEditGroupBox
 class ParamWidget(QWidget):
     def __init__(self, dataset, title = '', settings = None, settingskey = None, parent = None):
         super(ParamWidget, self).__init__(parent = parent)
@@ -142,7 +182,7 @@ class ParamWidget(QWidget):
         self.comboParam.setCurrentIndex(0)
 
 
-
+## Easy dialog on top on DataSetEditGroupBox
 class ParamDialog(QDialog):
     def __init__(self,   dataset, title = '', settings = None, settingskey = None, parent = None):
         super(ParamDialog, self).__init__(parent = parent)

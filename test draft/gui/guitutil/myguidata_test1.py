@@ -26,6 +26,8 @@ class Parameters(DataSet):
     description = TextItem('description', default ='multiline')
     
     password = PasswordItem('the password', default = 'secret', )
+    
+    limits = FloatRangeItem('limits' , default = (-.5,.5) )
 
 
 def test1():
@@ -65,7 +67,7 @@ def test3():
 
 
 if __name__ == '__main__':
-    #~ test1()
+    test1()
     #~ test2()
     #~ test3()
 

@@ -2,14 +2,13 @@
 
 
 from .waveforms import AverageWaveforms, AllWaveforms
-from .features import FeaturesParallelPlot, FeaturesWilsonPlot
+from .features import FeaturesParallelPlot, FeaturesWilsonPlot, Features3D, FeaturesEvolutionInTime, FeaturesNDViewer
 
 spikesorting_widget_list = [ AverageWaveforms, AllWaveforms,
-                                                FeaturesParallelPlot, FeaturesWilsonPlot, 
+                                                FeaturesParallelPlot, FeaturesWilsonPlot, Features3D,FeaturesEvolutionInTime,FeaturesNDViewer, 
                                                 ]
                                         #~ FullBandSignal , FilteredSignal ,   SignalStatistics,
-                                        #~ FeaturesNDViewer,  Features3D , 
                                         #~ SpikeList, UnitList,
-                                        #~ PlotIsi,PlotCrossCorrelogram, FeaturesEvolutionInTime,
+                                        #~ PlotIsi,PlotCrossCorrelogram, ,
                                         #~ Summary,
                                         #~ ]

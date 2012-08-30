@@ -9,8 +9,7 @@ Theses widget display individual waveforms and average waveforms.
 
 from .base import *
 
-#~ from mpl_toolkits.axes_grid1 import ImageGrid
-import matplotlib.gridspec as gridspec
+from matplotlib.gridspec import GridSpec
 
 class AverageWaveforms(SpikeSortingWidgetBase):
     name = 'Average waveforms'
@@ -36,7 +35,7 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         self.ax2s = [ ]
         ax = None
         ax2 = None
-        grid = gridspec.GridSpec(4,sps.trodness)
+        grid = GridSpec(4,sps.trodness)
         for i in range(sps.trodness):
             ax = self.fig.add_subplot( grid[0:3,i] ,  sharex = ax, sharey = ax)
             self.axs.append( ax )
@@ -113,7 +112,7 @@ class AllWaveforms(SpikeSortingWidgetBase):
             
         # recreate axes
         ax = None
-        grid = gridspec.GridSpec(1,sps.trodness)
+        grid = GridSpec(1,sps.trodness)
         for i in range(sps.trodness):
             ax = self.fig.add_subplot( grid[i] , sharex = ax, sharey = ax)
             self.axs.append( ax )
