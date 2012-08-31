@@ -34,7 +34,7 @@ from ..guiutil.mymatplotlib import *
 
 
 class SpikeSortingWidgetBase(QWidget):
-    spike_labels_changed = pyqtSignal()
+    spike_clusters_changed = pyqtSignal()
     spike_selection_changed = pyqtSignal()
     spike_subset_changed = pyqtSignal()
     

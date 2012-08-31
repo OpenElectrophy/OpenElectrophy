@@ -113,7 +113,7 @@ class SpikeSorter(object):
                                     )
         recordingChannelGroup = bl.recordingchannelgroups[0]
         spikesorter = SpikeSorter(recordingChannelGroup,
-                                initialState='fullBandSignal')
+                                initialState='full_band_signal')
 
 
         # Apply a chain
@@ -135,7 +135,7 @@ class SpikeSorter(object):
         spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 200 )
     
     """
-    def __init__(self,rcg,initial_state='fullBandSignal'):
+    def __init__(self,rcg,initial_state='full_band_signal'):
         """
         
         """
@@ -206,21 +206,15 @@ class SpikeSorter(object):
                                                                     #shape = ( NbSpk, NbClus)
         
         
-        # Theses attributes are for plotting purpose: colors, random subselection when cluster are too big, ...
+        # Theses attributes are for plotting and GUI purpose: colors, random subselection when cluster are too big, ...
         self.cluster_colors = { } # a dict  (keys = unique(self.spike_clusters)  and value = colors are a tuple of (r,g,b)
         self.displayed_subset_size = 100 # undensify big cluster for plotting
         self.cluster_displayed_subset = { } # a dict (keys = unique(self.spike_clusters) and value = vector of selected indexes
+        self.selected_spikes = None # a vector bool to deal with spikes that are selected shpae = (NbSpk,)
         
-        
-        
+        self.initial_state = initial_state
         self.initialize_state(rcg,state=initial_state)
-        
-        
-        
-        
-        
-        
-        
+    
     
     aliases = { 'recordingchannels'  : 'rcs',
                 'segments' : 'segs',
@@ -264,7 +258,7 @@ class SpikeSorter(object):
         t += '-'*5+'\n'
         t += 'Nb segments: {}\n'.format(len(self.segs))
         t += 'Trodnes (nb channel): {}\n'.format(self.trodness)
-        t += 'Initial state: "{}"\n'.format(self.state)
+        t += 'Initial state: "{}"\n'.format(self.initial_state)
         
         if self.state == 'full_band_signal':
             t += 'Signals are filtrered : {}\n'.format(not(self.filtered_sigs is None))
@@ -272,7 +266,7 @@ class SpikeSorter(object):
         
         if self.spike_index_array is not None:
             l = [len(pos) for pos in self.spike_index_array]
-            t += 'Nb spikes total : {}\n'.format(np.sum(l))
+            t += 'Nb spikes total : {}\n'.format(self.nb_spikes)
             t += ('Nb spikes by segments : '+'{} '*len(self.segs)+'\n').format(*l)
         if self.spike_waveforms is not None:
             t += 'Waveform size : {}  = {} pts (={}+1+{})  \n'.format(
@@ -295,7 +289,20 @@ class SpikeSorter(object):
     @property
     def trodness(self):
         return len(self.rcs)
-    
+        
+    @property
+    def nb_spikes(self):
+        if self.spike_clusters is not None:
+            return self.spike_clusters.size
+        if self.spike_waveforms is not None:
+            return self.spike_waveforms.shape[0]
+        if self.waveform_features is not None:
+            return self.waveform_features.shape[0]
+        if self.spike_index_array is not None:
+            l = [len(pos) for pos in self.spike_index_array]
+            return np.sum(l)
+        return 0
+        
     def initialize_state(self,recordingChannelGroup, state):
         self.state=state
         
@@ -349,14 +356,35 @@ class SpikeSorter(object):
         for step in self.history:
             print step
             other.run_step(step['methodInstance'].__class__, **step['arguments'])
+    
+    ## Manul clustering utilities
+    def delete_one_cluster(self, c):
+        raise(NotImplementedError)
 
-
+    def regroup_small_cluster(self, size = 10):
+        n = max(self.cluster_names.keys()) +1
+        to_pop = [ ]
+        for c in self.cluster_names:
+            ind = self.spike_clusters == c
+            if sum(ind) <size:
+                self.spike_clusters[ ind ] = n
+                to_pop.append(c)
+        for c in to_pop:
+            self.cluster_names.pop(c)
+        self.cluster_names[n] = u'regrouped small cluster'
+        self.refresh_colors()
+    
     ####
     ## Plot utilities
-    def refresh_display(self):
+    def check_display_attributes(self):
         self.refresh_cluster_names()
         self.refresh_colors()
-        self.refresh_displayed_subset(self.displayed_subset_size)
+        #self.refresh_displayed_subset(self.displayed_subset_size)
+        if self.selected_spikes is None and self.nb_spikes is not None:
+            self.selected_spikes = np.zeros( (self.nb_spikes), dtype = bool)
+        for c in self.cluster_names.keys():
+            if c not in self.cluster_displayed_subset:
+                self.random_display_subset(c)
 
     def refresh_cluster_names(self):
         if self.spike_clusters is None:
@@ -371,6 +399,7 @@ class SpikeSorter(object):
                     self.cluster_names[-1] = 'trash'
 
     def refresh_colors(self):
+        self.refresh_cluster_names()
         self.cluster_colors = { }
         if self.spike_clusters is not None:
             cmap = get_cmap('jet' , len(self.cluster_names)+3)
@@ -383,10 +412,14 @@ class SpikeSorter(object):
         if self.spike_clusters is None: return
         self.cluster_displayed_subset = { }
         for i , c in enumerate(self.cluster_names.keys()):
+            self.random_display_subset(c)
+            
+    def random_display_subset(self, c):
             ind, = np.where( self.spike_clusters ==c )
             np.random.shuffle(ind)
-            if displayed_subset_size < ind.size:
-                ind = ind[:displayed_subset_size]
+            if self.displayed_subset_size < ind.size:
+                ind = ind[:self.displayed_subset_size]
             self.cluster_displayed_subset[c]  = ind
+
 
 

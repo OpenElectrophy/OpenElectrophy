@@ -205,7 +205,7 @@ class FeaturesEvolutionInTime(SpikeSortingWidgetBase):
 
 
 class FeaturesNDViewer(SpikeSortingWidgetBase):
-    name = 'Evolution of features over time'
+    name = 'ND Viewer'
     refresh_on = [  'waveform_features', 'feature_names', ]
     icon_name = 'Clustering.png'
 
@@ -229,14 +229,15 @@ class FeaturesNDViewer(SpikeSortingWidgetBase):
                                                         )
     
     def newSelectionInViewer(self):
+        self.spikesorter.selected_spikes = self.ndviewer.actualSelection
         self.spike_selection_changed.emit()
-        
-    def setSpikeSelection(self, ind):
-        # To avoid larsen
-        if self.spikesorter.features is None: return
-        self.ndviewer.selection_changed.disconnect(self.newSelectionInViewer )
-        self.ndviewer.changeSelection(ind)
-        self.ndviewer.selection_changed.connect(self.newSelectionInViewer )
+    
+    def on_spike_selection_changed(self):
+        sps = self.spikesorter
+        if sps.waveform_features is None : return
+        #~ self.ndviewer.selection_changed.disconnect(self.newSelectionInViewer )
+        self.ndviewer.changeSelection(sps.selected_spikes, emit_signal = False)
+        #~ self.ndviewer.selection_changed.connect(self.newSelectionInViewer )
 
     def rigthClickOnNDViewer(self,event):
         if hasattr(self.ndviewer, 'lasso'): return
@@ -255,7 +256,7 @@ class FeaturesNDViewer(SpikeSortingWidgetBase):
         
         self.spikesorter.refresh_display()
         self.refresh()
-        self.spike_labels_changed.emit()
+        self.spike_clusters_changed.emit()
 
     def createNewClusterWithSpikes(self):
         ind = self.ndviewer.actualSelection
@@ -263,7 +264,7 @@ class FeaturesNDViewer(SpikeSortingWidgetBase):
         
         self.spikesorter.refresh_display()
         self.refresh()
-        self.spike_labels_changed.emit()
+        self.spike_clusters_changed.emit()
 
 
 

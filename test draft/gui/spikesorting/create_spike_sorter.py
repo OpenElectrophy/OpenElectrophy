@@ -38,6 +38,6 @@ if True:
     spikesorter.SklearnKMeans(n_cluster = 5)
     
     
-spikesorter.refresh_display()
+spikesorter.check_display_attributes()
 print spikesorter
 

@@ -144,13 +144,8 @@ class NDViewer(QWidget):
         
         self.selectionLine = None
         
-        self.actualSelection = np.array([ ] , dtype='i')
-        
-        
         self.selection_changed.connect(self.redrawSelection)
 
-    
-    
     ## draw and redraw ##
     def change_dim(self, ndim):
         
@@ -191,6 +186,8 @@ class NDViewer(QWidget):
         if data.shape[1] != self.dim :
             self.change_dim(data.shape[1])
         self.data = data
+        
+        self.actualSelection = np.zeros(data.shape[0], dtype = bool)
         
         if data_labels is None:
             data_labels = np.zeros( data.shape[0], dtype = 'i')
@@ -247,7 +244,6 @@ class NDViewer(QWidget):
             d1, d2 = self.spins[i]
             for d in [d1,d2]:
                 d.valueChanged.disconnect(self.spinsChanged)
-                #~ self.disconnect(d1, SIGNAL('valueChanged( double  )'), self.spinsChanged)
             d1.setValue(self.projection[i,0])
             d2.setValue(self.projection[i,1])
             
@@ -281,10 +277,6 @@ class NDViewer(QWidget):
             ax.set_xlim([-1.02,1.02])
             ax.set_ylim([-1.02,1.02])
             
-            
-            # Fixme
-            #~ ax.xaxis.set_visible(False)
-            #~ ax.yaxis.set_visible(False)
             
             self.ax_circle = ax
             self.canvas.draw()
@@ -390,7 +382,6 @@ class NDViewer(QWidget):
 
 
     def stepOptimizedTour(self):
-        #~ print 'stepOptimizedTour'
         actual_lda =  ComputeIndexLda(self.projection, self.data, self.data_labels)
         
         nloop = 1
@@ -412,9 +403,10 @@ class NDViewer(QWidget):
 
 
     ## selections ##
-    def changeSelection(self, ind):
-        
-        self.actualSelection = np.array(ind, dtype='i')
+    def changeSelection(self, new_selection, emit_signal = False):
+        self.actualSelection = new_selection
+        if emit_signal:
+            self.selection_changed.emit()
         if not self.tour_running:
             self.redrawSelection()
     
@@ -448,7 +440,8 @@ class NDViewer(QWidget):
             cid = self.canvas.mpl_connect('button_press_event', self.startLasso)
             self.toBeDisconnected.append(cid)
         
-        self.actualSelection = np.array([ ] , dtype='i')
+        self.actualSelection[:] = False
+        
         self.selection_changed.emit()
         
         
@@ -470,9 +463,10 @@ class NDViewer(QWidget):
         if isinstance(event.artist, Line2D):
             xdata, ydata = event.artist.get_data()
             x,y = xdata[event.ind[0]], ydata[event.ind[0]]
-            self.actualSelection = np.array([np.argmin( np.sum( (np.dot( self.data, self.projection )-np.array([[ x,y ]]) )**2 , axis=1)) ] , dtype='i')
+            self.actualSelection[:] = False
+            self.actualSelection[np.argmin( np.sum( (np.dot( self.data, self.projection )-np.array([[ x,y ]]) )**2 , axis=1)) ]  = True
         else:
-            self.actualSelection = np.array([ ] , dtype='i')
+            self.actualSelection[:] = False
         
         self.selection_changed.emit()
 
@@ -481,32 +475,21 @@ class NDViewer(QWidget):
         if event.button != 1: return
         
         
-        #~ print 'startLasso', self.canvas.widgetlock.locked()
         if self.canvas.widgetlock.locked():
             # sometimes there is a bug lassostop is not intercepted!!!
             # so to avoid 2 start
-            #~ print 'in lasso bug'
             self.clearArtistSelection()
             return
         if event.inaxes is None: return
-        #~ for e in self.toBeDisconnected:
-            #~ self.canvas.mpl_disconnect(e)
-
 
         self.lasso = Lasso(event.inaxes, (event.xdata, event.ydata), self.stopLasso)
         # acquire a lock on the widget drawing
         self.canvas.widgetlock(self.lasso)
         
     def stopLasso(self, verts):
-        #~ print 'stopLasso', self.canvas.widgetlock.locked()
-        self.actualSelection,  = np.where(points_inside_poly(np.dot( self.data, self.projection ), verts))
-        #~ self.canvas.draw()
+        self.actualSelection  = points_inside_poly(np.dot( self.data, self.projection ), verts)
         self.canvas.widgetlock.release(self.lasso)
-        #~ print self.canvas.artists
         del self.lasso
-        #~ print 'lasso deleted'
-        #~ self.redraw()
-        
         self.selection_changed.emit()
     
     def pressContour(self, event):
@@ -523,7 +506,6 @@ class NDViewer(QWidget):
                                     marker = 'o' ,
                                     markerfacecolor='g', 
                                     animated=False)
-            #~ self.canvas.draw()
             self.redraw()
             return
         
@@ -544,10 +526,9 @@ class NDViewer(QWidget):
             self.poly.xy = np.array( list(self.poly.xy) +  [[event.xdata , event.ydata]])
             self.line.set_xdata( np.array(list(self.line.get_xdata()) + [ event.xdata]) )
             self.line.set_ydata( np.array(list(self.line.get_ydata()) + [ event.ydata]) )
-            #~ self.canvas.draw()
             self.redraw()
         
-        self.actualSelection, =np.where(points_inside_poly(np.dot( self.data, self.projection ), self.poly.xy))
+        self.actualSelection = points_inside_poly(np.dot( self.data, self.projection ), self.poly.xy)
         self.selection_changed.emit()
     
     
@@ -563,10 +544,9 @@ class NDViewer(QWidget):
 
         self.poly.xy[self._ind] = x,y
         self.line.set_data(zip(*self.poly.xy))
-        #~ self.canvas.draw()
         self.redraw()
         
-        self.actualSelection, = where(points_inside_poly(dot( self.data, self.projection ), self.poly.xy))
+        self.actualSelection = points_inside_poly(np.dot( self.data, self.projection ), self.poly.xy)
         self.selection_changed.emit()
     
     def redrawSelection(self):

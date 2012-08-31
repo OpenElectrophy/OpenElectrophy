@@ -10,6 +10,7 @@ Theses widget display individual waveforms and average waveforms.
 from .base import *
 
 from matplotlib.gridspec import GridSpec
+from matplotlib.lines import Line2D
 
 class AverageWaveforms(SpikeSortingWidgetBase):
     name = 'Average waveforms'
@@ -28,7 +29,7 @@ class AverageWaveforms(SpikeSortingWidgetBase):
     def refresh(self, step = None):
         sps = self.spikesorter
         if sps.spike_waveforms is None : return
-            
+        
         # recreate axes
         self.fig.clear()
         self.axs = [ ]
@@ -50,7 +51,6 @@ class AverageWaveforms(SpikeSortingWidgetBase):
             else:
                 ax.set_ylabel('mean +- sd')
                 ax2.set_ylabel('sd')
-                
         times = (np.arange(-sps.left_sweep, sps.right_sweep+1)/sps.wf_sampling_rate).rescale('ms').magnitude
         
         # plots
@@ -71,9 +71,8 @@ class AverageWaveforms(SpikeSortingWidgetBase):
                                     color = color, alpha = .3)
                 self.axs[0].set_xlim(times[0], times[-1])
                 self.ax2s[i].plot(times, sd, linewidth=2,color = color,)
-        
-        self.canvas.draw()
 
+        self.canvas.draw()
 
 class AllWaveforms(SpikeSortingWidgetBase):
     name = 'All aveforms'
@@ -94,7 +93,7 @@ class AllWaveforms(SpikeSortingWidgetBase):
        
         # for selection
         self.mpl_event_id = self.canvas.mpl_connect('pick_event', self.onPick)
-        self.actualSelection = np.array([ ] , dtype='i')
+        #self.actualSelection = np.array([ ] , dtype='i')
         self.epsilon = .5
         self.selected_lines = None
         self.already_in_pick = False # to avoid multiple pick
@@ -152,16 +151,19 @@ class AllWaveforms(SpikeSortingWidgetBase):
     # self.canvas.mpl_disconnect(e)
     
     def refresh_selection(self):
+        sps = self.spikesorter
         if self.selected_lines is not None:
             for i, ax in enumerate(self.axs):
                 ax.lines.remove(self.selected_lines[i])
         
         times = (np.arange(-sps.left_sweep, sps.right_sweep+1)/sps.wf_sampling_rate).rescale('ms').magnitude
         
-        if self.actualSelection.size>=1:
+        #~ if self.actualSelection.size>=1:
+        if np.any(sps.selected_spikes):
             self.selected_lines = [ ]
             for i, ax in enumerate(self.axs):
-                lines  = self.axs[i].plot(times, self.spikesorter.spike_waveforms[self.actualSelection[0],i,:],
+                sel,  = np.where(sps.selected_spikes)
+                lines  = self.axs[i].plot(times, self.spikesorter.spike_waveforms[sel[0],i,:],
                                                     color = 'm',
                                                     linewidth = 4,
                                                     alpha = .6,
@@ -175,17 +177,22 @@ class AllWaveforms(SpikeSortingWidgetBase):
     
     def onPick(self , event):
         #~ print 'on pick'
+        sps = self.spikesorter
         if self.already_in_pick: return
         self.canvas.mpl_disconnect(self.mpl_event_id)
         if isinstance(event.artist, Line2D):
             i =  self.axs.index(event.artist.get_axes())
             if event.artist not in self.lines[i]:
-                self.actualSelection = np.array([ ] , dtype='i')
+                #~ self.actualSelection = np.array([ ] , dtype='i')
+                sps.selected_spikes[:] = False
             else:
                 num_line = self.lines[i].index(event.artist)
-                self.actualSelection = self.ploted_indices[[num_line]]
+                sps.selected_spikes[:] = False
+                sps.selected_spikes[self.ploted_indices[num_line]] = True
+                #~ self.actualSelection = self.ploted_indices[[num_line]]
         else:
-            self.actualSelection = np.array([ ] , dtype='i')
+            #~ self.actualSelection = np.array([ ] , dtype='i')
+            sps.selected_spikes[:] = False
         self.refresh_selection()
         self.spike_selection_changed.emit()
         self.mpl_event_id = self.canvas.mpl_connect('pick_event', self.onPick)
@@ -204,12 +211,12 @@ class AllWaveforms(SpikeSortingWidgetBase):
         self.already_in_pick = False
     
     
-    def setSpikeSelection(self, ind):
+    def on_spike_selection_changed(self):
         # TO avoid larsen
-        self.canvas.mpl_disconnect(self.mpl_event_id)
-        self.actualSelection =  ind
+        #~ self.canvas.mpl_disconnect(self.mpl_event_id)
+        #~ self.actualSelection =  ind
         self.refresh_selection()
-        self.mpl_event_id = self.canvas.mpl_connect('pick_event', self.onPick)
+        #~ self.mpl_event_id = self.canvas.mpl_connect('pick_event', self.onPick)
 
 
 

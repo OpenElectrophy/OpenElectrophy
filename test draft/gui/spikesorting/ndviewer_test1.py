@@ -38,6 +38,12 @@ def test1():
     
     w.change_point(data[:,1:5])
     w.change_point(data , dataLabels)
+    
+    def display_selection():
+        print np.where(w.actualSelection)
+    
+    w.selection_changed.connect(display_selection)
+    
     w.show()
 
     app.exec_()

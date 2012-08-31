@@ -11,6 +11,7 @@ from PyQt4.QtGui import *
 
 from .spikesortingwidgets import spikesorting_widget_list
 
+import numpy as np
 
 class SpikeSortingWindow(QMainWindow):
     def __init__(self, spikesorter = None, settings = None, parent = None ):
@@ -75,9 +76,9 @@ class SpikeSortingWindow(QMainWindow):
             self.addDockWidget(Qt.RightDockWidgetArea, dock)
             self.list_dock.append(dock)
             self.list_widget.append(w)
-            w.spike_labels_changed.connect(self.spikeLabelsChanged)
-            w.spike_selection_changed.connect(self.spikeSelectionChanged)
-            w.spike_subset_changed.connect(self.spikeSubsetChanged)
+            w.spike_clusters_changed.connect(self.on_spike_clusters_changed)
+            w.spike_selection_changed.connect(self.on_spike_selection_changed)
+            w.spike_subset_changed.connect(self.on_spike_subset_changed)
             dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
         
         self.toolbar.addSeparator()
@@ -87,13 +88,13 @@ class SpikeSortingWindow(QMainWindow):
                                             icon = QIcon(':/view-refresh.png' ),
                                             text = u'Refresh all')
         self.toolbar.addWidget(but)
-        but.clicked.connect(self.refreshAll)
+        but.clicked.connect(self.refresh_all)
         but =  QToolButton(toolButtonStyle = Qt.ToolButtonTextBesideIcon,
                                             icon = QIcon(':/roll.png' ),
                                             text ='Sample subset n=')
         self.toolbar.addWidget(but)
-        but.clicked.connect(self.sampleSubset)
-        but.clicked.connect(self.refreshAll)
+        but.clicked.connect(self.refresh_displayed_subset)
+        but.clicked.connect(self.refresh_all)
         self.spinboxSubsetLimit = QSpinBox( minimum = 0, maximum = 1e9, specialValueText = "All",
                                                                             singleStep = 500, value = 5000)
         self.toolbar.addWidget(self.spinboxSubsetLimit)
@@ -106,14 +107,14 @@ class SpikeSortingWindow(QMainWindow):
         #~ but.clicked.connect(self.save)
         
         self.changeTemplate(self.templateNames[0])
-        self.refreshAll( )
+        self.refresh_all( )
 
 
-    def refreshAll(self, shuffle = True):
-        # TODO
-        #~ self.spikesorter.refreshColors()
+    def refresh_all(self, shuffle = True):
+        self.spikesorter.refresh_cluster_names()
+        self.spikesorter.refresh_colors()
         if shuffle:
-            self.sampleSubset()
+            self.refresh_displayed_subset()
         import time
         for w,dock in zip(self.list_widget, self.list_dock):
             if dock.isVisible():
@@ -122,38 +123,29 @@ class SpikeSortingWindow(QMainWindow):
                 t2 = time.time()
                 print 'refresh ', w.name, t2-t1
 
-
-    def spikeLabelsChanged(self):
-        self.spikesorter.refreshColors()
-        self.sampleSubset()
+    def on_spike_clusters_changed(self):
+        self.spikesorter.refresh_colors()
+        self.spikesorter.selected_spikes[:] = False
+        self.refresh_displayed_subset()
         for dock, w in zip(self.list_dock,self.list_widget):
             if w == self.sender(): continue
-            if dock.isVisible() and 'Clustering' in w.refresh_on:
+            if dock.isVisible() :#and 'spike_clusters' in w.refresh_on:
                 w.refresh()
-        
-        self.spikeSelectionChanged( numpy.array([ ],'i') )
 
-
-    def spikeSubsetChanged(self):
-        self.refreshAll( shuffle = False)
+    def on_spike_subset_changed(self):
+        self.refresh_all( shuffle = False)
     
-    def sampleSubset(self):
+    def refresh_displayed_subset(self):
         val = self.spinboxSubsetLimit.value()
-        if val == 0: val = numpy.inf
-        # TODO
-        #~ self.spikesorter.refreshShuffle(max_size_by_cluster = val)
+        if val == 0: val = np.inf
+        self.spikesorter.refresh_displayed_subset(displayed_subset_size = val)
 
-
-
-
-    def spikeSelectionChanged(self, ind):
-        #~ print 'in spikeSelectionChanged spikesorting'
+    def on_spike_selection_changed(self):
         for dock, w in zip(self.list_dock,self.list_widget):
             if w == self.sender():
-                #~ print 'sender'
                 continue
-            if dock.isVisible() and hasattr(w, 'setSpikeSelection'):
-                w.setSpikeSelection(ind)
+            if dock.isVisible() and hasattr(w, 'on_spike_selection_changed'):
+                w.on_spike_selection_changed()
 
         
     ## DOCK AND TEMPLATE
@@ -277,7 +269,7 @@ class SpikeSortingWindow(QMainWindow):
             dDock['Interval Inter Spike'].setVisible(True)            
         
         
-        self.refreshAll()
+        self.refresh_all()
         
 
         
