@@ -12,6 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.gridspec import GridSpec
 
 from .ndviewer import NDViewer
+from ...tools import correlogram
 
 
 class Summary(SpikeSortingWidgetBase):
@@ -58,7 +59,7 @@ class Summary(SpikeSortingWidgetBase):
             self.tableSignal.setRowCount(len(sps.rcs))
             self.tableSignal.setColumnCount(n_segments)
             for i, seg in enumerate(sps.segs):
-                item = QTableWidgetItem('Seg {} {}'.format(i, seg.name))
+                item = QTableWidgetItem('Seg {}'.format(i))
                 self.tableSignal.setHorizontalHeaderItem( i, item)
             for j,rc  in enumerate(sps.rcs):
                 item = QTableWidgetItem('Chanel {}'.format(rc.index) )
@@ -72,8 +73,8 @@ class Summary(SpikeSortingWidgetBase):
                         print (ana.size/sps.sig_sampling_rate).rescale('s')
                     item = QTableWidgetItem(QIcon(), 'AnalogSignal\n size:{}\n duration:{}'.format(ana.size, (ana.size/sps.sig_sampling_rate).rescale('s') ))
                     self.tableSignal.setItem(j, i , item )
-        self.tableSignal.resizeColumnsToContents()
-        self.tableSignal.resizeRowsToContents()
+            self.tableSignal.resizeColumnsToContents()
+            self.tableSignal.resizeRowsToContents()
 
 
         #table neurons
@@ -81,7 +82,7 @@ class Summary(SpikeSortingWidgetBase):
         self.tableSpikeTrain.setRowCount(n_neurons)
         self.tableSpikeTrain.setColumnCount(n_segments)
         for i, seg in enumerate(sps.segs):
-            item = QTableWidgetItem('Seg {} {}'.format(i, seg.name))
+            item = QTableWidgetItem('Seg {}'.format(i))
             self.tableSpikeTrain.setHorizontalHeaderItem( i, item)
         for j,c  in enumerate(sps.cluster_names.keys()):
             nb = np.where(sps.spike_clusters==c)[0].size
@@ -100,3 +101,133 @@ class Summary(SpikeSortingWidgetBase):
                 self.tableSpikeTrain.setItem(j, i , item )
         self.tableSpikeTrain.resizeColumnsToContents()
         self.tableSpikeTrain.resizeRowsToContents()
+
+
+class PlotIsi(SpikeSortingWidgetBase):
+    name = 'Inter-Spike Interval'
+    refresh_on = [  'spike_index_array', 'spike_clusters', ]# TODO
+    icon_name = 'plot-isi.png'
+    
+    plot_dataset = type('Parameters', (DataSet,), {   'bin_width' : FloatItem('bin width (ms)', 2.),
+                                                                                                    'limit' : FloatItem('limit (ms)', 50.),
+                                                                                                    'plot_type' : ChoiceItem('plot_type', ['bar', 'line']),
+                                                                                                })
+    
+    def __init__(self,**kargs):
+        super(PlotIsi, self).__init__(**kargs)
+        
+        self.combo = QComboBox()
+        self.mainLayout.addWidget( self.combo )
+        self.combo.currentIndexChanged.connect( self.comboChanged )
+        
+        self.canvas = SimpleCanvas()
+        self.fig = self.canvas.fig
+        self.ax = self.fig.add_subplot(1,1,1)
+        self.mainLayout.addWidget(self.canvas)
+        
+    def refresh(self, step = None):
+        sps = self.spikesorter
+        if sps.spike_index_array is None : return
+        self.combo.clear()
+        self.combo.addItems( ['Neuron {}'.format(c) for c in  sps.cluster_names ])
+        
+
+    def comboChanged(self, ind):
+        
+        sps = self.spikesorter
+        if sps.spike_clusters is None: return
+        c = sps.spike_clusters[ind]
+        self.ax.clear()
+
+        width = self.plot_parameters['bin_width']
+        limit = self.plot_parameters['limit']
+        
+        all_isi = [ ]
+        for s, seg in enumerate(sps.segs):
+            all_isi.append(np.diff(sps.get_spike_times(s,c, units = 'ms').magnitude))
+        isi = np.concatenate(all_isi)
+        
+        y,x = np.histogram(isi, bins = np.arange(0,limit, width))
+        if self.plot_parameters['plot_type'] == 'bar':
+            self.ax.bar(x[:-1], y, width =width, color = sps.cluster_colors[c])
+        elif self.plot_parameters['plot_type'] == 'line':
+            self.ax.plot(x[:-1], y,  color = sps.cluster_colors[c])
+        self.ax.set_xlabel('isi (ms)')
+        self.ax.set_ylabel('count')
+        self.canvas.draw()
+        
+
+
+
+
+
+
+class PlotCrossCorrelogram(SpikeSortingWidgetBase):
+    name = 'Cross-correlogram'
+    refresh_on = [  'spike_index_array', 'spike_clusters', ]
+    icon_name = 'plot-crosscorrelogram.png'
+    
+    plot_dataset = type('Parameters', (DataSet,), {   'bin_width' : FloatItem('bin width (ms)', 2.),
+                                                                                                    'limit' : FloatItem('limit (ms)', 50.),
+                                                                                                    'plot_type' : ChoiceItem('plot_type', ['bar', 'line']),
+                                                                                                })
+    
+    def __init__(self,**kargs):
+        super(PlotCrossCorrelogram, self).__init__(**kargs)
+
+        self.canvas = SimpleCanvas()
+        self.fig = self.canvas.fig
+        self.mainLayout.addWidget(self.canvas)
+
+        self.threadRefresh = None
+
+
+    def refresh(self, step = None):
+        self.threadRefresh = ThreadRefresh(widgetToRefresh = self)
+        self.threadRefresh.start()
+        
+        
+    def refresh_background(self):
+        sps = self.spikesorter
+        if sps.cluster_names is None : return
+        
+        bin_width = self.plot_parameters['bin_width']
+        limit = self.plot_parameters['limit']
+         
+        clusters = sps.cluster_names.keys()
+        n = len(clusters)
+        
+        self.canvas.fig.clear()
+        for i, c1 in enumerate(clusters):
+                for j, c2 in enumerate(clusters):
+                    if j<i: continue
+                    delta = .05
+                    ax = self.canvas.fig.add_axes([delta/4.+i*1./n, delta/4.+j*1./n  ,(1.-delta)/n, (1.-delta)/n])
+                    all_count = [ ]
+                    for s , seg in enumerate(sps.segs):
+                        t1 = sps.get_spike_times(s,c1, units = 'ms').magnitude
+                        t2 = sps.get_spike_times(s,c2, units = 'ms').magnitude
+                        count, bins = correlogram(t1,t2, bin_width = bin_width, limit = limit , auto = i==j)
+                        all_count.append(count[np.newaxis,:])
+                    count = np.sum(np.concatenate(all_count, axis= 0 ), axis=0)
+                    
+                    
+                    if i==j:
+                        color =  sps.cluster_colors[ c1 ]
+                    else:
+                        color = 'k'
+
+                    if self.plot_parameters['plot_type'] == 'bar':
+                        ax.bar(bins[:-1]+bin_width/2., count , width = bin_width, color = color)
+                    elif self.plot_parameters['plot_type'] == 'line':
+                        ax.plot(bins[:-1]+bin_width/2., count , color = color)
+                    ax.set_xlim(-limit, limit)
+                    
+                    if i!=j: ax.set_xticks([])
+                    if i!=0: ax.set_yticks([])
+                
+        self.canvas.draw()
+
+
+
+

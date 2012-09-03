@@ -302,24 +302,79 @@ class SpikeSorter(object):
             l = [len(pos) for pos in self.spike_index_array]
             return np.sum(l)
         return 0
+    
+    def get_spike_times(self, s, c, units = 's'):
+        """
+        Transform spike_index_array (index of spike on signal) to times for ONE cluster in ONE segment.
+        :params s: segment index
+        :params c: cluster
+        """
+        slice = self.seg_spike_slices[s]
+        clusters_in_seg = self.spike_clusters[slice]
+        spike_indexes = self.spike_index_array[s]
+        spike_times = (spike_indexes[clusters_in_seg == c]/self.sig_sampling_rate).rescale(units)
+        return spike_times
         
+        
+        
+        
+        
+    
     def initialize_state(self,recordingChannelGroup, state):
         self.state=state
-        
-        if state=='full_band_signal':
-            self.full_band_sigs = np.empty( (len(self.rcs), len(self.segs)),
-                                                dtype = object)
+
+        if state=='full_band_signal' or state=='filtered_band_signal':
+            all_sigs= np.empty( (len(self.rcs), len(self.segs)), dtype = object)
             for i, rc in enumerate(self.rcs):
-                for j, seg in enumerate(self.segs):
-                    self.full_band_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
+                  for j, seg in enumerate(self.segs):
+                      all_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
             self.sig_sampling_rate = self.rcs[0].analogsignals[0].sampling_rate
-            
-            
-            
-        elif state=='filtered_band_signal':
-            pass # self.filteredBandAnaSig = TODO...
-        # And so on
-    
+            self.full_band_sigs = all_sigs
+            self.filtered_sigs = all_sigs
+            #~ if state=='full_band_signal':
+                
+            #~ else:
+                #~ self.filtered_sigs = all_sigs
+
+        elif state=='spikes_and_waveforms' or state=='spikes_and_features':
+            self.seg_spike_slices = { }
+            pos = 0
+            clusters = [ ]
+            waveforms = [ ]
+            features = [ ]
+            for s, seg in enumerate(self.segs):
+                nb_spike_in_segs = 0
+                for u, unit in enumerate(self.rcg.units):
+                    self.cluster_names[u] = unit.name
+                    sptr = None
+                    for sptr in seg.spiketrains:
+                        if sptr.unit == unit:
+                            break
+                    if sptr is None : continue
+                    
+                    nb_spike_in_segs += sptr.size
+                    clusters.append(np.ones(sptr.size, dtype = int)*u)
+                    
+                    if sptr.waveforms is not None :
+                        waveforms.append(sptr.waveforms.magnitude)
+                        self.wf_sampling_rate = sptr.sampling_rate
+                        self.left_sweep = int((sptr.left_sweep*sptr.sampling_rate).simplified.magnitude)
+                        self.right_sweep = sptr.waveforms.shape[2]-1-self.left_sweep
+                    if 'waveform_features' in sptr.annotations:
+                        features.append(sptr.annotations['waveform_features'])
+                
+                self.seg_spike_slices[s] = slice(pos, pos+nb_spike_in_segs)
+                pos += nb_spike_in_segs
+
+            self.spike_clusters = np.concatenate(clusters)
+
+            if waveforms != []:
+                self.spike_waveforms = np.concatenate(waveforms)
+            if features != [ ]:
+                self.waveform_features = np.concatenate(features)
+                for n in self.waveform_features.shape[1]:
+                    self.feature_names[n] = 'feature {}'.format(n)
+                
     
     def run_step(self, method, **kargs):
         """

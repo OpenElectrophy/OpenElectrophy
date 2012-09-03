@@ -53,6 +53,8 @@ def generate_block_for_sorting(
         for s,seg in enumerate(bl.segments):
             sptr = neo.SpikeTrain(  spike_times[s], t_start = t_start, t_stop = t_start+duration)
             sptr.waveforms = all_waveforms[n:n+spike_times[s].size, :,:] 
+            sptr.sampling_rate = sampling_rate
+            sptr.left_sweep = (sptr.waveforms.shape[2]/sampling_rate).rescale('ms')/2.
             seg.spiketrains.append(sptr)
             unit.spiketrains.append(sptr)
             n += spike_times[s].size

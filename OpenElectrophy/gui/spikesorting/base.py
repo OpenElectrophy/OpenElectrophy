@@ -66,5 +66,12 @@ class SpikeSortingWidgetBase(QWidget):
 
 
 
+class ThreadRefresh(QThread):
+    def __init__(self, parent = None,widgetToRefresh = None):
+        QThread.__init__(self)
+        self.widgetToRefresh = widgetToRefresh
+    def run(self):
+        self.widgetToRefresh.refresh_background()
+
 
 

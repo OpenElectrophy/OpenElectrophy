@@ -26,16 +26,18 @@ else:
     print 'exist : transform to neo'
     bl = oebl.to_neo(cascade = True)
 rcg = bl.recordingchannelgroups[0]
-spikesorter = SpikeSorter(rcg, initial_state='full_band_signal')
 
 
 if True:
+    spikesorter = SpikeSorter(rcg, initial_state='full_band_signal')
     spikesorter.ButterworthFilter( f_low = 200.)
     spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6.,)
     spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
     spikesorter.PcaFeature(n_components = 4)
-    #~ spikesorter.CombineFeature(use_peak = True, use_peak_to_valley = True, n_pca = 3, n_ica = 3, n_haar = 3, sign = '-')
+    spikesorter.CombineFeature(use_peak = True, use_peak_to_valley = True, n_pca = 3, n_ica = 3, n_haar = 3, sign = '-')
     spikesorter.SklearnKMeans(n_cluster = 5)
+
+#~ spikesorter = SpikeSorter(rcg, initial_state='spikes_and_waveforms')
     
     
 spikesorter.check_display_attributes()
