@@ -44,7 +44,7 @@ if __name__=="__main__":
                         'matplotlib>=0.99.1',
                         'SQLAlchemy>=0.7',
                         'sqlalchemy-migrate>=0.6',
-                        'sklearn',
+                        'scikit-learn',
                         ],
                         
         requires = ['PyQt4 (>=4.6.2)',
