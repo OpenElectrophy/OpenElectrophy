@@ -207,6 +207,7 @@ class PlotCrossCorrelogram(SpikeSortingWidgetBase):
                     for s , seg in enumerate(sps.segs):
                         t1 = sps.get_spike_times(s,c1, units = 'ms').magnitude
                         t2 = sps.get_spike_times(s,c2, units = 'ms').magnitude
+                        if t1.size==0 or t2.size==0: continue
                         count, bins = correlogram(t1,t2, bin_width = bin_width, limit = limit , auto = i==j)
                         all_count.append(count[np.newaxis,:])
                     count = np.sum(np.concatenate(all_count, axis= 0 ), axis=0)
