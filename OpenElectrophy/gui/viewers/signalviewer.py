@@ -62,12 +62,16 @@ class SignalViewer(ViewerBase):
         
         self.analogsignals = analogsignals
         self.analogsignal_curves = [ ]
+        self.times_familly = { }# signal sharing same size sampling and t_start are in the same familly
         for i,anasig in enumerate(analogsignals):
-            #~ print i, colors[i]
+            key = (float(anasig.t_start.rescale('s').magnitude), float(anasig.sampling_rate.rescale('Hz').magnitude), anasig.size)
+            if  key in self.times_familly:
+                self.times_familly[key].append(i)
+            else:
+                self.times_familly[key] = [ i ]
             curve = make.curve([ ], [ ])#, color =  colors[i])
             self.plot.add_item(curve)
             self.analogsignal_curves.append(curve)
-        
     
     def refresh(self, fast = False):
         """
@@ -89,10 +93,28 @@ class SignalViewer(ViewerBase):
         #~ t2 = time.time()
         #~ print t2-t1
         
+        for key, sig_nums in self.times_familly.items():
+            if fast:
+                decimate = self.max_point_if_decimate
+            else:
+                decimate = None
+            print  t_start*pq.s, t_stop*pq.s
+            t_vect, sl = get_analogsignal_slice(self.analogsignals[sig_nums[0]], t_start*pq.s, t_stop*pq.s,
+                                                        return_t_vect = True,decimate = decimate,)
+            if t_vect.size>0:
+                print t_vect[0], t_vect[-1]
+            
+            for c in sig_nums:
+                curve = self.analogsignal_curves[c]
+                ana = self.analogsignals[c]
+                chunk = ana.magnitude[sl]
+                curve.set_data(t_vect, chunk)
+        
+        
         # AnalogSignals
-        for c, curve in enumerate(self.analogsignal_curves):
-            ana = self.analogsignals[c]
-            t_vect, chunk = get_analogsignal_chunk(ana, t_start*pq.s, t_stop*pq.s)
+        #~ for c, curve in enumerate(self.analogsignal_curves):
+            #~ ana = self.analogsignals[c]
+            #~ t_vect, chunk = get_analogsignal_chunk(ana, t_start*pq.s, t_stop*pq.s)
 
 
             # 4 ms
@@ -101,12 +123,12 @@ class SignalViewer(ViewerBase):
             #~ print chunk.size
             
             
-            # .01ms
-            if fast and chunk.size>self.max_point_if_decimate:
-                sl = slice(0, None, int(chunk.size/self.max_point_if_decimate))
-                curve.set_data(t_vect[sl], chunk[sl])
-            else:
-                curve.set_data(t_vect, chunk)
+                # .01ms
+                #~ if fast and chunk.size>self.max_point_if_decimate:
+                    #~ sl2 = slice(0, None, int(chunk.size/self.max_point_if_decimate))
+                    #~ curve.set_data(t_vect[sl2], chunk[sl2])
+                #~ else:
+                    #~ curve.set_data(t_vect, chunk)
             
         self.plot.setAxisScale(yaxis, self.ylims[0], self.ylims[1])
             
@@ -146,6 +168,8 @@ class SignalViewer(ViewerBase):
         t2 = time.time()
         print fast, t2-t1
         print
+        
+        self.is_refreshing = False
 
 
 

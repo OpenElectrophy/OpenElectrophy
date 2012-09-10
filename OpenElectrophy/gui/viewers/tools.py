@@ -56,7 +56,7 @@ class TimeSeeker(QWidget) :
         self.speedSpin.setMaximum(100.)
         self.speedSpin.setSingleStep(0.1)
         self.speedSpin.setValue(1.)
-        self.speedSpin.valueChanged.connect(self.changeSpeed)
+        self.speedSpin.valueChanged.connect(self.change_speed)
         
         but = QPushButton('<')
         but.clicked.connect(self.prev_step)
@@ -135,10 +135,10 @@ class TimeSeeker(QWidget) :
             #~ self.time_changed.emit(self.t)
             self.delay_emit()
         
-    def changeSpeed(self , speed):
+    def change_speed(self , speed):
         self.speed = speed
     
-    def changeStartStop(self, t_start, t_stop):
+    def change_start_stop(self, t_start, t_stop):
         assert t_stop>t_start
         self.t_start = t_start
         self.t_stop = t_stop
@@ -167,9 +167,10 @@ class ViewerBase(QWidget):
     
     All are seekable remote by a TimeSeeker (or a timer or something else)
     All have a xisze: the size of window for x axis.
-    
-    
     """
+    
+    need_refresh = pyqtSignal(bool)
+    
     def __init__(self, parent = None,
                             xsize = 10.,
                             xzoom_limits = [0.001, 1000],
@@ -193,11 +194,13 @@ class ViewerBase(QWidget):
         #~ self.mainlayout.addWidget(self.widget_plot, 8)
         
         
-        
         self.createToolBar()
         self.mainlayout.addWidget(self.toolBar, 2)
         
         self.t = 0.
+        
+        self.need_refresh.connect(self.refresh, type = Qt.QueuedConnection)
+        self.is_refreshing = False
     
     def createToolBar(self):
         self.toolBar = QToolBar(orientation = Qt.Vertical)
@@ -231,20 +234,33 @@ class ViewerBase(QWidget):
         self.toolBar.addWidget(self.xsize_slider)
         self.xsize_spinbox.valueChanged.connect(self.xsize_spinbox_changed)
         
+        
         #~ self.xsize_spinbox.valueChanged.connect(self.refresh)
         
         self.xsize_slider.valueChanged.connect(self.xsize_slider_changed)
+        self.xsize_spinbox.setValue(self.xsize)
         self.toolBar.addSeparator()
     
         self.is_refreshing = False
 
     def fast_seek(self, t):
+        if self.is_refreshing: 
+            print 'ret fast'
+            return
         self.t = t
-        self.refresh(fast = True)
+        self.is_refreshing = True
+        self.need_refresh.emit(True)
+        #~ self.refresh(fast = True)
 
     def seek(self, t):
+        if self.is_refreshing:
+            print 'ret slow'
+            return
         self.t = t
-        self.refresh()
+        self.is_refreshing = True
+        self.need_refresh.emit(False)
+
+        #~ self.refresh()
         
     
     def refresh(self, fast = False):
@@ -257,6 +273,7 @@ class ViewerBase(QWidget):
             print 'slow refresh'
             #~ pass
         
+        self.is_refreshing = False
     
 
         
@@ -268,7 +285,8 @@ class ViewerBase(QWidget):
         self.xsize =xsize
         # FIXME
         #~ self.refresh()
-        self.refresh(fast = True)
+        #~ self.refresh(fast = True)
+        self.need_refresh.emit(True)
         
     
     
@@ -283,7 +301,8 @@ class ViewerBase(QWidget):
             self.ylims[i] = spin.value()
         # FIXME
         #~ self.refresh()
-        self.refresh(fast = True)
+        #~ self.refresh(fast = True)
+        self.need_refresh.emit(True)
     
     def xsize_slider_changed(self, val):
         
@@ -291,11 +310,13 @@ class ViewerBase(QWidget):
         v = 10**((val/100.)*(np.log10(max) - np.log10(min) )+np.log10(min))
         self.xsize_spinbox.valueChanged.disconnect(self.xsize_spinbox_changed)
         self.xsize_spinbox.setValue(v)
-        self.xsize = v
+        #~ self.xsize = v
+        self.set_xsize(v)
         self.xsize_spinbox.valueChanged.connect(self.xsize_spinbox_changed)
     
     def xsize_spinbox_changed(self, val):
-        self.xsize = val
+        #~ self.xsize = val
+        self.set_xsize(val)
         min, max = self.xzoom_limits
         v = int( (np.log10(val)-np.log10(min))/(np.log10(max) - np.log10(min) )*100 )
         self.xsize_slider.valueChanged.disconnect(self.xsize_slider_changed)
@@ -304,35 +325,36 @@ class ViewerBase(QWidget):
 
 
 
-def get_analogsignal_chunk(ana, t_start, t_stop, return_t_vect = True):
-    #~ print t_start, t_stop
-    #~ print ana.t_start, ana.t_stop
-    #~ print 
+def get_analogsignal_slice(ana, t_start, t_stop, return_t_vect = True, decimate = None):
     if t_start>=ana.t_stop or t_stop<ana.t_start:
-        #~ print 'yep'
         if return_t_vect:
-            return array([ ], dtype = ana.dtype), array([ ], dtype = 'f')
+            return np.array([ ], dtype = 'f'), slice(0,0)
         else:
-            return array([ ], dtype = ana.dtype)
+            return slice(0,0)
     else:
         ind_start = int(((t_start-ana.t_start)*ana.sampling_rate).simplified)
         ind_stop = int(((t_stop-ana.t_start)*ana.sampling_rate).simplified)
+        step = 1
+        if decimate is not None:
+            length = (ind_stop-ind_start)
+            step = int(length/decimate)
+            if step==0: step=1
+            #~ # align on step ???
+            #~ ind_start -= ind_start%step
+            #~ ind_stop -= ind_stop%step + step
+        else:
+            step = 1
+        if ind_start<0:
+            ind_start=0
+            t_start = ana.t_start
+        if ind_stop>ana.size:
+            ind_stop=ana.size
         
         if return_t_vect:
-            t_vect = (np.arange(ind_stop-ind_start)/ana.sampling_rate+t_start).rescale('s').magnitude
-            if ind_start<0:
-                t_vect = t_vect[-ind_start:]
-                ind_start=0
-            if ind_stop>ana.size:
-                t_vect = t_vect[:-(ind_stop-ana.size)]
-                ind_stop=ana.size
-            return t_vect, ana.magnitude[ind_start:ind_stop]
+            t_vect = (np.arange(0,ind_stop-ind_start, step, dtype='f')/ana.sampling_rate+t_start).rescale('s').magnitude
+            return t_vect, slice(ind_start, ind_stop, step)
         else:
-            if ind_start<0:
-                ind_start=0
-            if ind_stop>ana.signal.size:
-                ind_stop=ana.signal.size
-            return ana.magnitude[ind_start:ind_stop]
+            return slice(ind_start, ind_stop, step)
 
 
 
