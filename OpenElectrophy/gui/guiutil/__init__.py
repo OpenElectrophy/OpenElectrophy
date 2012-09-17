@@ -3,3 +3,4 @@
 from .icons import icons 
 
 from myguidata import *
+from mymatplotlib import *

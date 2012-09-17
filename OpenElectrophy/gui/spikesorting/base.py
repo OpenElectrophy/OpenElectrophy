@@ -28,6 +28,7 @@ from PyQt4.QtGui import *
 import quantities as pq
 import numpy as np
 
+import neo
 
 from ..guiutil.myguidata import *
 from ..guiutil.mymatplotlib import *
