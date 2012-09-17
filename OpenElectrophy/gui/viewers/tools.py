@@ -258,6 +258,10 @@ class XSizeChanger(QWidget):
         self.targets = targets
         for target in self.targets:
             target.xsize = self.xsize
+
+    def set_xsize(self, xsize):
+        self._set_xsize(xsize)
+        self.xsize_spinbox.setValue(self.xsize)
     
     def _set_xsize(self, xsize):
         self.xsize =xsize

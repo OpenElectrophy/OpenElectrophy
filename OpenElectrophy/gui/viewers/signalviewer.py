@@ -88,8 +88,17 @@ class SignalViewerQwt(ViewerWithXSizeAndYlim):
         for c,spiketrains in enumerate(spiketrains_on_signals):
             self.spikeonsignal_curves.append([])
             for s,sptr in enumerate(spiketrains):
-                color = ['red', 'green', 'blue', 'magenta'][s%4]
-                curve = make.curve([ ], [ ], markerfacecolor=  color,marker = 'o' , linestyle = '', markersize = 7)
+                if 'color' in sptr.annotations:
+                    color = sptr.annotations['color']
+                else:
+                    color = ['red', 'green', 'blue', ][s%3]
+                if type(color) == tuple or type(color) == list:
+                    r,g,b = color
+                    color = QColor( r*255,g*255,b*255  )
+                else:
+                    color = QColor(color)
+                markersize = sptr.annotations.get('markersize', 7)
+                curve = make.curve([ ], [ ], markerfacecolor=  color,marker = 'o' , linestyle = '', markersize = markersize)
                 self.plot.add_item(curve)
                 self.spikeonsignal_curves[-1].append(curve)
                 

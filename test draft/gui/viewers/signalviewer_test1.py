@@ -30,7 +30,8 @@ def test1():
         analogsignals.append(neo.AnalogSignal(sig, units = 'uV', t_start= -5.*pq.s, sampling_rate = 10*pq.kHz))
         spiketrains_on_signals.append([ ])
         for i in range(2):
-            spiketrains_on_signals[-1].append(neo.SpikeTrain(spikepos[i*nb_spike/2:(i+1)*nb_spike/2]/fs-5., t_start = -5., t_stop = -5.+sig_size/fs, units = 's'))
+            color = ['magenta', 'green', 'blue', 'red'][i%4]
+            spiketrains_on_signals[-1].append(neo.SpikeTrain(spikepos[i*nb_spike/2:(i+1)*nb_spike/2]/fs-5., t_start = -5., t_stop = -5.+sig_size/fs, units = 's', color = color))
     
     
     app = QApplication([ ])
