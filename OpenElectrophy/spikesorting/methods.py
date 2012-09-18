@@ -38,14 +38,11 @@ from feature.combine import CombineFeature
 from feature.allpeak import AllPeak
 from feature.peaktovalley import PeakToValley
 from feature.haarwavelet import HaarWaveletFeature
-
-
-
-
 from sorting.gmm_em import SklearnGaussianMixtureEm
 from sorting.kmeans import SklearnKMeans
 from sorting.minibatchkmeans import SklearnMiniBatchKMeans
 from sorting.meanshift import SklearnMeanShift
+
 
 all_methods = [ ButterworthFilter,
                 StdThresholdDetection,

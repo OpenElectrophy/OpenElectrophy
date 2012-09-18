@@ -18,9 +18,6 @@ API for SpikeSortingWidget:
             3. spike_subset_changed = pyqtSignal()
 
 
-
-
-
 """
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *

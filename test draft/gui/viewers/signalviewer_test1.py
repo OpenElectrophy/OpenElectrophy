@@ -13,6 +13,7 @@ from OpenElectrophy.gui.viewers.signalviewer import *
 from OpenElectrophy.spikesorting import SpikeSorter, generate_block_for_sorting
 
 #~ sig_size = 3.6e8
+#~ sig_size = 1e7
 sig_size = 1e5
 nb_spike =  10e3
 fs = 10.e3
@@ -23,7 +24,7 @@ t = np.arange(sig_size)/fs
 def test1():
     analogsignals = [ ]
     spiketrains_on_signals = [ ]
-    for i in range(4):
+    for i in range(1):
         sig = 5*np.sin(t*np.pi*2*25) + np.random.randn(sig_size)+i*10.
         spikepos = np.random.randint(sig.size, size =nb_spike)
         sig[spikepos] += 15

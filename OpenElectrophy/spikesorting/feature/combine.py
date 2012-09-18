@@ -16,6 +16,7 @@ class CombineFeature(object):
     datasets.
     
     """
+    name  = 'Combined feature methods'
     
     def run (self, spikesorter, 
                     use_peak = True, use_peak_to_valley = True,
