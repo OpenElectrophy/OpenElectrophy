@@ -14,15 +14,8 @@ def initialize_waveform(spikesorter, wisze):
     
     """
     trodness = len(spikesorter.rcs)
-    
-    start = 0
-    spikesorter.seg_spike_slices = { }
-    for s, ind in enumerate(spikesorter.spike_index_array):
-        stop = start + ind.size
-        spikesorter.seg_spike_slices[s] = slice(start, stop)
-        start = stop
-    n_spike = start
-    
+    spikesorter.init_seg_spike_slices()
+    n_spike = np.sum( [ ind.size for ind in spikesorter.spike_index_array])
     spikesorter.spike_waveforms = np.empty((n_spike, trodness, wisze), dtype = float)
 
 
@@ -36,4 +29,6 @@ def remove_limit_spikes(spikesorter, swl, swr):
         ind = spikesorter.spike_index_array[s]
         mask = (ind>swl+1) & (ind<sig_size-swr-3)
         spikesorter.spike_index_array[s] = ind[mask]
+    
+    spikesorter.check_change_on_attributes('spike_index_array')
     

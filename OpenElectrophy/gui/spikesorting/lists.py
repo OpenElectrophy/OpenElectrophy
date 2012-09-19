@@ -70,7 +70,7 @@ class ModelSpikeList(QAbstractItemModel):
             else:
                 return None
         elif role == Qt.DecorationRole :
-            if col == 0:
+            if col == 0 and sps.spike_clusters is not None:
                 return self.icons[sps.spike_clusters[row]]
             else:
                 return None
@@ -304,6 +304,8 @@ class UnitList(SpikeSortingWidgetBase):
         sps.selected_spikes[:] = False
         for index in self.treeNeuron.selectedIndexes():
             if index.column() !=0: continue
+            #~ print sps.selected_spikes.shape
+            #~ print sps.spike_clusters.shape
             sps.selected_spikes[sps.spike_clusters == self.cluster_list[index.row()]] = True
         self.spike_selection_changed.emit()
 

@@ -10,6 +10,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from .spikesortingwidgets import spikesorting_widget_list
+from .toolchain import *
 
 import numpy as np
 
@@ -80,6 +81,16 @@ class SpikeSortingWindow(QMainWindow):
             w.spike_selection_changed.connect(self.on_spike_selection_changed)
             w.spike_subset_changed.connect(self.on_spike_subset_changed)
             dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
+        
+        self.toolchain = ToolChainWidget(spikesorter = self.spikesorter ,settings = self.settings )
+        self.toolchain.change_toolchain(FromFullBandSignalToClustered, )
+        self.toolchain.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        dock = QDockWidget('Tool Chain',self)
+        dock.setObjectName(  'Tool chain' )
+        dock.setWidget(self.toolchain)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.toolchain.need_refresh.connect(self.refresh_all)
+        
         
         self.toolbar.addSeparator()
         

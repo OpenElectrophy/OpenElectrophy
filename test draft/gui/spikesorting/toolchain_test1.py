@@ -6,11 +6,11 @@ from PyQt4.QtGui import *
 
 from OpenElectrophy.gui.spikesorting.toolchain import *
 
+from OpenElectrophy.gui.guiutil.picklesettings import PickleSettings
 
 
 
-
-
+from create_spike_sorter import *
 
 def test1():
     app = QApplication([ ])
@@ -23,9 +23,10 @@ def test1():
 def test2():
     app = QApplication([ ])
 
-
-    w1 = ToolChainWidget()
-    w1.change_toolchain(FromFullBandSignalToClustered)
+    settings = PickleSettings(applicationname = 'testOE3')
+    
+    w1 = ToolChainWidget(spikesorter = spikesorter, settings = settings)
+    w1.change_toolchain(FromFullBandSignalToClustered, )
     #~ w1.change_toolchain(FromFullBandSignalToDetection)
     
     

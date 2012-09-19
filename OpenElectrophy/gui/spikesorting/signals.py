@@ -196,7 +196,7 @@ class SignalStatistics(SpikeSortingWidgetBase):
             self.axs.append(ax)
 
     
-    def refresh(self, step = None):
+    def refresh(self):
         
         sps = self.spikesorter
         for ax in self.axs:

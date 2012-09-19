@@ -118,7 +118,7 @@ SklearnKMeans.dataset = SklearnKMeans_DataSet
 class SklearnMiniBatchKMeans_DataSet(DataSet):
     n_cluster = IntItem( 'n_cluster', 8)    
     init =  ChoiceItem('Initilisation method', ['k-means++', 'random'])
-    n_init = IntItem( 'n_init', 10)
+    batch_size = IntItem( 'batch_size', 100)
     max_iter = IntItem( 'max_iter', 300)
 SklearnMiniBatchKMeans.dataset = SklearnMiniBatchKMeans_DataSet
 

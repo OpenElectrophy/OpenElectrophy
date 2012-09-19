@@ -26,12 +26,13 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         self.fig = self.canvas.fig
         self.refresh()
 
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
+        self.fig.clear()
         if sps.spike_waveforms is None : return
         
         # recreate axes
-        self.fig.clear()
+        
         self.axs = [ ]
         self.ax2s = [ ]
         ax = None
@@ -100,7 +101,7 @@ class AllWaveforms(SpikeSortingWidgetBase):
         
         self.refresh()
     
-    def refresh(self, step = None):
+    def refresh(self):
         
         sps = self.spikesorter
         self.axs = [ ]

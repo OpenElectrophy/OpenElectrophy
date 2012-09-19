@@ -44,7 +44,7 @@ class Summary(SpikeSortingWidgetBase):
         g.addWidget( self.tableSpikeTrain, 1,1 )
 
 
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
         
         if sps.spike_clusters is not None:
@@ -125,7 +125,7 @@ class PlotIsi(SpikeSortingWidgetBase):
         self.ax = self.fig.add_subplot(1,1,1)
         self.mainLayout.addWidget(self.canvas)
         
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
         if sps.spike_index_array is None : return
         self.combo.clear()
@@ -182,7 +182,7 @@ class PlotCrossCorrelogram(SpikeSortingWidgetBase):
         self.threadRefresh = None
 
 
-    def refresh(self, step = None):
+    def refresh(self):
         self.threadRefresh = ThreadRefresh(widgetToRefresh = self)
         self.threadRefresh.start()
         

@@ -221,11 +221,19 @@ class SpikeSorter(object):
                 'recordingchannelgroup' : 'rcg',
                 }
     
+    
+
+        
+        
+        
+        
     def __setattr__(self, name, value):
         """
-        Do aliases
+        Do aliases and check changes
         """
         name = self.aliases.get(name, name)
+        if name in self.interdependent_attributes:
+            self.check_change_on_attributes(name)
         object.__setattr__(self, name, value)
 
     def __getattr__(self, name):
@@ -252,7 +260,45 @@ class SpikeSorter(object):
             raise AttributeError
         name = self.aliases.get(name, name)
         return object.__getattribute__(self, name)
-    
+
+    interdependent_attributes = ['full_band_sigs', 'filtered_sigs', 'spike_index_array', 
+                                                    'seg_spike_slices', 'spike_waveforms', 'waveform_features', 
+                                                    'spike_clusters', 
+                                                    ]
+
+    def check_change_on_attributes(self, name):
+        """
+        This a home made dependency checking.
+        
+        Alvaro and Bartosz: if one day you read theses lines please do better.
+        """
+        print 'check', name
+        if not hasattr(self, name):
+            # we are in __init__
+            return 
+        
+        if name == 'spike_index_array':
+            self.init_seg_spike_slices()
+            object.__setattr__(self, 'spike_waveforms', None)
+            object.__setattr__(self, 'waveform_features', None)
+            self.spike_clusters = np.zeros(self.nb_spikes, dtype = int)
+        elif name == 'spike_waveforms':
+            object.__setattr__(self, 'waveform_features', None)
+        elif name == 'spike_clusters':
+            self.cluster_names = { }
+            self.refresh_cluster_names()
+        self.selected_spikes is None
+
+    def init_seg_spike_slices(self):
+        start = 0
+        self.seg_spike_slices = { }
+        if self.spike_index_array is None: return
+        for s, ind in enumerate(self.spike_index_array):
+            stop = start + ind.size
+            self.seg_spike_slices[s] = slice(start, stop)
+            start = stop
+
+
     def __repr__(self):
         t = 'SpikeSorter for: {}\n'.format(self.rcg.name)
         t += '-'*5+'\n'
@@ -436,6 +482,9 @@ class SpikeSorter(object):
         self.refresh_colors()
         #self.refresh_displayed_subset(self.displayed_subset_size)
         if self.selected_spikes is None and self.nb_spikes is not None:
+            self.selected_spikes = np.zeros( (self.nb_spikes), dtype = bool)
+        if self.selected_spikes is not None and self.nb_spikes is not None and \
+             self.selected_spikes.size != self.nb_spikes:
             self.selected_spikes = np.zeros( (self.nb_spikes), dtype = bool)
         for c in self.cluster_names.keys():
             if c not in self.cluster_displayed_subset:

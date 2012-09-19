@@ -31,13 +31,15 @@ class FeaturesParallelPlot(SpikeSortingWidgetBase):
         self.ax = self.canvas.fig.add_subplot(1,1,1)
         self.refresh()
 
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
+        self.ax.clear()
         if sps.waveform_features is None : return
         
-        self.ax.clear()
+        
         for c in sps.cluster_names:
             ind = sps.cluster_displayed_subset[c]
+            if ind.size ==0: continue
             if ind.size>self.plot_parameters['max_lines']:
                 ind = ind[:self.plot_parameters['max_lines']]
             self.ax.plot( sps.waveform_features[ind,:].transpose() , 
@@ -63,13 +65,14 @@ class FeaturesWilsonPlot(SpikeSortingWidgetBase):
         self.fig = self.canvas.fig
         self.refresh()
 
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
+        self.canvas.fig.clear()
         if sps.waveform_features is None : return
         
         ndim = sps.waveform_features.shape[1]
         ndim2 = min(ndim, 16)
-        self.canvas.fig.clear()
+        
         if sps.waveform_features.shape[1]>1:
             for c in sps.cluster_names:
                 ind = sps.cluster_displayed_subset[c]
@@ -138,13 +141,15 @@ class Features3D(SpikeSortingWidgetBase):
                                                 )
         self.canvas.draw()
 
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
+        for i in range(3):
+            self.combos[i].clear()
         if sps.waveform_features is None : return
         
         ndim = sps.waveform_features.shape[1]
         for i in range(3):
-            self.combos[i].clear()
+            #~ self.combos[i].clear()
             self.combos[i].addItems( [ sps.feature_names[n] for n in range(ndim) ] )
             if i<ndim:
                 self.combos[i].setCurrentIndex(i)
@@ -194,11 +199,12 @@ class FeaturesEvolutionInTime(SpikeSortingWidgetBase):
         self.canvas.draw()
 
     
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
+        self.combo.clear()
         if sps.waveform_features is None : return
         
-        self.combo.clear()
+        
         ndim = sps.waveform_features.shape[1]
         self.combo.addItems( [ sps.feature_names[n] for n in range(ndim) ] )
 
@@ -220,9 +226,11 @@ class FeaturesNDViewer(SpikeSortingWidgetBase):
         self.ndviewer.selection_changed.connect(self.newSelectionInViewer )
         self.ndviewer.canvas.mpl_connect('button_press_event', self.rigthClickOnNDViewer)
 
-    def refresh(self, step = None):
+    def refresh(self):
         sps = self.spikesorter
-        if sps.waveform_features is None : return
+        if sps.waveform_features is None :
+            self.ndviewer.change_point(np.empty((0,2)) )
+            return
         self.ndviewer.change_point(sps.waveform_features, data_labels = sps.spike_clusters, 
                                                         colors = sps.cluster_colors,
                                                         subset = sps.cluster_displayed_subset,
