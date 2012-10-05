@@ -231,6 +231,10 @@ import numpy as np
 
 import zlib
 import blosc
+# TODO
+import lz4
+import snappy
+
 import tables
 
 from base import OEBase
@@ -589,6 +593,10 @@ class SQL_NumpyArrayPropertyLoader():
             buf = blosc.decompress(nprow.blob)
         elif nprow.compress == 'zlib':
             buf = zlib.decompress(nprow.blob)
+        elif nprow.compress == 'lz4':
+            buf = lz4.decompress(nprow.blob)
+        elif nprow.compress == 'snappy':
+            buf = snappy.decompress(nprow.blob)        
         elif nprow.compress is None:
             buf = nprow.blob
             
@@ -648,6 +656,10 @@ class SQL_NumpyArrayPropertyLoader():
             blob = blosc.compress(value.tostring(), typesize = value.dtype.itemsize, clevel= 9)
         elif self.compress == 'zlib':
             blob = zlib.compress(np.getbuffer(value))
+        elif self.compress == 'lz4':
+            blob = lz4.compress(np.getbuffer(value))
+        elif self.compress == 'snappy':
+            blob = snappy.compress(np.getbuffer(value))
         else :
             blob = np.getbuffer(value)
         nprow.compress = self.compress
@@ -987,7 +999,7 @@ class DataBaseConnectionInfo(object):
 
 
 def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_session = True, 
-                        object_number_in_cache = None,  numpy_storage_engine = 'sqltable', compress = 'blosc',
+                        object_number_in_cache = None,  numpy_storage_engine = 'sqltable', compress = 'lz4',
                         hdf5_filename = None,
                         relationship_lazy = 'select', predefined_classes = None, max_binary_size = MAX_BINARY_SIZE,):
     """
@@ -1002,7 +1014,7 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     :param numpy_storage_engine: 'sqltable' or 'hdf5' all numpy.array ( and pq.Quantity) can be stored directly in sql tables or separated hdf5.
                                                                     'sqltable': great because your database is consistent but this is slow, SQL is not optimized for for big binaries object.
                                                                     'hdf5': great because this is faster but you need to provide a separated file than url for storage.
-    :param compress: 'blosc', 'zlib' or None do compress with all BLOB for np.array (save disk space and band width)
+    :param compress: 'lz4', 'snappy',  'blosc', 'zlib' or None do compress with all BLOB for np.array (save disk space and band width)
                                             Note that compression include a memory overhead (beauause np.array buffer + compress buffer)
     :param hdf5_filename: if numpy_storage_engine is hdf5 you need to provide the filename.
     :param relationship_lazy: sqlalchemy option for relationship (default 'select') 
@@ -1043,7 +1055,7 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     if numpy_storage_engine ==  'sqltable':
         hfile = None
     elif numpy_storage_engine ==  'hdf5':
-        hfile =  tables.openFile(hdf5_filename, mode = "a", filters = tables.Filters(complevel=9, complib=compress,))
+        hfile =  tables.openFile(hdf5_filename, mode = "a", filters = tables.Filters(complevel=9, complib='blosc',))
     
     metadata = map_generated_classes(engine, generated_classes, relationship_lazy = relationship_lazy,
                                     numpy_storage_engine = numpy_storage_engine, compress = compress, hfile = hfile )

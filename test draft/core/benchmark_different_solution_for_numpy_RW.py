@@ -28,6 +28,8 @@ import time
 import io
 import zlib
 import blosc
+import snappy
+import lz4
 nthreads = 8
 blosc_comp = 9
 blosc.set_nthreads(nthreads)
@@ -38,8 +40,8 @@ import sqlalchemy as sa
 sig_size = 1e6
 loop = 50
 
-arr = np.random.rand(sig_size).astype('f4')
-#~ arr = np.zeros(sig_size)
+#~ arr = np.random.rand(sig_size).astype('f4')
+arr = np.zeros(sig_size)
 #~ arr = np.empty(sig_size)
 buf = np.getbuffer(arr)
 
@@ -117,6 +119,32 @@ class CompressedFileBlosc(StandartFile):
         f = io.open(self.filename.format(n), 'rb')
         a = np.frombuffer(blosc.decompress(f.read()), dtype  = arr.dtype)
         return a
+
+class CompressedFileLz4(StandartFile):
+    filename = 'compressed lz4 binray {}.raw'
+    def write_one(self, arr, n):
+        f = io.open(self.filename.format(n), 'wb')
+        buf = lz4.compress(np.getbuffer(arr))
+        f.write(buf)
+        f.close()
+    def read_one(self, n):
+        f = io.open(self.filename.format(n), 'rb')
+        a = np.frombuffer(lz4.decompress(f.read()), dtype  = arr.dtype)
+        return a
+
+class CompressedFileSnappy(StandartFile):
+    filename = 'compressed snappy binray {}.raw'
+    def write_one(self, arr, n):
+        f = io.open(self.filename.format(n), 'wb')
+        buf = snappy.compress(np.getbuffer(arr))
+        f.write(buf)
+        f.close()
+    def read_one(self, n):
+        f = io.open(self.filename.format(n), 'rb')
+        a = np.frombuffer(snappy.decompress(f.read()), dtype  = arr.dtype)
+        return a
+
+
 
 
 class NumpySaveZ(StandartFile):
@@ -323,14 +351,16 @@ benchlist = [
                         #~ MemMapFile, 
                         #~ CompressedFileZLib,
                         CompressedFileBlosc ,
+                        CompressedFileLz4,
+                        CompressedFileSnappy,
                         #~ NumpySaveZ,
                         AllInOneHDF5, 
                         #~ SqlalchemyBlobSqlite,
                         #~ SqlalchemyBlobMySQL, 
-                        SqlalchemyBlobSqliteBlosc,
-                        SqlalchemyBlobMySQLBlosc,
-                        SqlalchemyBlobChunkedSQlite,
-                        SqlalchemyBlobChunkedMySQL,
+                        #~ SqlalchemyBlobSqliteBlosc,
+                        #~ SqlalchemyBlobMySQLBlosc,
+                        #~ SqlalchemyBlobChunkedSQlite,
+                        #~ SqlalchemyBlobChunkedMySQL,
                         
                         ]
 

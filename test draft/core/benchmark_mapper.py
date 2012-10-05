@@ -1,7 +1,7 @@
 import sys
 import os
 
-#~ sys.path.append('../..')
+sys.path.append('../..')
 
 import time
 
@@ -10,7 +10,7 @@ import quantities as pq
 
 import neo
 
-sig_size = 1e7
+sig_size = 1e6
 nb_sig = 4
 nb_block = 1
 nb_seg = 3
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         
         bl = create_big_neo_block(name='block num {}'.format(b))
         # OE sqlite
-        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress ='blosc')
+        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress ='lz4')
         t1 = time.time()
         oebl = Block.from_neo(bl,mapperInfo.mapped_classes, cascade =True)
         oebl.save()
@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
 
         # OE SQlite
-        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress = 'blosc')
+        mapperInfo = open_db(url_sqlite, myglobals = globals(), compress = 'lz4')
         session = mapperInfo.Session()
         t1 = time.time()
         bl = session.query(Block).filter_by(name = 'block num {}'.format(b)).one()
