@@ -14,6 +14,10 @@ from .toolchain import *
 
 import numpy as np
 
+# TODO: save result
+# TODO: dock template
+# TODO: change toolchain
+
 class SpikeSortingWindow(QMainWindow):
     def __init__(self, spikesorter = None, settings = None, parent = None ):
         super(SpikeSortingWindow, self).__init__(parent = parent)
@@ -83,7 +87,9 @@ class SpikeSortingWindow(QMainWindow):
             dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
         
         self.toolchain = ToolChainWidget(spikesorter = self.spikesorter ,settings = self.settings )
+        # TODO: auto guess best mode
         self.toolchain.change_toolchain(FromFullBandSignalToClustered, )
+        
         self.toolchain.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         dock = QDockWidget('Tool Chain',self)
         dock.setObjectName(  'Tool chain' )
@@ -91,6 +97,11 @@ class SpikeSortingWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
         self.toolchain.need_refresh.connect(self.refresh_all)
         
+        but =  QToolButton( popupMode = QToolButton.InstantPopup,
+                                            toolButtonStyle = Qt.ToolButtonTextBesideIcon,
+                                            icon = QIcon(':/spikesorting-mode.png' ),
+                                            text = u'')
+        self.toolbar.addWidget(but)
         
         self.toolbar.addSeparator()
         

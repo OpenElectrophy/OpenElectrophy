@@ -7,32 +7,13 @@ from PyQt4.QtGui import *
 import numpy as np
 import quantities as pq
 import neo
-from OpenElectrophy.gui.viewers import *
+
+
 from OpenElectrophy.gui.viewers.signalviewer import *
 
-from OpenElectrophy.spikesorting import SpikeSorter, generate_block_for_sorting
-
-#~ sig_size = 3.6e8
-#~ sig_size = 1e7
-sig_size = 1e5
-nb_spike =  10e3
-fs = 10.e3
-t = np.arange(sig_size)/fs
-
-
+from create_segment import *
 
 def test1():
-    analogsignals = [ ]
-    spiketrains_on_signals = [ ]
-    for i in range(1):
-        sig = 5*np.sin(t*np.pi*2*25) + np.random.randn(sig_size)+i*10.
-        spikepos = np.random.randint(sig.size, size =nb_spike)
-        sig[spikepos] += 15
-        analogsignals.append(neo.AnalogSignal(sig, units = 'uV', t_start= -5.*pq.s, sampling_rate = 10*pq.kHz))
-        spiketrains_on_signals.append([ ])
-        for i in range(2):
-            color = ['magenta', 'green', 'blue', 'red'][i%4]
-            spiketrains_on_signals[-1].append(neo.SpikeTrain(spikepos[i*nb_spike/2:(i+1)*nb_spike/2]/fs-5., t_start = -5., t_stop = -5.+sig_size/fs, units = 's', color = color))
     
     
     app = QApplication([ ])

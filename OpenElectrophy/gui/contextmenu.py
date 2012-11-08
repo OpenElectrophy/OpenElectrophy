@@ -88,7 +88,7 @@ class CreateTop(MenuItem):
 
 class EditRecordingChannelGroups(MenuItem):
     name = 'Edit RecordingChannelGroups'
-    table = 'block'
+    table = 'Block'
     mode = 'unique'
     icon = ':/recordingchannelgroup.png'
     def execute(self, session,treeview, id, tablename,treedescription, explorer,  **kargs):
@@ -102,39 +102,42 @@ class EditRecordingChannelGroups(MenuItem):
 
 class SaveToFile(MenuItem):
     name = 'Save Block(s) to file'
-    table = 'block'
+    table = 'Block'
     mode = 'homogeneous'
     icon = ':/document-save.png'
 
 class EditOscillation(MenuItem):
     name = 'Edit Oscillations'
-    table = 'analogsignal'
+    table = 'AnalogSignal'
     mode = 'unique'
     icon = ':/oscillation.png'
 
-class BaseSpikeSorting(MenuItem):
-    table = 'recordingchannelgroup'
+
+from .spikesorting import SpikeSortingWindow
+from ..spikesorting import SpikeSorter
+
+class SpikeSorting(MenuItem):
+    table = 'RecordingChannelGroup'
     mode = 'unique'
     icon = ':/spike.png'
+    def execute(self, session,explorer,tablename,  id, treedescription,settings,  **kargs):
+        class_ = treedescription.tablename_to_class[tablename]
+        rcg = session.query(class_).get(id)
+        
+        neo_rcg = rcg.to_neo(cascade = True)
+        spikesorter = SpikeSorter(neo_rcg)
+        w= SpikeSortingWindow(spikesorter = spikesorter, settings =settings)
+        w.setParent(explorer)
+        w.setWindowFlags(Qt.Window)
+        w.show()
 
 
-class SpikeSortingFullBand(BaseSpikeSorting):
-    name = 'Spike Sorting (mode = from_full_band_signal)'
-    spike_sorting_mode = 'from_full_band_signal'
-class SpikeSortingFiltered(BaseSpikeSorting):
-    name = 'Spike Sorting (mode = from_filtered_signal)'
-    spike_sorting_mode = 'from_filtered_signal'
-class SpikeSortingSpike(BaseSpikeSorting):
-    name = 'Spike Sorting (mode = from_detected_spike)'
-    spike_sorting_mode = 'from_detected_spike'
-class SpikeSortingWaveformFeatures(BaseSpikeSorting):
-    name = 'Spike Sorting (mode = from_waveform_features)'
-    spike_sorting_mode = 'from_waveform_features'
+
 
 
 class DetecRespiratoryCycle(MenuItem):
     name = 'Detect respiratory cycles'
-    table = 'respirationsignal'
+    table = 'RespirationSignal'
     mode = 'unique'
     icon = ':/repiration.png'
 
@@ -143,6 +146,6 @@ class DetecRespiratoryCycle(MenuItem):
 context_menu = [ Delete, Edit, ChangeParent,CreateTop, 
                 EditRecordingChannelGroups, SaveToFile,
                 EditOscillation, 
-                SpikeSortingFullBand, SpikeSortingFiltered, SpikeSortingSpike, SpikeSortingWaveformFeatures,
+                SpikeSorting,
                 DetecRespiratoryCycle,
                 ]

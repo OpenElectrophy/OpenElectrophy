@@ -26,8 +26,8 @@ def test2():
     settings = PickleSettings(applicationname = 'testOE3')
     
     w1 = ToolChainWidget(spikesorter = spikesorter, settings = settings)
-    w1.change_toolchain(FromFullBandSignalToClustered, )
-    #~ w1.change_toolchain(FromFullBandSignalToDetection)
+    #~ w1.change_toolchain(FromFullBandSignalToClustered, )
+    w1.change_toolchain(FromFullBandSignalToDetection)
     
     
     w1.show()
