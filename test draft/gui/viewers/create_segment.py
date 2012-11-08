@@ -3,7 +3,7 @@ import numpy as np
 import quantities as pq
 import neo
 
-nb_sig = 4
+nb_sig = 8
 
 #~ sig_size = 3.6e8
 #~ sig_size = 1e7

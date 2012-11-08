@@ -37,7 +37,7 @@ class TimeFreqViewer(ViewerBase):
         self.params_time_freq = dict(
                                         f_start=3.,
                                         f_stop = 90.,
-                                        deltafreq = 2.,
+                                        deltafreq = 1.,
                                         sampling_rate = self.analogsignal.sampling_rate.magnitude,#FIXME
                                         f0 = 2.5,
                                         normalisation = 0.,
@@ -49,7 +49,12 @@ class TimeFreqViewer(ViewerBase):
     def initialize_time_freq(self):
         self.plot.del_all_items()
         
-        self.len_wavelet = int(self.xsize*self.analogsignal.sampling_rate.rescale('Hz').magnitude)
+        # we take sampling_rate = f_stop*4 or (original sampling_rate)
+        f_stop = self.params_time_freq['f_stop']
+        if f_stop*4 < self.analogsignal.sampling_rate.magnitude:
+            self.params_time_freq['sampling_rate'] = f_stop*4
+        
+        self.len_wavelet = int(self.xsize*self.params_time_freq['sampling_rate'])
         self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq).transpose()
         
         self.win = np.hamming(self.len_wavelet)
@@ -78,13 +83,19 @@ class TimeFreqViewer(ViewerBase):
                                                 return_t_vect = False)
         chunk = self.analogsignal.magnitude[sl]
         
-        if self.need_recreate_thread:
-            self.thread = ThreadComputeTF(chunk, self.wf, self.win, parent = self)
-            self.thread.finished.connect(self.map_computed)
-            self.need_recreate_thread = False
+        if chunk.size==self.analogsignal.sampling_rate.magnitude*self.xsize:
+        
+            if self.need_recreate_thread:
+                self.thread = ThreadComputeTF(chunk, self.wf, self.win, parent = self)
+                self.thread.finished.connect(self.map_computed)
+                self.need_recreate_thread = False
+            else:
+                self.thread.sig = chunk
+            self.thread.start()
         else:
-            self.thread.sig = chunk
-        self.thread.start()
+            self.map[:] = 0.
+            self.map_computed()
+            
         
         self.is_refreshing = False
 
@@ -108,7 +119,7 @@ class TimeFreqViewer(ViewerBase):
         self.last_times.append(time.time())
         if len(self.last_times)>10:
             self.last_times = self.last_times[-10:]
-        print 1./np.mean(np.diff(self.last_times)), 'fps'
+        print 1./np.mean(np.diff(self.last_times)), 'fps', 'for ', self.map.shape
 
 
 
@@ -121,14 +132,14 @@ class ThreadComputeTF(QThread):
         self.win = win
         
     def run(self):
-        if self.wf.shape[1]== self.sig.size:
-            sigf=self.win*fftpack.fft(self.sig)
-            wt_tmp=fftpack.ifft(sigf[np.newaxis,:]*self.wf,axis=1)
-            wt = fftpack.fftshift(wt_tmp,axes=[1])
-            self.parent().map = abs(wt)
-        else:
-            # bad size
-            self.parent().map = np.zeros(self.wf.shape)
+        n = self.wf.shape[1]/2
+        sigf=fftpack.fft(self.sig)
+        sigf = np.concatenate([sigf[:n],  sigf[-n:]])
+        sigf *= self.win
+        wt_tmp=fftpack.ifft(sigf[np.newaxis,:]*self.wf,axis=1)
+        wt = fftpack.fftshift(wt_tmp,axes=[1])
+        
+        self.parent().map = abs(wt)
         self.finished.emit()
 
 
