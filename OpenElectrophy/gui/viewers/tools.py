@@ -30,7 +30,8 @@ class TimeSeeker(QWidget) :
     fast_time_changed = pyqtSignal(float)
     
     def __init__(self, parent = None, show_play = True, show_step = True,
-                                    show_slider = True, show_spinbox = True, show_label = False) :
+                                    show_slider = True, show_spinbox = True, show_label = False,
+                                    refresh_interval = .1) :
         QWidget.__init__(self, parent)
         
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
@@ -113,7 +114,7 @@ class TimeSeeker(QWidget) :
             t.addSeparator()
         
         # all in s
-        self.refresh_interval = .1 #s
+        self.refresh_interval = refresh_interval #s
         self.step_size = 0.05 #s
         self.speed = 1.
         self.t = 0 #  s

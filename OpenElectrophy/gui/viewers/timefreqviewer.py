@@ -11,125 +11,165 @@ from scipy import fftpack
 
 import time
 
+from PyQt4.Qwt5 import QwtPlot
+
+    
+
 class TimeFreqViewer(ViewerBase):
     """
     This is a time frequancy viewer based on morlet continuous wavelet tranform.
     
+    All analogsignals need to have same asmpling_rate.
+    
     """
     def __init__(self, parent = None,
-                            analogsignal = None,
-                            
+                            analogsignals = None,
+                            nb_column = 4,
                             ):
                             
         super(TimeFreqViewer,self).__init__(parent)
     
-        self.analogsignal = analogsignal
+        self.analogsignals = analogsignals
+        
         
         mainlayout = QHBoxLayout()
         self.setLayout(mainlayout)
         
-        self.plot = ImagePlot(yreverse=False,lock_aspect_ratio=False)
-        mainlayout.addWidget(self.plot)
+        self.grid = QGridLayout()
+        mainlayout.addLayout(self.grid)
         
+        self.global_sampling_rate = self.analogsignals[0].sampling_rate
         
-        self.image = None
-        self.xsize = 2.
+        n = len(analogsignals)
+        
+        r,c = 0,0
+        self.plots = [ ]
+        for i, anasig in enumerate(self.analogsignals):
+            assert(anasig.sampling_rate==self.global_sampling_rate)
+            plot = ImagePlot(yreverse=False,lock_aspect_ratio=False, ylabel = 'freqs')
+            self.plots.append(plot)
+            self.grid.addWidget(plot, r,c)
+            plot.enableAxis(QwtPlot.xBottom, False) # QwtPlot
+            plot.enableAxis(QwtPlot.yRight, False) # QwtPlot
+            #~ if c!=0: plot.enableAxis(QwtPlot.yLeft, False) # QwtPlot
+            
+            c+=1
+            if c==nb_column:
+                c=0
+                r+=1
+        self.images = [ None for i in range(n)]
+        self.maps = [ None for i in range(n)]
+        self.is_computing = np.zeros((n), dtype = bool)
+        self.range_lines = [ None for i in range(n)]
+        self.threads = [ None for i in range(n)]
+        
+        self.xsize = 5.
         self.params_time_freq = dict(
                                         f_start=3.,
                                         f_stop = 90.,
-                                        deltafreq = 1.,
-                                        sampling_rate = self.analogsignal.sampling_rate.magnitude,#FIXME
+                                        deltafreq = 2.,
+                                        sampling_rate = self.global_sampling_rate.magnitude,#FIXME
                                         f0 = 2.5,
                                         normalisation = 0.,
                                         )
         self.need_recreate_thread = True
-        self.is_computing = False
+        
         self.initialize_time_freq()
         
     def initialize_time_freq(self):
-        self.plot.del_all_items()
+        for plot in self.plots:
+            plot.del_all_items()
         
         # we take sampling_rate = f_stop*4 or (original sampling_rate)
         f_stop = self.params_time_freq['f_stop']
-        if f_stop*4 < self.analogsignal.sampling_rate.magnitude:
+        if f_stop*4 < self.analogsignals[0].sampling_rate.magnitude:
             self.params_time_freq['sampling_rate'] = f_stop*4
         
         self.len_wavelet = int(self.xsize*self.params_time_freq['sampling_rate'])
         self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq).transpose()
         
         self.win = np.hamming(self.len_wavelet)
-        self.map = np.zeros(self.wf.shape)
-        self.image = make.image(self.map, title='TimeFreq',interpolation ='nearest')
-        self.plot.add_item(self.image)
+        for i, plot in enumerate(self.plots):
+            self.maps[i] = np.zeros(self.wf.shape)
+            image = make.image(self.maps[i], title='TimeFreq',interpolation ='nearest')
+            plot.add_item(image)
+            self.images[i] =image
+            
+            self.range_lines[i]  = make.range(0.,0.)
+            plot.add_item(self.range_lines[i])
         
         p = self.params_time_freq
         self.freqs = np.arange(p['f_start'],p['f_stop'],p['deltafreq'])
         
-        self.range_line = make.range(0.,0.)
-        self.plot.add_item(self.range_line)
-        
+        self.need_recreate_thread = True
         
         
 
     def refresh(self, fast = False):
-        if self.is_computing:
+        #~ print self.is_computing
+        if self.is_computing.any():
+            self.is_refreshing = False
             return
-        self.isComputing = True
+        
         
         #~ xaxis, yaxis = self.plot.get_active_axes()
+        #~ xaxis.hide()
         self.t_start, self.t_stop = self.t-self.xsize/3. , self.t+self.xsize*2/3.
         
-        sl = get_analogsignal_slice(self.analogsignal,self.t_start*pq.s, self.t_stop*pq.s,
+        
+        for i, anasig in enumerate(self.analogsignals):
+            self.is_computing[i] = True
+            sl = get_analogsignal_slice(anasig,self.t_start*pq.s, self.t_stop*pq.s,
                                                 return_t_vect = False)
-        chunk = self.analogsignal.magnitude[sl]
-        
-        if chunk.size==self.analogsignal.sampling_rate.magnitude*self.xsize:
-        
-            if self.need_recreate_thread:
-                self.thread = ThreadComputeTF(chunk, self.wf, self.win, parent = self)
-                self.thread.finished.connect(self.map_computed)
-                self.need_recreate_thread = False
+            chunk = anasig.magnitude[sl]
+            if chunk.size==self.global_sampling_rate*self.xsize:
+                if self.need_recreate_thread:
+                    self.threads[i] = ThreadComputeTF(chunk, self.wf, self.win,i, parent = self)
+                    self.threads[i].finished.connect(self.map_computed)
+                else:
+                    self.threads[i].sig = chunk
+                self.threads[i].start()
             else:
-                self.thread.sig = chunk
-            self.thread.start()
-        else:
-            self.map[:] = 0.
-            self.map_computed()
+                self.maps[i][:] = 0.
+                self.map_computed(i)
             
-        
+        self.need_recreate_thread = False
         self.is_refreshing = False
 
     
-    def map_computed(self):
-        
-        xaxis, yaxis = self.plot.get_active_axes()
-        self.plot.setAxisScale(yaxis, self.freqs[0], self.freqs[-1])
-        self.plot.setAxisScale(xaxis,self.t_start, self.t_stop)
+    def map_computed(self, i):
+        #~ print 'i', i
+        xaxis, yaxis = self.plots[i].get_active_axes()
+        self.plots[i].setAxisScale(yaxis, self.freqs[0], self.freqs[-1])
+        self.plots[i].setAxisScale(xaxis,self.t_start, self.t_stop)
 
-        self.image.set_ydata(self.freqs[0], self.freqs[-1])
-        self.image.set_xdata(self.t_start, self.t_stop)
+        self.images[i].set_ydata(self.freqs[0], self.freqs[-1])
+        self.images[i].set_xdata(self.t_start, self.t_stop)
         
-        self.image.set_data(self.map)
-        self.range_line.set_range(self.t,self.t)
-        self.plot.replot()
-        self.isComputing = False
+        self.images[i].set_data(self.maps[i])
+        self.range_lines[i].set_range(self.t,self.t)
+        self.plots[i].replot()
+        self.is_computing[i] = False
         
+        #perfs
         if not hasattr(self, 'last_times'):
             self.last_times = [ ]
-        self.last_times.append(time.time())
-        if len(self.last_times)>10:
-            self.last_times = self.last_times[-10:]
-        print 1./np.mean(np.diff(self.last_times)), 'fps', 'for ', self.map.shape
+        if i==0:
+            self.last_times.append(time.time())
+            if len(self.last_times)>10:
+                self.last_times = self.last_times[-10:]
+            print 1./np.mean(np.diff(self.last_times)), 'fps', 'for ', self.maps[0].shape
 
 
 
 class ThreadComputeTF(QThread):
-    finished = pyqtSignal()
-    def __init__(self, sig, wf, win, parent = None, ):
+    finished = pyqtSignal(int)
+    def __init__(self, sig, wf, win,n, parent = None, ):
         super(ThreadComputeTF, self).__init__(parent)
         self.sig = sig
         self.wf = wf
         self.win = win
+        self.n = n
         
     def run(self):
         n = self.wf.shape[1]/2
@@ -139,8 +179,8 @@ class ThreadComputeTF(QThread):
         wt_tmp=fftpack.ifft(sigf[np.newaxis,:]*self.wf,axis=1)
         wt = fftpack.fftshift(wt_tmp,axes=[1])
         
-        self.parent().map = abs(wt)
-        self.finished.emit()
+        self.parent().maps[self.n] = abs(wt)
+        self.finished.emit(self.n)
 
 
 #TODO remove this when tiomefreq module is donne
