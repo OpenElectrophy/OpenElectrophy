@@ -4,14 +4,27 @@ TimeFreqViewer
 """
 
 from tools import *
-from guiqwt.styles import CurveParam
+#~ from guiqwt.styles import CurveParam
 
 from scipy import fftpack
 #~ import numpy.fft as fftpack
 
 import time
 
-from PyQt4.Qwt5 import QwtPlot
+#~ from PyQt4.Qwt5 import QwtPlot
+
+import pyqtgraph as pg
+
+
+from matplotlib import cm 
+from matplotlib.colors import ColorConverter
+lut = [ ]
+cmap = cm.get_cmap('jet' , 100)
+for i in range(100):
+    r,g,b =  ColorConverter().to_rgb(cmap(i) )
+    lut.append([r*255,g*255,b*255])
+jet_lut = np.array(lut, dtype = np.uint8)
+
 
     
 
@@ -43,16 +56,14 @@ class TimeFreqViewer(ViewerBase):
         n = len(analogsignals)
         
         r,c = 0,0
-        self.plots = [ ]
+        self.views = [ ]
         for i, anasig in enumerate(self.analogsignals):
             assert(anasig.sampling_rate==self.global_sampling_rate)
-            plot = ImagePlot(yreverse=False,lock_aspect_ratio=False, ylabel = 'freqs')
-            self.plots.append(plot)
-            self.grid.addWidget(plot, r,c)
-            plot.enableAxis(QwtPlot.xBottom, False) # QwtPlot
-            plot.enableAxis(QwtPlot.yRight, False) # QwtPlot
-            #~ if c!=0: plot.enableAxis(QwtPlot.yLeft, False) # QwtPlot
-            
+            #~ view = ImagePlot(yreverse=False,lock_aspect_ratio=False, ylabel = 'freqs')
+            view = pg.GraphicsView()
+            view.setBackground(self.palette().color(QPalette.Background))
+            self.views.append(view)
+            self.grid.addWidget(view, r,c)
             c+=1
             if c==nb_column:
                 c=0
@@ -60,7 +71,7 @@ class TimeFreqViewer(ViewerBase):
         self.images = [ None for i in range(n)]
         self.maps = [ None for i in range(n)]
         self.is_computing = np.zeros((n), dtype = bool)
-        self.range_lines = [ None for i in range(n)]
+        #~ self.range_lines = [ None for i in range(n)]
         self.threads = [ None for i in range(n)]
         
         self.xsize = 5.
@@ -77,8 +88,8 @@ class TimeFreqViewer(ViewerBase):
         self.initialize_time_freq()
         
     def initialize_time_freq(self):
-        for plot in self.plots:
-            plot.del_all_items()
+        #~ for view in self.views:
+            #~ view.del_all_items()
         
         # we take sampling_rate = f_stop*4 or (original sampling_rate)
         f_stop = self.params_time_freq['f_stop']
@@ -89,14 +100,15 @@ class TimeFreqViewer(ViewerBase):
         self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq).transpose()
         
         self.win = np.hamming(self.len_wavelet)
-        for i, plot in enumerate(self.plots):
+        for i, view in enumerate(self.views):
             self.maps[i] = np.zeros(self.wf.shape)
-            image = make.image(self.maps[i], title='TimeFreq',interpolation ='nearest')
-            plot.add_item(image)
+            #~ image = make.image(self.maps[i], title='TimeFreq',interpolation ='nearest')
+            image = pg.ImageItem(border='w')
+            view.addItem(image)
             self.images[i] =image
             
-            self.range_lines[i]  = make.range(0.,0.)
-            plot.add_item(self.range_lines[i])
+            #~ self.range_lines[i]  = make.range(0.,0.)
+            #~ view.add_item(self.range_lines[i])
         
         p = self.params_time_freq
         self.freqs = np.arange(p['f_start'],p['f_stop'],p['deltafreq'])
@@ -112,7 +124,7 @@ class TimeFreqViewer(ViewerBase):
             return
         
         
-        #~ xaxis, yaxis = self.plot.get_active_axes()
+        #~ xaxis, yaxis = self.view.get_active_axes()
         #~ xaxis.hide()
         self.t_start, self.t_stop = self.t-self.xsize/3. , self.t+self.xsize*2/3.
         
@@ -139,16 +151,19 @@ class TimeFreqViewer(ViewerBase):
     
     def map_computed(self, i):
         #~ print 'i', i
-        xaxis, yaxis = self.plots[i].get_active_axes()
-        self.plots[i].setAxisScale(yaxis, self.freqs[0], self.freqs[-1])
-        self.plots[i].setAxisScale(xaxis,self.t_start, self.t_stop)
+        #~ xaxis, yaxis = self.views[i].get_active_axes()
+        #~ self.views[i].setAxisScale(yaxis, self.freqs[0], self.freqs[-1])
+        #~ self.views[i].setAxisScale(xaxis,self.t_start, self.t_stop)
 
-        self.images[i].set_ydata(self.freqs[0], self.freqs[-1])
-        self.images[i].set_xdata(self.t_start, self.t_stop)
+        #~ self.images[i].set_ydata(self.freqs[0], self.freqs[-1])
+        #~ self.images[i].set_xdata(self.t_start, self.t_stop)
+        self.views[i].setRange(QRectF(0, 0, self.wf.shape[1],self.wf.shape[0] ))
         
-        self.images[i].set_data(self.maps[i])
-        self.range_lines[i].set_range(self.t,self.t)
-        self.plots[i].replot()
+        
+        #~ self.images[i].set_data(self.maps[i])
+        self.images[i].setImage(self.maps[i].transpose()[:,::-1], lut = jet_lut)
+        #~ self.range_lines[i].set_range(self.t,self.t)
+        #~ self.views[i].replot()
         self.is_computing[i] = False
         
         #perfs
