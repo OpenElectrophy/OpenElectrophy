@@ -6,8 +6,11 @@ http://matplotlib.sourceforge.net/examples/user_interfaces/embedding_in_qt4.html
 
 """
 
+from .qt import *
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure

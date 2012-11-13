@@ -20,10 +20,10 @@ def test1():
     
     s = TimeSeeker()
     s.show()
-    s.change_start_stop(t_start= -25., t_stop = analogsignals[0].t_stop.magnitude)
+    s.set_start_stop(analogsignals[0].t_start.magnitude-2,analogsignals[0].t_stop.magnitude+2)
     
-    w1 = SignalViewerQwt(analogsignals = analogsignals, spiketrains_on_signals = spiketrains_on_signals)
-    #~ w1 = SignalViewerQwt(analogsignals = analogsignals, spiketrains_on_signals = None)
+    #~ w1 = SignalViewer(analogsignals = analogsignals, spiketrains_on_signals = spiketrains_on_signals)
+    w1 = SignalViewer(analogsignals = analogsignals, spiketrains_on_signals = None, xsize = 2)
     w1.show()
 
     #~ w2 = SignalViewerMpl(analogsignals = analogsignals)
@@ -42,10 +42,24 @@ def test1():
     
     s.seek(0.)
     
-    app.exec_()
+    #~ app.exec_()
+    sys.exit(app.exec_())
 
+
+def test2():
+    paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
+                                                    children = [ {'name': 'xsize', 'type': 'float', 'value': 10., 'step': 0.1},
+                                                                        {'name': 'ylims', 'type': 'range', 'value': [-10., 10.] },
+                                                                        {'name': 'background_color', 'type': 'color', 'value': 'k' },
+                                                                    ])    
+    
+    app = QApplication([ ])
+    w = SignalViewerParameters(analogsignals = analogsignals, paramGlobal = paramGlobal)
+    w.show()
+    sys.exit(app.exec_())
 
 
 
 if __name__ == '__main__' :
     test1()
+    #~ test2()

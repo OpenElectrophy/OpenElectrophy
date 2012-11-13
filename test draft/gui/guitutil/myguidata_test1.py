@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../..')
+sys.path.append('../../..')
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -67,8 +67,8 @@ def test3():
 
 
 if __name__ == '__main__':
-    test1()
+    #~ test1()
     #~ test2()
-    #~ test3()
+    test3()
 
     

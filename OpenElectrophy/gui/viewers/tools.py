@@ -3,21 +3,12 @@
 Common tools for viewers.
 """
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
 from ..guiutil import *
 
 import quantities as pq
 import numpy as np
 
 
-from guiqwt.curve import CurvePlot, CurveItem#
-from guiqwt.image import ImagePlot
-from guiqwt.styles import CurveParam
-from guiqwt.builder import make
-from guiqwt.shapes import RectangleShape
-from guiqwt.styles import ShapeParam, LineStyleParam
 
 import time
 
@@ -112,6 +103,10 @@ class TimeSeeker(QWidget) :
             self.labelTime = QLabel('0')
             t.addWidget(self.labelTime)
             t.addSeparator()
+
+        self.timerPlay = QTimer(self)
+        self.timerPlay.timeout.connect(self.timerPlayTimeout)
+        self.timerDelay = None
         
         # all in s
         self.refresh_interval = refresh_interval #s
@@ -120,11 +115,8 @@ class TimeSeeker(QWidget) :
         self.t = 0 #  s
         self.set_start_stop(0., 10.)
         
-        self.timerPlay = QTimer(self)
-        self.timerPlay.timeout.connect(self.timerPlayTimeout)
-        self.timerDelay = None
         
-        self.seek(self.t_start)
+        #~ self.seek(self.t_start)
         
 
     def play(self):
@@ -140,11 +132,15 @@ class TimeSeeker(QWidget) :
         self.seek(t)
     
     def set_start_stop(self, t_start, t_stop):
+        #~ print 't_start', t_start, 't_stop', t_stop
+        assert t_stop>t_start
         self.t_start = t_start
-        self.t_stop =  t_stop
+        self.t_stop = t_stop
+        self.seek(self.t_start)
         if self.show_spinbox:
             self.spinbox.setMinimum(t_start)
             self.spinbox.setMaximum(t_stop)
+            #~ print 'yop', self.spinbox.minimum(), self.spinbox.maximum()
         
     def change_step(self, act):
         t = str(act.text())
@@ -205,11 +201,7 @@ class TimeSeeker(QWidget) :
     def change_speed(self , speed):
         self.speed = speed
     
-    def change_start_stop(self, t_start, t_stop):
-        assert t_stop>t_start
-        self.t_start = t_start
-        self.t_stop = t_stop
-        self.seek(self.t_start)
+    #~ def change_start_stop(self, t_start, t_stop):
     
     def delay_emit(self):
         if self.timerDelay is not None: return
@@ -449,6 +441,7 @@ def get_analogsignal_slice(ana, t_start, t_stop, return_t_vect = True, decimate 
     else:
         ind_start = int(((t_start-ana.t_start)*ana.sampling_rate).simplified)
         ind_stop = int(((t_stop-ana.t_start)*ana.sampling_rate).simplified)
+        #~ ind_stop = int(((t_stop-t_start)*ana.sampling_rate).simplified) + ind_start # FIXME
         step = 1
         if decimate is not None:
             length = (ind_stop-ind_start)
@@ -472,6 +465,16 @@ def get_analogsignal_slice(ana, t_start, t_stop, return_t_vect = True, decimate 
             return slice(ind_start, ind_stop, step)
 
 
+class OptionsViewBox(pg.ViewBox):
+    clicked = pyqtSignal()
+    def __init__(self, *args, **kwds):
+        pg.ViewBox.__init__(self, *args, **kwds)
+    def mouseClickEvent(self, ev):
+        self.clicked.emit()
+    def mouseDragEvent(self, ev):
+        ev.ignore()
+    def wheelEvent(self, ev):
+        ev.ignore()
 
 
 
