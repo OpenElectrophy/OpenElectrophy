@@ -42,7 +42,6 @@ class TimeFreqViewer(ViewerBase):
     """
     def __init__(self, parent = None,
                             analogsignals = None,
-                            nb_column = 4,
                             ):
                             
         super(TimeFreqViewer,self).__init__(parent)
@@ -61,20 +60,25 @@ class TimeFreqViewer(ViewerBase):
         self.grid = QGridLayout()
         mainlayout.addLayout(self.grid)
         
+        nb_column = np.rint(np.sqrt(n))
+        
         self.paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
-                                                    children = [ {'name': 'xsize', 'type': 'float', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
-                                                                        {'name': 'f_start', 'type': 'float', 'value': 3., 'step': 1.},
+                                                    children = [ {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
+                                                                        {'name': 'nb_column', 'type': 'int', 'value': nb_column},
+                                                                    ])
+        
+        self.paramTimeFreq = pg.parametertree.Parameter.create( name='Time frequency options', type='group',
+                                                    children = [{'name': 'f_start', 'type': 'float', 'value': 3., 'step': 1.},
                                                                         {'name': 'f_stop', 'type': 'float', 'value': 90., 'step': 1.},
                                                                         {'name': 'deltafreq', 'type': 'float', 'value': 3., 'step': 1.,  'limits' : (0.001, 1.e6)},
                                                                         {'name': 'f0', 'type': 'float', 'value': 2.5, 'step': 0.1},
-                                                                        #~ {'name': 'sampling_rate', 'type': 'float', 'value': self.global_sampling_rate.magnitude, 'step':  10},
                                                                         {'name': 'normalisation', 'type': 'float', 'value': 0., 'step': 0.1},
-                                                                        
-                                                                        {'name': 'nb_column', 'type': 'int', 'value': 2},
-                                                                        
                                                                     ])
         
-        self.timefreqViewerParameters = TimefreqViewerParameters(paramGlobal = self.paramGlobal, analogsignals = analogsignals, parent= self)
+        
+        self.timefreqViewerParameters = TimefreqViewerParameters(paramGlobal = self.paramGlobal, 
+                                                                                                                                paramTimeFreq = self.paramTimeFreq, 
+                                                                                                                                analogsignals = analogsignals, parent= self)
         self.timefreqViewerParameters.setWindowFlags(Qt.Window)
         self.paramSignals = self.timefreqViewerParameters.paramSignals
 
@@ -82,26 +86,47 @@ class TimeFreqViewer(ViewerBase):
         self.grid_changing =QReadWriteLock()
         self.create_grid()
         
-        self.set_xsize(5.)
         self.need_recreate_thread = True
-        
-        self.paramGlobal.sigTreeStateChanged.connect(self.paramChanged)
-        for p in self.paramSignals:
-            p.sigTreeStateChanged.connect(self.paramChanged)
         self.initialize_time_freq()
+        
+        # this signal is a hack when many signal are emited at the same time
+        # only the first is taken
+        self.need_change_grid.connect(self.do_change_grid, type = Qt.QueuedConnection)
+        
+        self.paramGlobal.param('xsize').sigValueChanged.connect(self.initialize_time_freq_and_refresh)
+        self.paramGlobal.param('nb_column').sigValueChanged.connect(self.change_grid)
+        self.paramTimeFreq.sigTreeStateChanged.connect(self.initialize_time_freq_and_refresh)
+        for p in self.paramSignals:
+            p.param('visible').sigValueChanged.connect(self.change_grid)
+            p.param('clim').sigValueChanged.connect(self.clim_changed)
+        
 
     def get_xsize(self):
         return self.paramGlobal.param('xsize').value()
     def set_xsize(self, xsize):
         self.paramGlobal.param('xsize').setValue(xsize)
     xsize = property(get_xsize, set_xsize)
-
-    def paramChanged(self):
-        self.grid_changing.lockForWrite()
+    
+    
+    need_change_grid = pyqtSignal()
+    def change_grid(self, param):
+        if  self.grid_changing.tryLockForWrite():
+            self.need_change_grid.emit()
+    def do_change_grid(self):
         self.create_grid()
         self.initialize_time_freq()
         self.refresh()
         self.grid_changing.unlock()
+    def initialize_time_freq_and_refresh(self):
+        self.initialize_time_freq()
+        self.refresh()
+        
+    
+    def clim_changed(self, param):
+        i = self.paramSignals.index( param.parent())
+        clim = self.paramSignals[i].param('clim').value()
+        self.images[i].setImage(self.maps[i], lut = jet_lut, levels = [0,clim])
+        
 
     def open_configure_dialog(self):
         self.timefreqViewerParameters.setWindowFlags(Qt.Window)
@@ -135,10 +160,8 @@ class TimeFreqViewer(ViewerBase):
     def initialize_time_freq(self):
         # create self.params_time_freq
         p = self.params_time_freq = { }
-        for param in self.paramGlobal.children():
+        for param in self.paramTimeFreq.children():
             self.params_time_freq[param.name()] = param.value()
-        self.params_time_freq.pop('xsize')
-        self.params_time_freq.pop('nb_column')
         
         # we take sampling_rate = f_stop*4 or (original sampling_rate)
         if p['f_stop']*4 < self.global_sampling_rate:
@@ -176,16 +199,15 @@ class TimeFreqViewer(ViewerBase):
 
         for i, anasig in enumerate(self.analogsignals):
             if not self.paramSignals[i].param('visible').value(): continue
+            if self.need_recreate_thread:
+                    self.threads[i] = ThreadComputeTF(None, self.wf, self.win,i, self.factor, parent = self)
+                    self.threads[i].finished.connect(self.map_computed)
             self.is_computing[i] = True
             sl = get_analogsignal_slice(anasig,self.t_start*pq.s, self.t_stop*pq.s,
                                                 return_t_vect = False)
             chunk = anasig.magnitude[sl]
             if np.abs(chunk.size-self.global_sampling_rate*(self.t_stop-self.t_start))<1.:
-                if self.need_recreate_thread:
-                    self.threads[i] = ThreadComputeTF(chunk, self.wf, self.win,i, self.factor, parent = self)
-                    self.threads[i].finished.connect(self.map_computed)
-                else:
-                    self.threads[i].sig = chunk
+                self.threads[i].sig = chunk
                 self.threads[i].start()
             else:
                 self.maps[i][:] = 0.
@@ -228,7 +250,7 @@ class ThreadComputeTF(QThread):
 
 
 class TimefreqViewerParameters(QWidget):
-    def __init__(self, parent = None, analogsignals = [ ], paramGlobal = None):
+    def __init__(self, parent = None, analogsignals = [ ], paramGlobal = None, paramTimeFreq = None):
         super(TimefreqViewerParameters, self).__init__(parent)
         
         param_by_channel = [ 
@@ -240,7 +262,7 @@ class TimefreqViewerParameters(QWidget):
         
         self.analogsignals = analogsignals
         self.paramGlobal = paramGlobal
-        
+        self.paramTimeFreq = paramTimeFreq
 
         self.mainlayout = QVBoxLayout()
         self.setLayout(self.mainlayout)
@@ -280,6 +302,12 @@ class TimefreqViewerParameters(QWidget):
         self.tree3.header().hide()
         v.addWidget(self.tree3)
         self.tree3.setParameters(self.paramGlobal, showTop=True)
+
+        self.tree4 = pg.parametertree.ParameterTree()
+        self.tree4.header().hide()
+        v.addWidget(self.tree4)
+        self.tree4.setParameters(self.paramTimeFreq, showTop=True)
+        
 
         self.paramSelection = pg.parametertree.Parameter.create( name='Multiple change for selection', type='group',
                                                     children = param_by_channel[2:], tip= u'This options apply on selection AnalogSignal on left list')

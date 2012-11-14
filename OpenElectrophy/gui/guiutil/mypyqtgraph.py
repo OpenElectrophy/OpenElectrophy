@@ -11,6 +11,7 @@ from pyqtgraph.parametertree import parameterTypes as types
 import numpy as np
 
 
+##Range
 class RangeWidget(QWidget):
     sigChanged = pyqtSignal()
     def __init__(self, parent = None):
@@ -39,7 +40,6 @@ class RangeWidget(QWidget):
         
     
     def updateDisplayLabel(self, value=None):
-        print 'ici', value, self._val, self.param.value()
         if value is None:
             value = self.param.value()
         opts = self.param.opts
@@ -66,9 +66,102 @@ class RangeParameter(Parameter):
         self.sigActivated.emit(self)
         self.emitStateChanged('activated', None)
 
-
-
 registerParameterType('range', RangeParameter, override=True)
+
+
+
+
+
+
+class SpinAndSliderWidget(QWidget):
+    """this combinate a spin box and a slider in log scale"""
+    sigChanged = pyqtSignal()
+    def __init__(self, parent = None,
+                            limits = [0.001, 1000],
+                            orientation  = Qt.Horizontal,
+                            ):
+        QWidget.__init__(self, parent)
+
+        self._val = None
+        self.limits = limits
+
+        if orientation == Qt.Horizontal:
+            self.mainlayout = QHBoxLayout()
+        else:
+            self.mainlayout = QVBoxLayout()
+        self.setLayout(self.mainlayout)
+        
+        self.spinbox = QDoubleSpinBox(decimals = 4, singleStep = .1,
+                                                        minimum = self.limits[0], maximum = self.limits[1])
+        self.mainlayout.addWidget(self.spinbox)
+        self.slider = QSlider(Qt.Horizontal, minimum =0, maximum = 100)
+        self.mainlayout.addWidget(self.slider)
+        self.slider.setMinimumWidth(50)
+        
+        self.spinbox.valueChanged.connect(self.spinbox_changed)
+        self.slider.valueChanged.connect(self.slider_changed)
+ 
+    def value(self):
+        return self._val
+    
+    def setValue(self, val):
+        self._val = val
+        self.spinbox.valueChanged.disconnect(self.spinbox_changed)
+        self.spinbox.setValue(val)
+        self.spinbox.valueChanged.connect(self.spinbox_changed)
+        self.slider.valueChanged.disconnect(self.slider_changed)
+        self.slider.setValue(self.to_log(val))
+        self.slider.valueChanged.connect(self.slider_changed)
+    
+    def to_log(self, val):
+        min, max = self.limits
+        return int( (np.log10(val)-np.log10(min))/(np.log10(max) - np.log10(min) )*100 )
+    
+    def from_log(self, val):
+        min, max = self.limits
+        return 10**((val/100.)*(np.log10(max) - np.log10(min) )+np.log10(min))
+ 
+    def slider_changed(self, val):
+        self._val = self.from_log(val)
+        self.spinbox.valueChanged.disconnect(self.spinbox_changed)
+        self.spinbox.setValue(self._val)
+        self.spinbox.valueChanged.connect(self.spinbox_changed)
+        self.sigChanged.emit()
+    
+    def spinbox_changed(self, val):
+        self._val = self.to_log(val)
+        self.slider.valueChanged.disconnect(self.slider_changed)
+        self.slider.setValue(self._val)
+        self.slider.valueChanged.connect(self.slider_changed)
+        self.sigChanged.emit()
+
+    def updateDisplayLabel(self, value=None):
+        if value is None:
+            value = self.param.value()
+        opts = self.param.opts
+        if value is None:
+            text = u''
+        else:
+            text = u'{}'.format(self._val)
+        self.displayLabel.setText(text)
+
+
+class LogFloatParameterItem(types.WidgetParameterItem):
+    sigChanged = pyqtSignal
+    def __init__(self, param, depth):
+        types.WidgetParameterItem.__init__(self, param, depth)
+    def makeWidget(self):
+        w = SpinAndSliderWidget()
+        return w
+
+class LogFloatParameter(Parameter):
+    itemClass = LogFloatParameterItem
+    sigActivated = pyqtSignal(object)
+    def activate(self):
+        self.sigActivated.emit(self)
+        self.emitStateChanged('activated', None)
+
+registerParameterType('logfloat', LogFloatParameter, override=True)
 
 
 

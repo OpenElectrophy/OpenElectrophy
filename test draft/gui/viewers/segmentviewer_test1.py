@@ -14,7 +14,7 @@ from create_segment import *
 
 def test1():
     app = QApplication([ ])
-    w1 = SegmentViewer(segment = seg)
+    w1 = SegmentViewer(segment = seg, xsize = 15)
     w1.show()
     app.exec_()
 

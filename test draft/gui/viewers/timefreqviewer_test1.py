@@ -23,32 +23,38 @@ def test1():
     #~ print analogsignals[0].t_start, analogsignals[0].t_stop
     s.set_start_stop(t_start= analogsignals[0].t_start.magnitude-2, t_stop = analogsignals[0].t_stop.magnitude+2)
     
-    w = TimeFreqViewer(analogsignals = analogsignals, nb_column= 4)
+    w = TimeFreqViewer(analogsignals = analogsignals)
     w.show()
     s.time_changed.connect(w.seek)
     s.fast_time_changed.connect(w.fast_seek)
 
     
-    s.seek(0.)
+    #~ s.seek(0.)
     
     app.exec_()
 
 
 def test2():
-
     paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
-                                                    children = [ {'name': 'xsize', 'type': 'float', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
-                                                                        {'name': 'f_start', 'type': 'float', 'value': 3., 'step': 1.},
-                                                                        {'name': 'f_stop', 'type': 'float', 'value': 90., 'step': 1.},
-                                                                        {'name': 'deltafreq', 'type': 'float', 'value': 3., 'step': 1.,  'limits' : (0.001, 1.e6)},
-                                                                        {'name': 'f0', 'type': 'float', 'value': 2.5, 'step': 0.1},
-                                                                        #~ {'name': 'sampling_rate', 'type': 'float', 'value': self.global_sampling_rate.magnitude, 'step':  10},
-                                                                        {'name': 'normalisation', 'type': 'float', 'value': 0., 'step': 0.1},
-                                                                        
-                                                                    ])    
+                                                children = [ {'name': 'xsize', 'type': 'float', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
+                                                                    {'name': 'nb_column', 'type': 'int', 'value': 2},
+                                                                ])
+    
+    paramTimeFreq = pg.parametertree.Parameter.create( name='Time frequency options', type='group',
+                                                children = [{'name': 'f_start', 'type': 'float', 'value': 3., 'step': 1.},
+                                                                    {'name': 'f_stop', 'type': 'float', 'value': 90., 'step': 1.},
+                                                                    {'name': 'deltafreq', 'type': 'float', 'value': 3., 'step': 1.,  'limits' : (0.001, 1.e6)},
+                                                                    {'name': 'f0', 'type': 'float', 'value': 2.5, 'step': 0.1},
+                                                                    {'name': 'normalisation', 'type': 'float', 'value': 0., 'step': 0.1},
+                                                                ])
     
     app = QApplication([ ])
-    w = TimefreqViewerParameters(analogsignals = analogsignals, paramGlobal = paramGlobal)
+    w = timefreqViewerParameters = TimefreqViewerParameters(paramGlobal = paramGlobal, 
+                                                                                                                            paramTimeFreq = paramTimeFreq, 
+                                                                                                                            analogsignals = analogsignals)
+        
+
+    
     w.show()
     sys.exit(app.exec_())
 

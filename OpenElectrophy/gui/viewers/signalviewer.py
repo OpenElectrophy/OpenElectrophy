@@ -32,7 +32,7 @@ class SignalViewer(ViewerBase):
     def __init__(self, parent = None,
                             analogsignals = [ ],
                             spiketrains_on_signals = None,
-                            xsize = 10.,  xzoom_limits = (0.001, 1000),
+                            xsize = 10.,
                             ylims ='auto',
                             max_point_if_decimate = 2000,
                             show_toolbar = True,
@@ -40,8 +40,6 @@ class SignalViewer(ViewerBase):
                             ):
                             
         super(SignalViewer,self).__init__(parent)
-        #~ ,xsize = xsize, 
-                                #~ xzoom_limits = xzoom_limits, show_toolbar = show_toolbar, **kargs)
         
         self.max_point_if_decimate = max_point_if_decimate
 
@@ -73,7 +71,7 @@ class SignalViewer(ViewerBase):
         
 
         self.paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
-                                                    children = [ {'name': 'xsize', 'type': 'float', 'value': 10., 'step': 0.1},
+                                                    children = [ {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1},
                                                                         {'name': 'ylims', 'type': 'range', 'value': [-10., 10.] },
                                                                         {'name': 'background_color', 'type': 'color', 'value': 'k' },
                                                                     ])
@@ -254,7 +252,9 @@ class SignalViewerParameters(QWidget):
         self.analogsignals = analogsignals
         self.paramGlobal = paramGlobal
         
-        self.all_abs_max = np.array([ np.max(np.abs(anasig.magnitude)) for anasig in self.analogsignals ])
+        #~ self.all_abs_max = np.array([ np.max(np.abs(anasig.magnitude)) for anasig in self.analogsignals ])
+        self.all_abs_max = np.array([ np.abs(np.std(anasig.magnitude)) for anasig in self.analogsignals ])
+        
         
 
         self.mainlayout = QVBoxLayout()
@@ -353,7 +353,7 @@ class SignalViewerParameters(QWidget):
         for i, pSignal in enumerate(self.paramSignals):
             pSignal.param('visible').setValue(selected[i])
             if selected[i]:
-                pSignal.param('gain').setValue(gains[i])
+                pSignal.param('gain').setValue(gains[i]*2)
                 pSignal.param('offset').setValue(dy*o+ylims[0])
                 o+=1
     

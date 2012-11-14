@@ -48,7 +48,7 @@ def test1():
 
 def test2():
     paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
-                                                    children = [ {'name': 'xsize', 'type': 'float', 'value': 10., 'step': 0.1},
+                                                    children = [ {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1},
                                                                         {'name': 'ylims', 'type': 'range', 'value': [-10., 10.] },
                                                                         {'name': 'background_color', 'type': 'color', 'value': 'k' },
                                                                     ])    
@@ -61,5 +61,5 @@ def test2():
 
 
 if __name__ == '__main__' :
-    #~ test1()
-    test2()
+    test1()
+    #~ test2()
