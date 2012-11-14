@@ -21,7 +21,7 @@ def test1():
     s = TimeSeeker(refresh_interval = 0.1)
     s.show()
     #~ print analogsignals[0].t_start, analogsignals[0].t_stop
-    s.change_start_stop(t_start= analogsignals[0].t_start.magnitude-2, t_stop = analogsignals[0].t_stop.magnitude+2)
+    s.set_start_stop(t_start= analogsignals[0].t_start.magnitude-2, t_stop = analogsignals[0].t_stop.magnitude+2)
     
     w = TimeFreqViewer(analogsignals = analogsignals, nb_column= 4)
     w.show()
@@ -34,6 +34,23 @@ def test1():
     app.exec_()
 
 
+def test2():
+
+    paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
+                                                    children = [ {'name': 'xsize', 'type': 'float', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
+                                                                        {'name': 'f_start', 'type': 'float', 'value': 3., 'step': 1.},
+                                                                        {'name': 'f_stop', 'type': 'float', 'value': 90., 'step': 1.},
+                                                                        {'name': 'deltafreq', 'type': 'float', 'value': 3., 'step': 1.,  'limits' : (0.001, 1.e6)},
+                                                                        {'name': 'f0', 'type': 'float', 'value': 2.5, 'step': 0.1},
+                                                                        #~ {'name': 'sampling_rate', 'type': 'float', 'value': self.global_sampling_rate.magnitude, 'step':  10},
+                                                                        {'name': 'normalisation', 'type': 'float', 'value': 0., 'step': 0.1},
+                                                                        
+                                                                    ])    
+    
+    app = QApplication([ ])
+    w = TimefreqViewerParameters(analogsignals = analogsignals, paramGlobal = paramGlobal)
+    w.show()
+    sys.exit(app.exec_())
 
 
 
@@ -42,3 +59,4 @@ def test1():
 
 if __name__ == '__main__' :
     test1()
+    #~ test2()

@@ -64,10 +64,12 @@ class SignalViewer(ViewerBase):
         viewBox.clicked.connect(self.open_configure_dialog)
         
         self.graphicsview  = pg.GraphicsView()#useOpenGL = True)
+        self.mainlayout.addWidget(self.graphicsview)
+        
         self.plot = pg.PlotItem(viewBox = viewBox)
         self.graphicsview.setCentralItem(self.plot)
 
-        self.mainlayout.addWidget(self.graphicsview)
+        
         
 
         self.paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
@@ -110,9 +112,9 @@ class SignalViewer(ViewerBase):
     def set_analosignals(self, analogsignals):
         self.analogsignals = analogsignals
         
-        self.sigColorAndStyle = SignalViewerParameters(paramGlobal = self.paramGlobal, analogsignals = analogsignals, parent= self)
-        self.sigColorAndStyle.setWindowFlags(Qt.Window)
-        self.paramSignals = self.sigColorAndStyle.paramSignals
+        self.signalViewerParameters = SignalViewerParameters(paramGlobal = self.paramGlobal, analogsignals = analogsignals, parent= self)
+        self.signalViewerParameters.setWindowFlags(Qt.Window)
+        self.paramSignals = self.signalViewerParameters.paramSignals
         
         
         
@@ -164,8 +166,8 @@ class SignalViewer(ViewerBase):
                 spike_values = ana[spike_indexes].magnitude
         
     def open_configure_dialog(self):
-        self.sigColorAndStyle.setWindowFlags(Qt.Window)
-        self.sigColorAndStyle.show()
+        self.signalViewerParameters.setWindowFlags(Qt.Window)
+        self.signalViewerParameters.show()
     
     def refreshColorAndStyle(self, param, changes):
         n = self.paramSignals.index(param)
@@ -263,9 +265,6 @@ class SignalViewerParameters(QWidget):
         
         h = QHBoxLayout()
         self.mainlayout.addLayout(h)
-        
-
-        
         
         self.paramRoot = pg.parametertree.Parameter.create(name='AnalogSignals', type='group', children=[ ])
         self.paramSignals = [ ]

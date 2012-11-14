@@ -439,8 +439,8 @@ def get_analogsignal_slice(ana, t_start, t_stop, return_t_vect = True, decimate 
         else:
             return slice(0,0)
     else:
-        ind_start = int(((t_start-ana.t_start)*ana.sampling_rate).simplified)
-        ind_stop = int(((t_stop-ana.t_start)*ana.sampling_rate).simplified)
+        ind_start = int(np.rint(((t_start-ana.t_start)*ana.sampling_rate).simplified))
+        ind_stop = int(np.rint(((t_stop-ana.t_start)*ana.sampling_rate).simplified))
         #~ ind_stop = int(((t_stop-t_start)*ana.sampling_rate).simplified) + ind_start # FIXME
         step = 1
         if decimate is not None:
