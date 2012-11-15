@@ -3,7 +3,8 @@ import numpy as np
 import quantities as pq
 import neo
 
-nb_sig = 8
+nb_sig = 1
+nb_epocharrays = 4
 
 #~ sig_size = 3.6e8
 #~ sig_size = 1e7
@@ -13,6 +14,8 @@ nb_spike =  10e3
 fs = 10.e3
 t = np.arange(sig_size)/fs
 t_start = -5.
+epoch_size = 100
+dur = sig_size/fs
 
 analogsignals = [ ]
 spiketrains_on_signals = [ ]
@@ -27,9 +30,24 @@ for i in range(nb_sig):
         spiketrains_on_signals[-1].append(neo.SpikeTrain(spikepos[i*nb_spike/2:(i+1)*nb_spike/2]/fs+t_start,
                     t_start = t_start, t_stop = t_start+sig_size/fs, units = 's', color = color))
 
+epocharrays = [ ]
+for i in range(nb_epocharrays):
+    durations = np.random.rand(epoch_size)*(dur/epoch_size/2)
+    interv = np.random.rand(epoch_size)*(dur/epoch_size/2)+dur/epoch_size/4
+    times = np.cumsum(durations)+np.cumsum(interv)
+    ea = neo.EpochArray(times = times,
+                                        durations = durations,
+                                        name = 'epoch {}'.format(i))
+    epocharrays.append(ea)
 
+
+ea = neo.EpochArray(times = [1., 2., 3.]*pq.s,
+                                        durations = [.5,.3,.6]*pq.s,
+                                        name = 'yep')
+epocharrays.append(ea)
 
 seg = neo.Segment(name = 'test')
 
 seg.analogsignals = analogsignals
+seg.epocharrays = epocharrays
 #~ seg.spiketrains = 

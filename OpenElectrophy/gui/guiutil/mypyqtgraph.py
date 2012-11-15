@@ -129,9 +129,9 @@ class SpinAndSliderWidget(QWidget):
         self.sigChanged.emit()
     
     def spinbox_changed(self, val):
-        self._val = self.to_log(val)
+        self._val = val
         self.slider.valueChanged.disconnect(self.slider_changed)
-        self.slider.setValue(self._val)
+        self.slider.setValue(self.to_log(self._val))
         self.slider.valueChanged.connect(self.slider_changed)
         self.sigChanged.emit()
 
