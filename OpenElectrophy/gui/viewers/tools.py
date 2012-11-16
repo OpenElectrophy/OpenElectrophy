@@ -478,4 +478,19 @@ class OptionsViewBox(pg.ViewBox):
 
 
 
+def find_best_start_stop(segment = None,
+                                            analogsignals = None,
+                                            ):
+    
+    if segment is not None:
+        analogsignals = segment.analogsignals
+
+    t_start = 0.*pq.s
+    t_stop = 10.*pq.s
+    for anasig in analogsignals:
+        t_start = min(anasig.t_start, t_start)
+        t_stop = max(anasig.t_stop, t_stop)
+    eps = (t_stop-t_start).magnitude/20.
+    
+    return t_start.magnitude-eps, t_stop.magnitude+eps
 

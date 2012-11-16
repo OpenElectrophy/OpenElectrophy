@@ -86,6 +86,66 @@ class CreateTop(MenuItem):
         explorer.refresh()
     
 
+
+
+class SaveToFile(MenuItem):
+    name = 'Save Block(s) to file'
+    table = 'Block'
+    mode = 'homogeneous'
+    icon = ':/document-save.png'
+
+# Open Viewers
+from .viewers import SegmentViewer, SignalViewer, TimeFreqViewer
+
+class DrawSegment(MenuItem):
+    name = 'View Segment'
+    table = 'Segment'
+    mode = 'unique'
+    icon = ':/draw-segment.png'
+    def execute(self, session,treeview, id, tablename,treedescription, explorer,  **kargs):
+        class_ = treedescription.tablename_to_class[tablename]
+        neo_seg = session.query(class_).get(id).to_neo(cascade = True)
+        
+        w= SegmentViewer(segment = neo_seg, parent = treeview)
+        w.setWindowFlags(Qt.Window)
+        w.show()
+
+class DrawAnalogSignal(MenuItem):
+    name = 'View AnalogSignals'
+    table = 'AnalogSignal'
+    mode = 'homogeneous'
+    icon = ':/draw-analogsignals.png'
+    def execute(self, session,treeview, ids, treedescription,tablename,    **kargs):
+        class_ = treedescription.tablename_to_class[tablename]
+        analogsignals = [ ]
+        for id in ids:
+            neo_anasig = session.query(class_).get(id).to_neo(cascade = True)
+            analogsignals.append(neo_anasig)
+        w= SignalViewer(analogsignals = analogsignals, parent = treeview, with_time_seeker = True)
+        w.setWindowFlags(Qt.Window)
+        w.show()
+
+class DrawTimeFreqViewer(MenuItem):
+    name = 'View Time Frequency'
+    table = 'AnalogSignal'
+    mode = 'homogeneous'
+    icon = ':/draw-timefreq.png'
+    def execute(self, session,treeview, ids, treedescription,tablename,    **kargs):
+        class_ = treedescription.tablename_to_class[tablename]
+        analogsignals = [ ]
+        for id in ids:
+            neo_anasig = session.query(class_).get(id).to_neo(cascade = True)
+            analogsignals.append(neo_anasig)
+        w= TimeFreqViewer(analogsignals = analogsignals, parent = treeview, with_time_seeker = True)
+        w.setWindowFlags(Qt.Window)
+        w.show()
+
+
+
+
+
+
+
 class EditRecordingChannelGroups(MenuItem):
     name = 'Edit RecordingChannelGroups'
     table = 'Block'
@@ -100,11 +160,7 @@ class EditRecordingChannelGroups(MenuItem):
             explorer.refresh()
 
 
-class SaveToFile(MenuItem):
-    name = 'Save Block(s) to file'
-    table = 'Block'
-    mode = 'homogeneous'
-    icon = ':/document-save.png'
+
 
 class EditOscillation(MenuItem):
     name = 'Edit Oscillations'
@@ -131,21 +187,21 @@ class SpikeSorting(MenuItem):
         w.setWindowFlags(Qt.Window)
         w.show()
 
-
-
-
-
-class DetecRespiratoryCycle(MenuItem):
+class DetectRespiratoryCycle(MenuItem):
     name = 'Detect respiratory cycles'
     table = 'RespirationSignal'
     mode = 'unique'
     icon = ':/repiration.png'
+    
+    
+    
 
 
 
 context_menu = [ Delete, Edit, ChangeParent,CreateTop, 
+                DrawSegment, DrawAnalogSignal, DrawTimeFreqViewer, 
                 EditRecordingChannelGroups, SaveToFile,
                 EditOscillation, 
                 SpikeSorting,
-                DetecRespiratoryCycle,
+                DetectRespiratoryCycle,
                 ]

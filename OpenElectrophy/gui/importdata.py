@@ -4,6 +4,8 @@ widget for importing data into a db
     
 """
 
+# TODO : populate_RecordingChannel
+
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -26,8 +28,12 @@ import time
 
 from ..core.base import OEBase
 
+from ..io import iolist
+
 import neo
-from neo.io.tools import create_many_to_one_relationship, populate_RecordingChannel
+from neo.io.tools import populate_RecordingChannel
+
+
 
 
 import sqlalchemy
@@ -35,7 +41,7 @@ import sqlalchemy
 
 # constructing possibles input and output
 read_io_list = OrderedDict()
-for io in neo.io.iolist:
+for io in iolist:
     if io.name is not None:
         read_io_list[io.name] = io
     else:
@@ -188,17 +194,18 @@ class ImportData(QDialog) :
         io_kargs = { }
         if self.inputOptions is not None:
             io_kargs = self.inputOptions.to_dict()
-            
-            
+        
+        options = self.generalOptions.to_dict()
+        
         if self.use_thread:
-            self.threadimport = QImportThread(self, names, self.ioclass, io_kargs, self.dbinfo)
+            self.threadimport = QImportThread(self, names, self.ioclass, io_kargs, self.dbinfo, options)
             self.threadimport.finished.connect(self.importFinished)
             self.threadimport.one_file_done.connect(self.promptOneFileDone)
             self.setEnabled(False)
             self.threadimport.start()
         else:
             for name in names:
-                read_and_import(name, self.ioclass,io_kargs, self.dbinfo)
+                read_and_import(name, self.ioclass,io_kargs, self.dbinfo, options)
             self.accept()
     
     
@@ -228,13 +235,14 @@ class ImportData(QDialog) :
 class QImportThread(QThread):
     one_file_done = pyqtSignal(unicode)
     
-    def __init__(self, parent, names, ioclass, io_kargs, dbinfo):
+    def __init__(self, parent, names, ioclass, io_kargs, dbinfo, options):
         super(QImportThread, self).__init__(parent)
         self.names = names
         self.ioclass = ioclass
         self.error_list = [ ]
         self.io_kargs = io_kargs
         self.dbinfo = dbinfo
+        self.options = options
         
         
     def run(self):
@@ -242,7 +250,7 @@ class QImportThread(QThread):
             print 'runnning', name
             #try :
             if 1:
-                read_and_import(name, self.ioclass,self.io_kargs, self.dbinfo)
+                read_and_import(name, self.ioclass,self.io_kargs, self.dbinfo, self.options)
             #except:
              #       self.error_list.append(name)
             self.one_file_done.emit('{}'.format(name))
@@ -250,7 +258,7 @@ class QImportThread(QThread):
 
 
 
-def read_and_import(name, ioclass,io_kargs, dbinfo):
+def read_and_import(name, ioclass,io_kargs, dbinfo, options):
     #~ print 'read_and_import', name
     
     if ioclass.mode =='file':
@@ -263,6 +271,10 @@ def read_and_import(name, ioclass,io_kargs, dbinfo):
         reader = ioclass()
     
     neo_block = reader.read(** io_kargs)
+    if options['populate_recordingchannel'] and neo.RecordingChannelGroup not in reader.readable_objects:
+        print 'populate_RecordingChannel'
+        populate_RecordingChannel(neo_block, remove_from_annotation = False)
+    
     oe_block = OEBase.from_neo(neo_block, dbinfo.mapped_classes, cascade = True)
     oe_block.file_origin = os.path.basename(name)
     

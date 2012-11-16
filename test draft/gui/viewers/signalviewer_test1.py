@@ -58,8 +58,14 @@ def test2():
     w.show()
     sys.exit(app.exec_())
 
-
+def test3():
+    app = QApplication([ ])
+    
+    w1 = SignalViewer(analogsignals = analogsignals, spiketrains_on_signals = None, xsize = 2, with_time_seeker = True)
+    w1.show()
+    sys.exit(app.exec_())
 
 if __name__ == '__main__' :
-    test1()
+    #~ test1()
     #~ test2()
+    test3()

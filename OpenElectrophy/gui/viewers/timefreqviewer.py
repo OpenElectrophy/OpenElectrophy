@@ -42,6 +42,7 @@ class TimeFreqViewer(ViewerBase):
     """
     def __init__(self, parent = None,
                             analogsignals = None,
+                            with_time_seeker = False,
                             ):
                             
         super(TimeFreqViewer,self).__init__(parent)
@@ -54,7 +55,7 @@ class TimeFreqViewer(ViewerBase):
         n = len(analogsignals)
         
         
-        mainlayout = QHBoxLayout()
+        mainlayout = QVBoxLayout()
         self.setLayout(mainlayout)
 
         self.grid = QGridLayout()
@@ -99,7 +100,13 @@ class TimeFreqViewer(ViewerBase):
         for p in self.paramSignals:
             p.param('visible').sigValueChanged.connect(self.change_grid)
             p.param('clim').sigValueChanged.connect(self.clim_changed)
-        
+
+        if with_time_seeker:
+            self.timeseeker = TimeSeeker()
+            mainlayout.addWidget(self.timeseeker)
+            self.timeseeker.set_start_stop(*find_best_start_stop(analogsignals =analogsignals))
+            self.timeseeker.time_changed.connect(self.seek)
+            self.timeseeker.fast_time_changed.connect(self.fast_seek)        
 
     def get_xsize(self):
         return self.paramGlobal.param('xsize').value()

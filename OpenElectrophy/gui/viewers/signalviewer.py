@@ -33,9 +33,9 @@ class SignalViewer(ViewerBase):
                             analogsignals = [ ],
                             spiketrains_on_signals = None,
                             xsize = 10.,
-                            ylims ='auto',
+                            #~ ylims ='auto',
                             max_point_if_decimate = 2000,
-                            show_toolbar = True,
+                            with_time_seeker = False,
                             **kargs
                             ):
                             
@@ -43,7 +43,7 @@ class SignalViewer(ViewerBase):
         
         self.max_point_if_decimate = max_point_if_decimate
 
-        self.mainlayout = QHBoxLayout()
+        self.mainlayout = QVBoxLayout()
         self.setLayout(self.mainlayout)
         
         
@@ -86,6 +86,15 @@ class SignalViewer(ViewerBase):
         self.set_ylims([-10, 10])
         
         self.paramGlobal.sigTreeStateChanged.connect(lambda : self.refresh(fast = True))
+        
+        if with_time_seeker:
+            self.timeseeker = TimeSeeker()
+            self.mainlayout.addWidget(self.timeseeker)
+            self.timeseeker.set_start_stop(*find_best_start_stop(analogsignals =analogsignals))
+            self.timeseeker.time_changed.connect(self.seek)
+            self.timeseeker.fast_time_changed.connect(self.fast_seek)
+            
+        
     
     def get_xsize(self):
         return self.paramGlobal.param('xsize').value()

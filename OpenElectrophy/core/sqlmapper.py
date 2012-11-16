@@ -885,6 +885,7 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
         
         # one to many relationship
         for childname in genclass.one_to_many_relationship:
+            #~ print genclass.tablename, childname
             properties[childname.lower()+'s'] = orm.relationship(tablename_to_class[childname],
                                                                 primaryjoin = table.c.id==metadata.tables[childname].c[table.name.lower()+'_id'],
                                                                 #~ order_by = metadata.tables[childname].c['id'],

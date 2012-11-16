@@ -155,6 +155,7 @@ class OEBase(object):
                 for parentname in self.many_to_one_relationship:
                     if hasattr(self, parentname.lower()):
                         OEparent = getattr(self, parentname.lower())
+                        if OEparent is None: continue
                         neoparent = OEparent.neoinstance
                         if neoparent is None:
                             neoparent = OEparent.to_neo(cascade=True)

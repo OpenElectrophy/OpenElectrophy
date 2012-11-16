@@ -6,7 +6,7 @@ sys.path.append('../..')
 from OpenElectrophy import *
 import quantities as pq
 
-#~ url = 'sqlite://'
+url = 'sqlite://'
 
 #~ url = 'sqlite:///test_db_1.sqlite'
 #~ if os.path.exists('test_db_1.sqlite'):
@@ -51,6 +51,7 @@ for i in range(3):
     ana.signal = pq.Quantity( [1.,2.,3.], units = 'mV')
     ana.t_start = 50.23 * pq.s
     seg.analogsignals.append(ana)
+    print ana.segment
 
 
 for i in range(1):

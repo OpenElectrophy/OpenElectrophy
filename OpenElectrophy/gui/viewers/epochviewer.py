@@ -176,7 +176,7 @@ class EpochViewerParameters(QWidget):
         self.paramRoot = pg.parametertree.Parameter.create(name='epocharrays', type='group', children=[ ])
         self.paramEpochs = [ ]
         for i, anasig in enumerate(self.epocharrays):
-            pSignal = pg.parametertree.Parameter.create( name='AnalogSignal {}'.format(i), type='group', children = param_by_channel)
+            pSignal = pg.parametertree.Parameter.create( name='EpochArray {}'.format(i), type='group', children = param_by_channel)
             for k in ['channel_name', 'channel_index']:
                 if k in anasig.annotations:
                     pSignal.param(k).setValue(anasig.annotations[k])
@@ -205,7 +205,7 @@ class EpochViewerParameters(QWidget):
         self.tree3.setParameters(self.paramGlobal, showTop=True)
 
         self.paramSelection = pg.parametertree.Parameter.create( name='Multiple change for selection', type='group',
-                                                    children = param_by_channel[2:], tip= u'This options apply on selection AnalogSignal on left list')
+                                                    children = param_by_channel[2:], tip= u'This options apply on selection EpochArray on left list')
         self.paramSelection.sigTreeStateChanged.connect(self.paramSelectionChanged)
         self.tree1 = pg.parametertree.ParameterTree()
         self.tree1.header().hide()

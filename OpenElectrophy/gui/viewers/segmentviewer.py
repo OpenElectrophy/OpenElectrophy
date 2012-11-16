@@ -24,10 +24,14 @@ class SegmentViewer(MultiViewer):
         self.xsize_changer.sigChanged.connect(self.change_xsize)
         
         self.seg = segment
-        self.set_start_stop_auto()
+        self.timeseeker.set_start_stop(*find_best_start_stop(segment =segment))
+        self.timeseeker.seek(self.timeseeker.t_start)
         
-        self.add_analogsignals( analogsignals = self.seg.analogsignals )
-        self.add_timefreqs( analogsignals = self.seg.analogsignals)
+        if len(self.seg.analogsignals) > 0:
+            self.add_analogsignals( analogsignals = self.seg.analogsignals )
+            #~ self.add_timefreqs( analogsignals = self.seg.analogsignals)
+        if len(self.seg.epocharrays) > 0:
+            self.add_epochs(epocharrays = self.seg.epocharrays)
         
         self.change_xsize(xsize)
         
@@ -39,14 +43,5 @@ class SegmentViewer(MultiViewer):
         for subviewer in self.subviewers:
             subviewer.viewer.xsize = xsize
     
-    def set_start_stop_auto(self):
-        t_start = np.inf*pq.s
-        t_stop = -np.inf*pq.s
-        for anasig in self.seg.analogsignals:
-            t_start = min(anasig.t_start, t_start)
-            t_stop = max(anasig.t_stop, t_stop)
-        
-        eps = (t_stop-t_start).magnitude/20.
-        self.timeseeker.set_start_stop(t_start= t_start.magnitude-eps, t_stop = t_stop.magnitude+eps)
-        self.timeseeker.seek(t_start.magnitude)
-        
+
+
