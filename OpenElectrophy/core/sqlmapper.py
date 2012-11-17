@@ -323,13 +323,14 @@ def create_one_to_many_relationship_if_not_exists(parenttable, childtable):
     ind.create()
 
 def create_many_to_many_relationship_if_not_exists(table1, table2, metadata):
-    xref1 = table1.name+'XREF'+table2.name
-    xref2 = table2.name+'XREF'+table1.name
-    if xref1 in metadata.tables: return
-    if xref2 in metadata.tables: return
-    c1 = Column(table1.name.lower()+'_id', Integer, ForeignKey(table1.name+'.id'), index = True)
-    c2 = Column(table2.name.lower()+'_id', Integer, ForeignKey(table2.name+'.id'), index = True)
-    table =  Table(xref1, metadata, c1, c2  )
+    if table1.name>table2.name:
+        xref_table = table1.name+'XREF'+table2.name
+    else:
+        xref_table = table2.name+'XREF'+table1.name
+    if xref_table in metadata.tables: return
+    c1 = Column(table1.name.lower()+'_id', Integer, ForeignKey(table1.name+'.id'), index = True, primary_key = True)
+    c2 = Column(table2.name.lower()+'_id', Integer, ForeignKey(table2.name+'.id'), index = True, primary_key = True)
+    table =  Table(xref_table, metadata, c1, c2  )
     table.create()
 
 
@@ -898,17 +899,20 @@ def map_generated_classes(engine, generated_classes, relationship_lazy = 'select
                                                                 )
         # many to many relationship
         for tablename2 in genclass.many_to_many_relationship:
-            xref = table.name+'XREF'+tablename2
-            if xref not in metadata.tables:
-                xref = tablename2+'XREF'+table.name
-            xreftable =metadata.tables[xref]
-            properties[tablename2.lower()+'s'] = orm.relationship(tablename_to_class[tablename2],
-                                                                                        primaryjoin = table.c.id==xreftable.c[table.name.lower()+'_id'],
-                                                                                        secondary = xreftable,
-                                                                                        secondaryjoin = metadata.tables[tablename2].c.id==xreftable.c[tablename2.lower()+'_id'],
-                                                                                        lazy = ((relationship_lazy != "immediate") and relationship_lazy) or 'select',
-                                                                                        foreign_keys = [xreftable.c[table.name.lower()+'_id'],  xreftable.c[tablename2.lower()+'_id']],
-                                                                                        )
+            if table.name>tablename2:
+                # in other case is done with bacref
+                xref = table.name+'XREF'+tablename2
+                xreftable =metadata.tables[xref]
+                
+                properties[tablename2.lower()+'s'] = orm.relationship(tablename_to_class[tablename2],
+                                                                                            primaryjoin = table.c.id==xreftable.c[table.name.lower()+'_id'],
+                                                                                            secondary = xreftable,
+                                                                                            secondaryjoin = metadata.tables[tablename2].c.id==xreftable.c[tablename2.lower()+'_id'],
+                                                                                            lazy = ((relationship_lazy != "immediate") and relationship_lazy) or 'select',
+                                                                                            foreign_keys = [xreftable.c[table.name.lower()+'_id'],  xreftable.c[tablename2.lower()+'_id']],
+                                                                                            backref = orm.backref(table.name.lower()+'s'),
+                                                                                            )
+                                                                                        
             
             # one to one relationship with NumpyArrayTable
         for attrname, attrtype in genclass.usable_attributes.items():

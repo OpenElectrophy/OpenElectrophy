@@ -114,7 +114,7 @@ class OEBase(object):
                         OEchild = child.OEinstance
                     if OEchild not in getattr(OEinstance, childname.lower()+'s'):
                         getattr(OEinstance, childname.lower()+'s').append( OEchild )
-                        getattr(OEchild, OEinstance.tablename.lower()+'s').append( OEinstance )
+                        #~ getattr(OEchild, OEinstance.tablename.lower()+'s').append( OEinstance ) # DONE with orm.backref
             for childname in OEinstance.one_to_many_relationship:
                 if not hasattr(neoinstance, childname.lower()+'s'): continue
                 for child in getattr(neoinstance, childname.lower()+'s'):

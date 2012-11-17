@@ -22,8 +22,6 @@ from guiutil.icons import icons
 
 from sqlalchemy.sql import select
 
-#TODO context menu
-
 from operator import itemgetter, attrgetter
 
 import time
