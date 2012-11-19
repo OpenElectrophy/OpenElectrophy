@@ -72,7 +72,7 @@ def generate_block_for_sorting(
             else:
                 signal = noise_ratio*np.random.randn(sig_size)
             
-            anasig = neo.AnalogSignal(signal = signal, units = 'mV', sampling_rate = sampling_rate, t_start = t_start)
+            anasig = neo.AnalogSignal(signal = signal, units = 'mV', sampling_rate = sampling_rate, t_start = t_start, channel_index = j)
             seg.analogsignals.append(anasig)
             rc.analogsignals.append(anasig)
             
