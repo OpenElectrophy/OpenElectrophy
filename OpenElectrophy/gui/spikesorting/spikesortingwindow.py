@@ -19,11 +19,16 @@ import numpy as np
 # TODO: change toolchain
 
 class SpikeSortingWindow(QMainWindow):
-    def __init__(self, spikesorter = None, settings = None, parent = None ):
+    db_changed = pyqtSignal()
+    def __init__(self, spikesorter = None, settings = None, 
+                        session = None, dbinfo = None, parent = None ):
+                        
         super(SpikeSortingWindow, self).__init__(parent = parent)
         
         self.spikesorter = spikesorter
         sps = self.spikesorter
+        self.session = session
+        self.dbinfo = dbinfo
         self.settings = settings
         
         
@@ -123,10 +128,11 @@ class SpikeSortingWindow(QMainWindow):
         
         self.toolbar.addSeparator()
         
-        #~ but =  QToolButton(toolButtonStyle = Qt.ToolButtonTextBesideIcon,
-                                            #~ icon = QIcon(':/document-save.png' ),
-                                            #~ text = u'Save')
-        #~ but.clicked.connect(self.save)
+        but =  QToolButton(toolButtonStyle = Qt.ToolButtonTextBesideIcon,
+                                            icon = QIcon(':/document-save.png' ),
+                                            text = u'Save')
+        but.clicked.connect(self.save_to_database)
+        self.toolbar.addWidget(but)
         
         self.changeTemplate(self.templateNames[0])
         self.refresh_all( )
@@ -293,9 +299,26 @@ class SpikeSortingWindow(QMainWindow):
         
         
         self.refresh_all()
-        
+    
+    ## Save 
+    def save_to_database(self):
+        msg = u'Units and SPikeTrain will saved directly in opened database.\n'
+        msg += 'Note that old Units and SpikeTrain related to this RecodingChannelGourp will be removed for ever'
+        mb = QMessageBox.warning(self,u'Save to database',msg, 
+                QMessageBox.Ok ,QMessageBox.Cancel  | QMessageBox.Default  | QMessageBox.Escape,
+                QMessageBox.NoButton)
+        if mb == QMessageBox.Cancel : return
+        if self.dbinfo.url =='sqlite://':
+            msg = u'You are working in read only neo file. (memory sqlite database).\n'
+            msg += u'Export this result to a file before closing OpenElectrophy \n'
+            mb = QMessageBox.warning(self,u'Save to database',msg, 
+                    QMessageBox.Ok ,QMessageBox.NoButton,
+                    QMessageBox.NoButton)
+        self.spikesorter.save_in_database(self.session, self.dbinfo)
+        self.db_changed.emit()
 
-        
+    def save_to_hdf5(self):
+        pass
 
 
 

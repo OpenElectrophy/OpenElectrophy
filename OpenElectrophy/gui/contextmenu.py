@@ -186,7 +186,8 @@ class SpikeSorting(MenuItem):
         neo_rcg = rcg.to_neo(cascade = True)
         
         spikesorter = SpikeSorter(neo_rcg)
-        w= SpikeSortingWindow(spikesorter = spikesorter, settings =settings)
+        w= SpikeSortingWindow(spikesorter = spikesorter, session = session, dbinfo = treedescription.dbinfo, settings =settings)
+        w.db_changed.connect(explorer.refresh)
         w.setParent(explorer)
         w.setWindowFlags(Qt.Window)
         w.show()
