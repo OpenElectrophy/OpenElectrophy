@@ -95,6 +95,8 @@ all_method_names = dict([ (method.__name__, method) for method in all_methods ])
 from matplotlib.cm import get_cmap
 from matplotlib.colors import ColorConverter
 
+from ..core import OEBase, open_db
+import neo
 
 
 class SpikeSorter(object):
@@ -112,8 +114,7 @@ class SpikeSorter(object):
                                     noise_ratio = 0.2,
                                     )
         recordingChannelGroup = bl.recordingchannelgroups[0]
-        spikesorter = SpikeSorter(recordingChannelGroup,
-                                initialState='full_band_signal')
+        spikesorter = SpikeSorter(recordingChannelGroup)
 
 
         # Apply a chain
@@ -135,7 +136,7 @@ class SpikeSorter(object):
         spikesorter.SklearnGaussianMixtureEm(n_cluster = 12, n_iter = 200 )
     
     """
-    def __init__(self,rcg,initial_state='full_band_signal'):
+    def __init__(self,rcg):
         """
         
         """
@@ -172,7 +173,7 @@ class SpikeSorter(object):
         # so we need a dictionnary of size NbSeg that have key=segment num and value=a slice
         # to go back from the compact array (spikeWaveforms,spikeWaveformFeatures, spikeClusters, ...)
         # to individual segments
-        self.seg_spike_slices = None
+        self.seg_spike_slices = { }
         
         # 4. Aligned spike waveforms
         self.spike_waveforms = None # 3D np.array (dtype float) that concatenate all detected spikes waveform
@@ -212,8 +213,7 @@ class SpikeSorter(object):
         self.cluster_displayed_subset = { } # a dict (keys = unique(self.spike_clusters) and value = vector of selected indexes
         self.selected_spikes = None # a vector bool to deal with spikes that are selected shpae = (NbSpk,)
         
-        self.initial_state = initial_state
-        self.initialize_state(rcg,state=initial_state)
+        self.initialize_from_rcg(rcg)
     
     
     aliases = { 'recordingchannels'  : 'rcs',
@@ -269,10 +269,9 @@ class SpikeSorter(object):
     def check_change_on_attributes(self, name):
         """
         This a home made dependency checking.
-        
-        Alvaro and Bartosz: if one day you read theses lines please do better.
         """
-        print 'check', name
+        # Alvaro and Bartosz: if one day you read theses lines please do better.
+        
         if not hasattr(self, name):
             # we are in __init__
             return 
@@ -287,7 +286,7 @@ class SpikeSorter(object):
         elif name == 'spike_clusters':
             self.cluster_names = { }
             self.refresh_cluster_names()
-        self.selected_spikes is None
+        #~ self.selected_spikes is None
 
     def init_seg_spike_slices(self):
         start = 0
@@ -304,10 +303,6 @@ class SpikeSorter(object):
         t += '-'*5+'\n'
         t += 'Nb segments: {}\n'.format(len(self.segs))
         t += 'Trodnes (nb channel): {}\n'.format(self.trodness)
-        t += 'Initial state: "{}"\n'.format(self.initial_state)
-        
-        if self.state == 'full_band_signal':
-            t += 'Signals are filtrered : {}\n'.format(not(self.filtered_sigs is None))
         
         
         if self.spike_index_array is not None:
@@ -358,7 +353,12 @@ class SpikeSorter(object):
         slice = self.seg_spike_slices[s]
         clusters_in_seg = self.spike_clusters[slice]
         spike_indexes = self.spike_index_array[s]
-        spike_times = (spike_indexes[clusters_in_seg == c]/self.sig_sampling_rate).rescale(units)
+        sr = self.sig_sampling_rate.rescale('Hz').magnitude
+        t_start = self.rcs[0].analogsignals[s].t_start.rescale('s').magnitude
+        spike_times = spike_indexes[clusters_in_seg == c]/sr+t_start
+        if units is not None:
+            spike_times = (spike_times * pq.s).rescale(units)
+            
         return spike_times
         
         
@@ -366,40 +366,49 @@ class SpikeSorter(object):
         
         
     
-    def initialize_state(self,recordingChannelGroup, state):
-        self.state=state
-
-        if state=='full_band_signal' or state=='filtered_band_signal':
+    def initialize_from_rcg(self,recordingChannelGroup):
+        
+        # Signals
+        if len(self.rcs[0].analogsignals) == len(self.segs):
             all_sigs= np.empty( (len(self.rcs), len(self.segs)), dtype = object)
             for i, rc in enumerate(self.rcs):
-                  for j, seg in enumerate(self.segs):
-                      all_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
+                for j, seg in enumerate(self.segs):
+                    all_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
             self.sig_sampling_rate = self.rcs[0].analogsignals[0].sampling_rate
-            self.full_band_sigs = all_sigs
-            self.filtered_sigs = all_sigs
-            #~ if state=='full_band_signal':
-                
-            #~ else:
-                #~ self.filtered_sigs = all_sigs
-
-        elif state=='spikes_and_waveforms' or state=='spikes_and_features':
+        else:
+            all_sigs = None
+        self.full_band_sigs = all_sigs
+        self.filtered_sigs = all_sigs
+        
+        
+        if len(self.rcg.units)>0:
             self.seg_spike_slices = { }
+            self.spike_index_array = np.empty((len(self.segs)), dtype = object)
             pos = 0
             clusters = [ ]
             waveforms = [ ]
             features = [ ]
             for s, seg in enumerate(self.segs):
+                
                 nb_spike_in_segs = 0
+                spike_index =  [ ]
                 for u, unit in enumerate(self.rcg.units):
                     self.cluster_names[u] = unit.name
+                    
+                    #~ sptr = seg.spiketrains[u]
                     sptr = None
                     for sptr in seg.spiketrains:
                         if sptr.unit == unit:
                             break
-                    if sptr is None : continue
+                    assert sptr is not None
                     
                     nb_spike_in_segs += sptr.size
                     clusters.append(np.ones(sptr.size, dtype = int)*u)
+                    
+                    if all_sigs is not None:
+                        ana = self.rcs[0].analogsignals[s]
+                        spike_index.append(np.array((sptr.rescale('s') - ana.t_start.rescale('s'))* ana.sampling_rate.rescale('Hz'), dtype = 'i8'))
+                        #~ print 's', s, 'u', u, spike_index[-1].size
                     
                     if sptr.waveforms is not None :
                         waveforms.append(sptr.waveforms.magnitude)
@@ -411,8 +420,11 @@ class SpikeSorter(object):
                 
                 self.seg_spike_slices[s] = slice(pos, pos+nb_spike_in_segs)
                 pos += nb_spike_in_segs
-
+                self.spike_index_array[s] = np.concatenate(spike_index)
+                #~ print 's',s, self.spike_index_array[s].size
+                
             self.spike_clusters = np.concatenate(clusters)
+            #~ print self.spike_clusters.size
 
             if waveforms != []:
                 self.spike_waveforms = np.concatenate(waveforms)
@@ -524,6 +536,73 @@ class SpikeSorter(object):
             if self.displayed_subset_size < ind.size:
                 ind = ind[:self.displayed_subset_size]
             self.cluster_displayed_subset[c]  = ind
+    
+    def populate_recordingchannelgroup(self, save_empty = True):
+        """
+        Populate neo.RecordingChannelGroup  with new sorting.
+        """
+        rcg = self.rcg
+        bl = rcg.block
+        
+        for u, unit in enumerate(rcg.units):
+            for s, seg in enumerate(bl.segments):
+                for sptr in unit.spiketrains:
+                    #~ if sptr in seg.spiketrains:
+                    if contains(seg.spiketrains, sptr):
+                        seg.spiketrains.remove(sptr)
+        rcg.units = [ ]
+        
+        self.refresh_cluster_names()
+        for c, name in self.cluster_names.items():
+            unit = neo.Unit(name = name)
+            rcg.units.append(unit)
+            for s, seg in enumerate(bl.segments):
+                ana = self.rcs[0].analogsignals[s]
+                sptr = neo.SpikeTrain(self.get_spike_times(s, c, units = 's'), t_start = ana.t_start, t_stop = ana.t_stop)
+                unit.spiketrains.append(sptr)
+                seg.spiketrains.append(sptr)
+        
+        return rcg
+    
+    def save_in_database(self, session, dbinfo):
+        rcg = self.rcg.OEinstance
+        bl = rcg.block
+        
+        for u, unit in enumerate(rcg.units):
+            for s, seg in enumerate(bl.segments):
+                for sptr in unit.spiketrains:
+                    if contains(seg.spiketrains, sptr):
+                        seg.spiketrains.remove(sptr)
+        for u, unit in enumerate(rcg.units):
+            session.delete(unit)
+        session.commit()
+        
+        neorcg = self.populate_recordingchannelgroup()
+        for u, neounit in enumerate(neorcg.units):
+            unit = OEBase.from_neo(neounit, dbinfo.mapped_classes, cascade = False)
+            rcg.units.append(unit)
+            for s, neoseg in enumerate(neorcg.block.segments):
+                neosptr = neoseg.spiketrains[u]
+                sptr = OEBase.from_neo(neosptr, dbinfo.mapped_classes, cascade = False)
+                unit.spiketrains.append(sptr)
+                neoseg.OEinstance.spiketrains.append(sptr)
+        session.commit()
+
+        
 
 
+def contains(l, s):
+    # hack for bug  for :
+    #    "SpikeTrain in list" 
+    # when SpikeTrain is not
+    
+    # should be
+    # return s in l
+    return np.any([ s is s2 for s2 in l ])
+    
+    
+    
+    
+    
+    
 

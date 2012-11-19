@@ -133,8 +133,9 @@ class SpikeSortingWindow(QMainWindow):
 
 
     def refresh_all(self, shuffle = True):
-        self.spikesorter.refresh_cluster_names()
-        self.spikesorter.refresh_colors()
+        self.spikesorter.check_display_attributes()
+        #~ self.spikesorter.refresh_cluster_names()
+        #~ self.spikesorter.refresh_colors()
         if shuffle:
             self.refresh_displayed_subset()
         import time

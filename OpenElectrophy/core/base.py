@@ -131,9 +131,16 @@ class OEBase(object):
         return OEinstance
 
     def to_neo(self, cascade = False):
+        # TODO ?
+        # cascade_m2m  casacde_o2m cascade_m2o
+        
         if self.neoclass is not None:
+            
             # attributes
             if self.neoinstance is None:
+                #~ print type(self), self.id
+                #~ print 'yep', self.id
+                #~ self.neoinstance = 'doing'
                 kargs = {}
                 for k in self.usable_attributes:
                     kargs[k] = getattr(self, k)
@@ -162,6 +169,7 @@ class OEBase(object):
                             neoparent = OEparent.neoinstance
                             if neoparent is None:
                                 neoparent = OEparent.to_neo(cascade=True)
+                                #~ neoparent = OEparent.to_neo(cascade=False)
                             if neoparent is not None:
                                 setattr(self.neoinstance, parentname.lower(), neoparent)
             

@@ -25,13 +25,14 @@ class Summary(SpikeSortingWidgetBase):
         
         sps = self.spikesorter
         
-        self.label = QLabel('<b>Block.name:</b> {}   <b>RecordingChannelGroup.name:</b> {}   <b>Trodness:</b>{}   <b>Initial state:</b> {}' .format( sps.rcg.block.name, sps.rcg.name,  sps.trodness, sps.initial_state) )
+        self.label = QLabel('<b>Block.name:</b> {}   <b>RecordingChannelGroup.name:</b> {}   <b>Trodness:</b>{} ' .format( sps.rcg.block.name, sps.rcg.name,  sps.trodness) )
         self.mainLayout.addWidget( self.label )
         
         g = QGridLayout()
         self.mainLayout.addLayout( g )
         
-        self.disp_signals = sps.initial_state =='full_band_signal' or sps.initial_state =='filtered_band_signal'
+        #~ self.disp_signals = sps.initial_state =='full_band_signal' or sps.initial_state =='filtered_band_signal'
+        self.disp_signals = sps.full_band_sigs is not None 
         if self.disp_signals:
             self.labelSignal = QLabel('AnalogSignal')
             g.addWidget( self.labelSignal, 0,0)
@@ -66,11 +67,10 @@ class Summary(SpikeSortingWidgetBase):
                 self.tableSignal.setVerticalHeaderItem( j, item)
             for i, seg in enumerate(sps.segs):
                 for j,rc  in enumerate(sps.rcs):
-                    if self.spikesorter.initial_state == 'full_band_signal':
-                        ana = sps.full_band_sigs[j,i]
-                    elif self.spikesorter.initial_state == 'filtered_signal':
+                    if sps.filtered_sigs[j,i] is not None:
                         ana = sps.filtered_sigs[j,i]
-                        print (ana.size/sps.sig_sampling_rate).rescale('s')
+                    else:
+                        ana = sps.full_band_sigs[j,i]
                     item = QTableWidgetItem(QIcon(), 'AnalogSignal\n size:{}\n duration:{}'.format(ana.size, (ana.size/sps.sig_sampling_rate).rescale('s') ))
                     self.tableSignal.setItem(j, i , item )
             self.tableSignal.resizeColumnsToContents()

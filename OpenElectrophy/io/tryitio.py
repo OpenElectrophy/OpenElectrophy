@@ -37,7 +37,7 @@ class TryItIO(BaseIO):
                                     ):
         
         bl = spikesorting.generate_block_for_sorting(duration = duration*pq.s,
-                                                                                nb_segment = 5,)
+                                                                                nb_segment = nb_segment,)
         
         # add some oscillation
         for seg in bl.segments:

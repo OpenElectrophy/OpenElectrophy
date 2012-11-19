@@ -51,6 +51,7 @@ def generate_block_for_sorting(
         
         n = 0
         for s,seg in enumerate(bl.segments):
+            #~ print u, 's', s, spike_times[s].size
             sptr = neo.SpikeTrain(  spike_times[s], t_start = t_start, t_stop = t_start+duration)
             sptr.waveforms = all_waveforms[n:n+spike_times[s].size, :,:] 
             sptr.sampling_rate = sampling_rate
@@ -72,19 +73,19 @@ def generate_block_for_sorting(
             else:
                 signal = noise_ratio*np.random.randn(sig_size)
             
-            anasig = neo.AnalogSignal(signal = signal, units = 'mV', sampling_rate = sampling_rate, t_start = t_start, channel_index = j)
-            seg.analogsignals.append(anasig)
-            rc.analogsignals.append(anasig)
+            #~ anasig = neo.AnalogSignal(signal = signal, units = 'mV', sampling_rate = sampling_rate, t_start = t_start, channel_index = j)
             
             for sptr in seg.spiketrains:
                 for k,time in enumerate(sptr):
                     wf = sptr.waveforms[k,j,:]
                     pos = int(((time-t_start)*sampling_rate).simplified)
-                    try:
-                        anasig[pos:pos+wf.size] += wf
-                    except:
-                        pass
-
+                    if pos+wf.size<signal.size:
+                        signal[pos:pos+wf.size] += wf
+            anasig = neo.AnalogSignal(signal = signal, units = 'mV', sampling_rate = sampling_rate, t_start = t_start, channel_index = j)
+            seg.analogsignals.append(anasig)
+            rc.analogsignals.append(anasig)
+            
+    neo.io.tools.create_many_to_one_relationship(bl)
     return bl
     
     

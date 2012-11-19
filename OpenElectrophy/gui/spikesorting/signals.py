@@ -93,8 +93,9 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         t_stop = sps.segs[s].analogsignals[0].t_stop
         
         spiketrains = [ ]
-        sl = sps.seg_spike_slices[s]
+        
         if sps.spike_index_array is not None:
+            sl = sps.seg_spike_slices[s]
             pos = sps.spike_index_array[s]
             
             times_and_colors = [ ]

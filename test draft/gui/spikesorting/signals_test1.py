@@ -18,14 +18,14 @@ def test1():
     #~ w1.refresh()
     #~ w1.show()
     
-    #~ w2 = FilteredBandSignal(spikesorter = spikesorter)
-    #~ w2.refresh()
-    #~ w2.show()
+    w2 = FilteredBandSignal(spikesorter = spikesorter)
+    w2.refresh()
+    w2.show()
 
 
-    w3 = SignalStatistics(spikesorter = spikesorter)
-    w3.refresh()
-    w3.show()
+    #~ w3 = SignalStatistics(spikesorter = spikesorter)
+    #~ w3.refresh()
+    #~ w3.show()
 
     
 

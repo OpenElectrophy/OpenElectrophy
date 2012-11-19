@@ -105,7 +105,7 @@ class DrawSegment(MenuItem):
     def execute(self, session,treeview, id, tablename,treedescription, explorer,  **kargs):
         class_ = treedescription.tablename_to_class[tablename]
         neo_seg = session.query(class_).get(id).to_neo(cascade = True)
-        
+        print len(neo_seg.analogsignals)
         w= SegmentViewer(segment = neo_seg, parent = treeview)
         w.setWindowFlags(Qt.Window)
         w.show()
@@ -173,6 +173,7 @@ from .spikesorting import SpikeSortingWindow
 from ..spikesorting import SpikeSorter
 
 class SpikeSorting(MenuItem):
+    name = 'Spike sorting'
     table = 'RecordingChannelGroup'
     mode = 'unique'
     icon = ':/spike.png'
@@ -180,7 +181,10 @@ class SpikeSorting(MenuItem):
         class_ = treedescription.tablename_to_class[tablename]
         rcg = session.query(class_).get(id)
         
+        # FIXME: this load every in a block because of cascade = True
+        # do a hack for loading only the rcg
         neo_rcg = rcg.to_neo(cascade = True)
+        
         spikesorter = SpikeSorter(neo_rcg)
         w= SpikeSortingWindow(spikesorter = spikesorter, settings =settings)
         w.setParent(explorer)

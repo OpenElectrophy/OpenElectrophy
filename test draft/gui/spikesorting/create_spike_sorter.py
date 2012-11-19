@@ -1,14 +1,20 @@
+import sys
+sys.path.append('../../..')
 
 from OpenElectrophy.gui.guiutil.picklesettings import PickleSettings
 from OpenElectrophy.spikesorting import SpikeSorter, generate_block_for_sorting
 from OpenElectrophy.core import OEBase, open_db
 #~ from OpenElectrophy.core.base import OEBase
-
+import os
 
 import quantities as pq
 import numpy as np
 
-import os
+#~ if os.path.exists('test_spikesorting.sqlite'):
+    #~ os.remove('test_spikesorting.sqlite')
+
+
+
 url = 'sqlite:///test_spikesorting.sqlite'
 dbinfo = open_db(url = url, use_global_session = True, myglobals = globals(),)
 session = dbinfo.Session()
@@ -20,6 +26,9 @@ if oebl is None:
                                                         noise_ratio = 0.2,
                                                         nb_segment = 2,
                                                         )
+    #~ for s, seg in enumerate(bl.segments):
+        #~ for k, sptr in enumerate(seg.spiketrains):
+            #~ print 's', s, 'k', k, sptr.size
     oebl = OEBase.from_neo(bl, dbinfo.mapped_classes, cascade =True)
     oebl.save()
 else:
@@ -28,16 +37,16 @@ else:
 rcg = bl.recordingchannelgroups[0]
 
 
-if True:
-    spikesorter = SpikeSorter(rcg, initial_state='full_band_signal')
-    spikesorter.ButterworthFilter( f_low = 200.)
-    spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6.,)
-    spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
-    spikesorter.PcaFeature(n_components = 4)
-    spikesorter.CombineFeature(use_peak = True, use_peak_to_valley = True, n_pca = 3, n_ica = 3, n_haar = 3, sign = '-')
-    spikesorter.SklearnKMeans(n_cluster = 5)
+spikesorter = SpikeSorter(rcg)
 
-#~ spikesorter = SpikeSorter(rcg, initial_state='spikes_and_waveforms')
+#~ if True:
+    #~ spikesorter.ButterworthFilter( f_low = 200.)
+    #~ spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6.,)
+    #~ spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
+    #~ spikesorter.PcaFeature(n_components = 4)
+    #~ spikesorter.CombineFeature(use_peak = True, use_peak_to_valley = True, n_pca = 3, n_ica = 3, n_haar = 3, sign = '-')
+    #~ spikesorter.SklearnKMeans(n_cluster = 5)
+
     
     
 spikesorter.check_display_attributes()
