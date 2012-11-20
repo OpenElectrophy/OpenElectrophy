@@ -33,7 +33,7 @@ class Delete(MenuItem):
                                 'Are you sure?',
                                 'Are you really sure?',
                                 ]:
-            mb = QMessageBox.warning(treeview,treeview.tr('delete'),treeview.tr(warn), 
+            mb = QMessageBox.warning(treeview, u'delete',warn, 
                     QMessageBox.Ok ,QMessageBox.Cancel  | QMessageBox.Default  | QMessageBox.Escape,
                     QMessageBox.NoButton)
             if mb == QMessageBox.Cancel : return
@@ -154,10 +154,11 @@ class EditRecordingChannelGroups(MenuItem):
     def execute(self, session,treeview, id, tablename,treedescription, explorer,  **kargs):
         class_ = treedescription.tablename_to_class[tablename]
         instance = session.query(class_).get(id)
-        w= EditRecordingChannelGroupsDialog(parent = treeview, session = session,
-                block = instance, mapped_classes = treedescription.mapped_classes)
+        w= EditRecordingChannelGroupsDialog(parent = treeview, Session = treedescription.dbinfo.Session,
+                block = instance, mapped_classes = treedescription.dbinfo.mapped_classes)
         if w.exec_():
             explorer.refresh()
+
 
 
 
@@ -184,6 +185,7 @@ class SpikeSorting(MenuItem):
         # FIXME: this load every in a block because of cascade = True
         # do a hack for loading only the rcg
         neo_rcg = rcg.to_neo(cascade = True)
+        print neo_rcg.OEinstance
         
         spikesorter = SpikeSorter(neo_rcg)
         w= SpikeSortingWindow(spikesorter = spikesorter, session = session, dbinfo = treedescription.dbinfo, settings =settings)

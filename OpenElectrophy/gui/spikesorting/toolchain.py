@@ -164,11 +164,31 @@ class ToolChainWidget(QWidget):
         self.mainLayout = QVBoxLayout()
         self.setLayout(self.mainLayout)
         
+        h = QHBoxLayout()
+        self.mainLayout.addLayout(h)
         but = QPushButton('Run all chain')
-        self.mainLayout.addWidget(but)
+        h.addWidget(but)
         but.clicked.connect(self.run_all_chain)
         
         self.toolbox = None
+        
+        but =  QToolButton( popupMode = QToolButton.InstantPopup,
+                                            toolButtonStyle = Qt.ToolButtonTextBesideIcon,
+                                            icon = QIcon(':/configure.png' ),
+                                            #~ )
+                                            text = u'Mode')
+        h.addWidget(but)
+        self.actions = [ ]
+        for tc in all_toolchain:
+            act = QAction(tc.name, but, checkable = True)
+            act.triggered.connect( self.on_changed)       
+            but.addAction(act)
+            act.toolchain = tc
+            self.actions.append(act)
+        self.change_toolchain(all_toolchain[0])#FromFullBandSignalToClustered, 
+        self.actions[0].setChecked(True)
+        
+        
     
     def change_toolchain(self, toolchain):
         self.toolchain = toolchain
@@ -211,7 +231,13 @@ class ToolChainWidget(QWidget):
             method =  mparams.get_method()
             self.spikesorter.run_step(method, **kargs)
         self.need_refresh.emit()
-            
+
+    def on_changed(self):
+        for a in self.actions: a.setChecked(False)
+        self.sender().setChecked(True)
+        tc = self.sender().toolchain
+        self.change_toolchain(tc)
+    
             
             
         

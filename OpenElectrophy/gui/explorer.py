@@ -173,7 +173,7 @@ class MainExplorer(QWidget) :
         if dbinfo is not None: 
             self.dbinfo = dbinfo
         for i in range(len(self.tabViews)):
-            self.closeOneTab(i)
+            self.tabViews.removeTab(0)
         self.session = self.dbinfo.Session()
         for td in self.listTreeDescription:
             sqltreeview = QtSqlTreeView(session = self.session, treedescription = td, 

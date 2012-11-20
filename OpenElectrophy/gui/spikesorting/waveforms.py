@@ -76,7 +76,7 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         self.canvas.draw()
 
 class AllWaveforms(SpikeSortingWidgetBase):
-    name = 'All aveforms'
+    name = 'All waveforms'
     refresh_on = [  'spike_waveforms', 'spike_clusters', 'cluster_names']
     icon_name = 'plot-waveform.png'
     

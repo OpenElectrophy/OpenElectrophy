@@ -168,7 +168,7 @@ class ManyToManyModel(QAbstractItemModel):
         else :
             parentItem = parentIndex.internalPointer()
             if type(parentItem) == self.class1:
-                children = getattr(parentItem, self.class2.__name__.lower()+'s').all()
+                children = getattr(parentItem, self.class2.__name__.lower()+'s')
                 return len(children)
             else:
                 return 0
@@ -178,7 +178,7 @@ class ManyToManyModel(QAbstractItemModel):
             children = self.list1
         else:
             parentItem = parentIndex.internalPointer()
-            children = getattr(parentItem, self.class2.__name__.lower()+'s').all()
+            children = getattr(parentItem, self.class2.__name__.lower()+'s')
         if row >= len(children):
             return QModelIndex()
         childItem = children[row]
@@ -379,6 +379,12 @@ class EditManyToManyWidget(QWidget):
 
     def remove1(self):
         if len(self.tree1.selectedIndexes()) == 0: return
+        if len(self.list1) == 1:
+            msg = 'You need at least one RecordinChannelGroup'
+            mb = QMessageBox.warning(self,u'delete',msg, 
+                    QMessageBox.Ok ,QMessageBox.NoButton  | QMessageBox.Default  | QMessageBox.Escape,
+                    QMessageBox.NoButton)
+            return
         index = self.tree1.selectedIndexes()[0]
         item = index.internalPointer()
         self.list1.remove(item)
@@ -413,6 +419,8 @@ class EditRecordingChannelGroupsDialog(QDialog):
         self.mainLayout = QVBoxLayout()
         self.setLayout(self.mainLayout)
         
+        self.mainLayout.addWidget(QLabel(u'Drag and drop RCG to RC to create link (or reverse)'))
+        
         self.editMany = EditManyToManyWidget(class1 = RecordingChannelGroup,
                                         class2 = RecordingChannel,
                                         list1 = self.rcgs,
@@ -443,7 +451,6 @@ class EditRecordingChannelGroupsDialog(QDialog):
     def applyChange(self):
         for rcg in self.rcgs:
             if rcg.id is None:
-                print 'ici', rcg
                 self.block.recordingchannelgroups.append(rcg)
         self.session.commit()
         self.accept()

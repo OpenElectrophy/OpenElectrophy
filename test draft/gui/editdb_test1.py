@@ -19,6 +19,10 @@ import numpy as np
 url = 'sqlite:///test_db_1.sqlite'
 
 
+
+
+
+
 def test1():
     """
     EditFields
@@ -28,8 +32,11 @@ def test1():
                                         object_number_in_cache = 3000,
                                         relationship_lazy = 'dynamic', 
                                         )
-    
     session = dbinfo.Session()
+    bl = OEBase.from_neo(TryItIO().read(duration = 3, nb_segment = 2),
+                                            mapped_classes = dbinfo.mapped_classes, cascade = True)
+    bl.save(session= session)
+    
 
     app = QApplication([ ])
     
@@ -77,7 +84,7 @@ def test3():
     dbinfo = open_db(url, myglobals = globals(),
                             use_global_session = False, 
                             object_number_in_cache = 3000,
-                            relationship_lazy = 'dynamic', 
+                            #~ relationship_lazy = 'dynamic', 
                             )
     
     session = dbinfo.Session()

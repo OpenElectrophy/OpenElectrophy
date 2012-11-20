@@ -211,7 +211,7 @@ class FeaturesEvolutionInTime(SpikeSortingWidgetBase):
 
 
 class FeaturesNDViewer(SpikeSortingWidgetBase):
-    name = 'ND Viewer'
+    name = 'Features ND Viewer'
     refresh_on = [  'waveform_features', 'feature_names', ]
     icon_name = 'Clustering.png'
 

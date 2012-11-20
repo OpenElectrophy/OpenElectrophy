@@ -537,7 +537,7 @@ class SpikeSorter(object):
                 ind = ind[:self.displayed_subset_size]
             self.cluster_displayed_subset[c]  = ind
     
-    def populate_recordingchannelgroup(self, save_empty = True):
+    def populate_recordingchannelgroup(self,): # save_empty = True
         """
         Populate neo.RecordingChannelGroup  with new sorting.
         """
@@ -548,8 +548,9 @@ class SpikeSorter(object):
             for s, seg in enumerate(bl.segments):
                 for sptr in unit.spiketrains:
                     #~ if sptr in seg.spiketrains:
-                    if contains(seg.spiketrains, sptr):
-                        seg.spiketrains.remove(sptr)
+                        #~ seg.spiketrains.remove(sptr)
+                    if list_contains(seg.spiketrains, sptr):
+                        list_remove(seg.spiketrains, sptr)
         rcg.units = [ ]
         
         self.refresh_cluster_names()
@@ -571,9 +572,13 @@ class SpikeSorter(object):
         for u, unit in enumerate(rcg.units):
             for s, seg in enumerate(bl.segments):
                 for sptr in unit.spiketrains:
-                    if contains(seg.spiketrains, sptr):
-                        seg.spiketrains.remove(sptr)
+                    #~ if sptr in seg.spiketrains:
+                        #~ seg.spiketrains.remove(sptr)
+                    if list_contains(seg.spiketrains, sptr):
+                        sptr.neoinstance.OEinstance = None
+                        list_remove(seg.spiketrains, sptr)
         for u, unit in enumerate(rcg.units):
+            unit.neoinstance.OEinstance = None
             session.delete(unit)
         session.commit()
         
@@ -591,15 +596,19 @@ class SpikeSorter(object):
         
 
 
-def contains(l, s):
-    # hack for bug  for :
-    #    "SpikeTrain in list" 
-    # when SpikeTrain is not
-    
+# some hack for python list when contain numpy.array
+def list_contains(l, e):
     # should be
     # return s in l
-    return np.any([ s is s2 for s2 in l ])
-    
+    return np.any([ e is e2 for e2 in l ])
+
+def list_remove(l, e):
+    # should be
+    # l.remove(e)
+    ind,  = np.where([ e is e2 for e2 in l ])
+    if ind.size>=1:
+        l.pop(ind[0])
+
     
     
     

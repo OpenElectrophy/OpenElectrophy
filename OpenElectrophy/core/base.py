@@ -21,6 +21,8 @@ class OEBase(object):
         return obj
     
     def __init__(self, **kargs):
+        for k in self.usable_attributes:
+            setattr(self, k, None)
         for k,v in kargs.items():
             if k in self.usable_attributes:
                 setattr(self, k, v)
@@ -30,7 +32,10 @@ class OEBase(object):
     def __repr__(self):
         t = super(OEBase, self).__repr__()
         t += '\n'
-        t += '  id: {}\n'.format(self.id)
+        if hasattr(self, 'id'):
+            t += '  id: {}\n'.format(self.id)
+        #~ else:
+            
         for attrname, attrtype in self.usable_attributes.items():
             #~ if attrtype not in [ np.ndarray ,pq.Quantity ]:
                 t += '  {}: {}\n'.format(attrname,getattr(self,attrname))
@@ -145,6 +150,7 @@ class OEBase(object):
                 for k in self.usable_attributes:
                     kargs[k] = getattr(self, k)
                 self.neoinstance = self.neoclass(**kargs)
+                self.neoinstance.OEinstance = self
                 # cascade relationships
                 if cascade:
                     for childname in self.many_to_many_relationship:

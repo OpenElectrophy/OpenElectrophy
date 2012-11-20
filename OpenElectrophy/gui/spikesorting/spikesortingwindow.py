@@ -10,11 +10,10 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from .spikesortingwidgets import spikesorting_widget_list
-from .toolchain import *
+from .toolchain import all_toolchain, ToolChainWidget
 
 import numpy as np
 
-# TODO: save result
 # TODO: dock template
 # TODO: change toolchain
 
@@ -70,6 +69,7 @@ class SpikeSortingWindow(QMainWindow):
         self.list_dock = [ ]
         for W in spikesorting_widget_list:
             # Menu
+            #~ act = QAction(W.name,but, checkable = True)
             act = QAction(W.name,but, checkable = True)
             self.list_actionView.append(act)
             if hasattr(W, 'icon_name'):
@@ -91,16 +91,17 @@ class SpikeSortingWindow(QMainWindow):
             w.spike_subset_changed.connect(self.on_spike_subset_changed)
             dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
         
+        ## Tool chain
         self.toolchain = ToolChainWidget(spikesorter = self.spikesorter ,settings = self.settings )
-        # TODO: auto guess best mode
-        self.toolchain.change_toolchain(FromFullBandSignalToClustered, )
+        
         
         self.toolchain.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         dock = QDockWidget('Tool Chain',self)
         dock.setObjectName(  'Tool chain' )
         dock.setWidget(self.toolchain)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
         self.toolchain.need_refresh.connect(self.refresh_all)
+        ##
         
         but =  QToolButton( popupMode = QToolButton.InstantPopup,
                                             toolButtonStyle = Qt.ToolButtonTextBesideIcon,
@@ -175,6 +176,7 @@ class SpikeSortingWindow(QMainWindow):
                 continue
             if dock.isVisible() and hasattr(w, 'on_spike_selection_changed'):
                 w.on_spike_selection_changed()
+    
 
         
     ## DOCK AND TEMPLATE
@@ -217,17 +219,17 @@ class SpikeSortingWindow(QMainWindow):
         if name == 'Good ensemble':
             self.addDockWidget(Qt.TopDockWidgetArea, dDock['Full band signal'] , )
             dDock['Full band signal'].setVisible(True)
-            dDock['Waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Full band signal'], dDock['Waveforms'], Qt.Horizontal)
+            dDock['All waveforms'].setVisible(True)
+            self.splitDockWidget(dDock['Full band signal'], dDock['All waveforms'], Qt.Horizontal)
             dDock['Cross-correlogram'].setVisible(True)
-            self.splitDockWidget(dDock['Waveforms'], dDock['Cross-correlogram'], Qt.Horizontal)
-            self.tabifyDockWidget ( dDock['Full band signal'], dDock['Filtered signal'])
-            dDock['Filtered signal'].setVisible(True)
+            self.splitDockWidget(dDock['All waveforms'], dDock['Cross-correlogram'], Qt.Horizontal)
+            self.tabifyDockWidget ( dDock['Full band signal'], dDock['Filtered band signal'])
+            dDock['Filtered band signal'].setVisible(True)
 
             dDock['Unit list'].setVisible(True)
             self.addDockWidget(Qt.RightDockWidgetArea, dDock['Unit list'] , )
-            dDock['Features NDViewer'].setVisible(True)
-            self.splitDockWidget(dDock['Unit list'], dDock['Features NDViewer'], Qt.Horizontal)
+            dDock['Features ND Viewer'].setVisible(True)
+            self.splitDockWidget(dDock['Unit list'], dDock['Features ND Viewer'], Qt.Horizontal)
             dDock['Spike list'].setVisible(True)
             self.splitDockWidget(dDock['Unit list'], dDock['Spike list'], Qt.Vertical)
 
@@ -237,21 +239,21 @@ class SpikeSortingWindow(QMainWindow):
         elif name == 'One cell':
             self.addDockWidget(Qt.RightDockWidgetArea, dDock['Full band signal'] , )
             dDock['Full band signal'].setVisible(True)
-            self.splitDockWidget(dDock['Full band signal'], dDock['Filtered signal'], Qt.Vertical)
-            dDock['Filtered signal'].setVisible(True)
+            self.splitDockWidget(dDock['Full band signal'], dDock['Filtered band signal'], Qt.Vertical)
+            dDock['Filtered band signal'].setVisible(True)
             self.addDockWidget(Qt.RightDockWidgetArea, dDock['Spike list'] , )
             dDock['Spike list'].setVisible(True)
-            self.splitDockWidget(dDock['Spike list'], dDock['Waveforms'], Qt.Horizontal)
-            dDock['Waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Waveforms'], dDock['Average waveforms'], Qt.Horizontal)
+            self.splitDockWidget(dDock['Spike list'], dDock['All waveforms'], Qt.Horizontal)
+            dDock['All waveforms'].setVisible(True)
+            self.splitDockWidget(dDock['All waveforms'], dDock['Average waveforms'], Qt.Horizontal)
             dDock['Average waveforms'].setVisible(True)
                         
             
         elif name == 'Manual clustering':
             
-            self.addDockWidget(Qt.TopDockWidgetArea, dDock['Waveforms'] , )
-            dDock['Waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Waveforms'], dDock['Average waveforms'], Qt.Horizontal)
+            self.addDockWidget(Qt.TopDockWidgetArea, dDock['All waveforms'] , )
+            dDock['All waveforms'].setVisible(True)
+            self.splitDockWidget(dDock['All waveforms'], dDock['Average waveforms'], Qt.Horizontal)
             dDock['Average waveforms'].setVisible(True)
             self.splitDockWidget(dDock['Average waveforms'], dDock['Features Parallel Plot'], Qt.Horizontal)
             dDock['Features Parallel Plot'].setVisible(True)
@@ -262,21 +264,21 @@ class SpikeSortingWindow(QMainWindow):
             
             dDock['Unit list'].setVisible(True)
             self.addDockWidget(Qt.RightDockWidgetArea, dDock['Unit list'] , )
-            dDock['Features NDViewer'].setVisible(True)
-            self.splitDockWidget(dDock['Unit list'], dDock['Features NDViewer'], Qt.Horizontal)
+            dDock['Features ND Viewer'].setVisible(True)
+            self.splitDockWidget(dDock['Unit list'], dDock['Features ND Viewer'], Qt.Horizontal)
             dDock['Spike list'].setVisible(True)
             self.splitDockWidget(dDock['Unit list'], dDock['Spike list'], Qt.Vertical)
             
         elif name == 'Detection':
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Filtered signal'] , )
-            dDock['Filtered signal'].setVisible(True)
-            self.splitDockWidget(dDock['Filtered signal'], dDock['Average waveforms'], Qt.Vertical)
+            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Filtered band signal'] , )
+            dDock['Filtered band signal'].setVisible(True)
+            self.splitDockWidget(dDock['Filtered band signal'], dDock['Average waveforms'], Qt.Vertical)
             dDock['Average waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Average waveforms'], dDock['Waveforms'], Qt.Horizontal)
-            dDock['Waveforms'].setVisible(True)
-            self.tabifyDockWidget ( dDock['Filtered signal'], dDock['Full band signal'])
+            self.splitDockWidget(dDock['Average waveforms'], dDock['All waveforms'], Qt.Horizontal)
+            dDock['All waveforms'].setVisible(True)
+            self.tabifyDockWidget ( dDock['Filtered band signal'], dDock['Full band signal'])
             dDock['Full band signal'].setVisible(True)
-            self.splitDockWidget(dDock['Waveforms'], dDock['Signal statistics'], Qt.Horizontal)
+            self.splitDockWidget(dDock['All waveforms'], dDock['Signal statistics'], Qt.Horizontal)
             dDock['Signal statistics'].setVisible(True)
 
 
@@ -288,20 +290,22 @@ class SpikeSortingWindow(QMainWindow):
             self.splitDockWidget(dDock['Unit list'], dDock['Summary'], Qt.Horizontal)
             dDock['Spike list'].setVisible(True)
             self.splitDockWidget(dDock['Unit list'], dDock['Spike list'], Qt.Vertical)
-            dDock['Waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Summary'], dDock['Waveforms'], Qt.Vertical)
+            dDock['All waveforms'].setVisible(True)
+            self.splitDockWidget(dDock['Summary'], dDock['All waveforms'], Qt.Vertical)
 
         elif name == 'Controls':
             self.addDockWidget(Qt.TopDockWidgetArea, dDock['Cross-correlogram'] , )
             dDock['Cross-correlogram'].setVisible(True)
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Interval Inter Spike'] , )
-            dDock['Interval Inter Spike'].setVisible(True)            
+            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Inter-Spike Interval'] , )
+            dDock['Inter-Spike Interval'].setVisible(True)            
         
         
         self.refresh_all()
     
     ## Save 
     def save_to_database(self):
+        if self.session is None:
+            return
         msg = u'Units and SPikeTrain will saved directly in opened database.\n'
         msg += 'Note that old Units and SpikeTrain related to this RecodingChannelGourp will be removed for ever'
         mb = QMessageBox.warning(self,u'Save to database',msg, 
