@@ -22,7 +22,7 @@ def test1():
     tfr = TimeFreq(ana)
     fig = pyplot.figure()
     ax = fig.add_subplot(1,1,1)
-    tfr.plot(ax)
+    tfr.plot(ax,  clim = [0,5])
     print tfr.sampling_rate
     print tfr.freqs.shape
     print tfr.times.shape

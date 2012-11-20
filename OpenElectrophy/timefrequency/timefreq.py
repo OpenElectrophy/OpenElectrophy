@@ -73,7 +73,7 @@ def check_or_get_sampling_rate(ana, f_stop, sampling_rate = None):
             sampling_rate = f_stop*4
         else:
             sampling_rate = ana.sampling_rate
-    assert sampling_rate>2*f_stop
+    assert sampling_rate>=2*f_stop
     return sampling_rate
 
 def convolve_scalogram(ana, wf, sampling_rate):
@@ -184,6 +184,7 @@ class TimeFreq():
                                     colorbar = True,
                                     cax =None,
                                     orientation='horizontal',
+                                    clim = None,
                                     **kargs):
         """
         
@@ -195,7 +196,8 @@ class TimeFreq():
                                     extent=(self.ana.t_start, self.ana.t_stop, self.f_start-self.deltafreq/2., self.f_stop-self.deltafreq/2.),
                                     origin ='lower' ,
                                     aspect = 'normal')
-
+        if clim is not None:
+            im.set_clim(clim)
         if colorbar:
             if cax is None:
                 ax.figure.colorbar(im)
