@@ -1,4 +1,32 @@
 # -*- coding: utf-8 -*-
+"""
+
+NON:   http://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
+OUI:  http://www.microsoft.com/en-us/download/details.aspx?id=18950
+
+
+distutils.cfg dans C:\WinPython-64bit-2.7.3.1\python-2.7.3.amd64\Lib
+
+
+
+Note install on windows:
+   1. - winpython http://code.google.com/p/winpython/  and install it in C:\WinPython-64bit-2.7.3.1
+   2. - execute C:\python-2.7.3.amd64\WP control PANEL  MENU>Advanced>register distribution
+   3.- cd C:\python-2.7.3.amd64\Sripcts
+   3. - easy_install pip
+   4. - pip install quantities
+   5. - pip install neo
+   6. - pip install sqlalchemy-migrate
+   7. - Download pyton blosc (http://pypi.python.org/pypi/blosc/1.0.3) and install it
+   8. - Downlod python mysql (http://www.lfd.uci.edu/~gohlke/pythonlibs/)
+PB   9. - Download lz4 http://pypi.python.org/pypi/lz4
+PB   10. - Download snappy http://pypi.python.org/pypi/python-snappy
+   11. - Download pyqtgraph () rename it pyqtgraph-223.0.0.win-amd64-py2.7
+   12. - pip install OpenElectrophy
+
+"""
+
+
 from setuptools import setup, find_packages
 
 from OpenElectrophy.version import version

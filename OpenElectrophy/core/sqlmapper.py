@@ -229,11 +229,20 @@ import quantities as pq
 from datetime import datetime
 import numpy as np
 
+DEFAULT_COMPRESS_LIB = 'lz4'
+try:
+    import lz4
+except ImportError:
+    DEFAULT_COMPRESS_LIB = 'snappy'
+try:
+    import snappy
+except ImportError:
+    DEFAULT_COMPRESS_LIB = 'blosc'
+try:
+    import blosc
+except ImportError:
+    DEFAULT_COMPRESS_LIB = 'zlib'
 import zlib
-import blosc
-# TODO
-import lz4
-import snappy
 
 import tables
 
@@ -647,7 +656,7 @@ class SQL_NumpyArrayPropertyLoader():
         if self.arraytype == pq.Quantity:
             assert type(value) == pq.Quantity , '{} {} {} value is not pq.Quantity'.format(inst.__class__.__name__, self.name, value)
         
-        shape = str(value.shape).replace('(','').replace(')','').replace(' ','')
+        shape = ('{},'*value.ndim)[:-1].format(*value.shape)
         if shape.endswith(',') : shape = shape[:-1]
         nprow.shape = shape
         
@@ -1004,7 +1013,7 @@ class DataBaseConnectionInfo(object):
 
 
 def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_session = True, 
-                        object_number_in_cache = None,  numpy_storage_engine = 'sqltable', compress = 'lz4',
+                        object_number_in_cache = None,  numpy_storage_engine = 'sqltable', compress = DEFAULT_COMPRESS_LIB,
                         hdf5_filename = None,
                         relationship_lazy = 'select', predefined_classes = None, max_binary_size = MAX_BINARY_SIZE,):
     """
