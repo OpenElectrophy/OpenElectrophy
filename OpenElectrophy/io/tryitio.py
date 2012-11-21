@@ -34,10 +34,12 @@ class TryItIO(BaseIO):
     def read_block(self,cascade = True, lazy = False,
                                     duration = 60.,
                                     nb_segment = 5,
+                                    nb_epocharrays = 2,
                                     ):
-        
+        t_start = -2
         bl = spikesorting.generate_block_for_sorting(duration = duration*pq.s,
-                                                                                nb_segment = nb_segment,)
+                                                                                nb_segment = nb_segment,
+                                                                                t_start =t_start*pq.s)
         
         # add some oscillation
         for seg in bl.segments:
@@ -48,7 +50,19 @@ class TryItIO(BaseIO):
                 sig = np.sin(2*np.pi*t*f1) * np.sin(np.pi*t*f2+np.random.rand()*np.pi)**2
                 sig[t<0] = 0.
                 ana += sig * ana.units
-                
+        
+        epoch_size = 100
+        # add some epoch arrays
+        for seg in bl.segments:
+            for i in range(nb_epocharrays):
+                durations = np.random.rand(epoch_size)*(duration/epoch_size/2)
+                interv = np.random.rand(epoch_size)*(duration/epoch_size/2)+duration/epoch_size/4
+                times = np.cumsum(durations)+np.cumsum(interv)
+                ea = neo.EpochArray(times = (times+t_start)* pq.s,
+                                                    durations = durations* pq.s,
+                                                    name = 'epoch {}'.format(i))
+                seg.epocharrays.append(ea)
+
                 
                 
         

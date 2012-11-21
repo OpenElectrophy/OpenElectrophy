@@ -3,17 +3,14 @@ sys.path = [ '../..' ] + sys.path
 
 
 from OpenElectrophy.timefrequency.timefreq import *
+from OpenElectrophy import *
 import time
 import neo
 
 
-sig_size = 1e3
-fs = 10.e3
-t = np.arange(sig_size)/fs
-t_start = -5.
 
-sig = 7*np.sin(t*np.pi*2*25.) + np.random.randn(sig_size)*6
-ana = neo.AnalogSignal(sig, units = 'uV', t_start=t_start*pq.s, sampling_rate = fs*pq.Hz)
+bl = TryItIO().read(nb_segment=1, duration = 10)
+ana = bl.segments[0].analogsignals[0]
 
 from matplotlib import pyplot
 
@@ -22,7 +19,7 @@ def test1():
     tfr = TimeFreq(ana)
     fig = pyplot.figure()
     ax = fig.add_subplot(1,1,1)
-    tfr.plot(ax,  clim = [0,5])
+    tfr.plot(ax,  clim = [0,3])
     print tfr.sampling_rate
     print tfr.freqs.shape
     print tfr.times.shape

@@ -45,7 +45,7 @@ def generate_block_for_sorting(
         spikerate = np.random.rand()*np.diff(spikerate_range)+spikerate_range[0].magnitude
         spike_times = [ ]
         for seg in bl.segments:
-            spike_times.append(np.random.rand(int((spikerate*(duration)).simplified))*duration)
+            spike_times.append(np.random.rand(int((spikerate*(duration)).simplified))*duration+t_start)
         n_total = np.sum( times.size for times in spike_times )
         all_waveforms = stupid_waveform_generator(n_total, nb_recordingchannel, sampling_rate) * pq.mV
         
