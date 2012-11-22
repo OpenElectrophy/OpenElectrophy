@@ -3,7 +3,7 @@ import quantities as pq
 import numpy as np
 import pymc as pm
 import MetropolisCategorical
-import generate_mcmc_model as gen
+import generate_mcmc_model_optimized as gen
 
 class GaussianMixtureMCMC(object):
     """
@@ -50,8 +50,15 @@ class GaussianMixtureMCMC(object):
         #Creation of the model
         sampler = pm.MCMC(dict_stochastics.values())
         sampler.use_step_method(MetropolisCategorical.MetropolisCategorical,dict_stochastics['labels'],nb_gauss=n_cluster, nb_draw = nb_draw) 
-        sampler.sample(iter=n_iter,burn=n_burn,thin=thin,verbose=verbose)
         
+        
+        sampler.sample(iter=n_iter,burn=n_burn,thin=thin,verbose=verbose)
+
+        print sampler.step_method_dict
+        for meth in sampler.step_method_dict.itervalues():
+            print meth
+            print meth[0].proposal_distribution
+            
         sps.spike_clusters=sampler.trace('labels')[-1]
         sps.cluster_names = dict( [ (i, 'cluster #{}'.format(i))
                                     for i in np.unique(sps.spike_clusters) ] )

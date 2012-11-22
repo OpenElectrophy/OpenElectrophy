@@ -19,13 +19,13 @@ class MetropolisCategorical(pm.DiscreteMetropolis):
     and if you want to take more than one sample in each step
     """
     
-    def __init__(self, stochastic, scale=1., proposal_sd=None, proposal_distribution="Poisson", positive=False, verbose=None,tally=True, rej = False, nb_gauss = 2, nb_draw = 40):
+    def __init__(self, stochastic, verbose=None, rej = False, nb_gauss = 2, nb_draw = 40):
         '''
         DiscreteMetropolis class initialization. initialization of the superclass DiscreteMetropolis
         '''
         
         # Initialize superclass
-        pm.DiscreteMetropolis.__init__(self, stochastic, scale=scale, proposal_sd=proposal_sd, proposal_distribution=proposal_distribution, verbose=verbose, tally=tally)
+        pm.DiscreteMetropolis.__init__(self, stochastic, verbose=verbose)
         self.len_stoch=len(self.stochastic.value)
         self.nb_gauss=nb_gauss
         self.nb_draw=nb_draw
@@ -57,32 +57,19 @@ class MetropolisCategorical(pm.DiscreteMetropolis):
         valued, and is not being proposed from its prior.
         """
 
+	print "CATEGORICAL !!!!!"
+
         # Probability and likelihood for s's current value:
         for i in range(self.nb_draw):
-
-            if self.verbose>1:
-                print
-                print self._id + ' getting initial logp.'
             
-
-            if self.proposal_distribution == "Prior":
-                logp = self.loglike
-            else:
-                logp = self.logp_plus_loglike
-
-            if self.verbose>1:
-                print self._id + ' proposing.'
-
+            logp = self.logp_plus_loglike            
+            
             # Sample a candidate value
             self.propose()
             
             # Probability and likelihood for s's proposed value:
             try:
-                if self.proposal_distribution == "Prior":
-                    logp_p = self.loglike
-                    # Check for weirdness before accepting jump
-                    self.stochastic.logp
-                else:
+                
                     logp_p = self.logp_plus_loglike
 
             except ZeroProbability:
@@ -98,7 +85,7 @@ class MetropolisCategorical(pm.DiscreteMetropolis):
                 if self.verbose>1:
                     print self._id + ' returning.'
                 return
-
+            
             if self.verbose>1:
                 print 'logp_p - logp: ', logp_p - logp
 

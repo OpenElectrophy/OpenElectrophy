@@ -32,6 +32,8 @@ import pymc as pm
 import pymc.distributions as dist
 import numpy as np
 
+global covs_save,sigmas_save,S_save,theta_save
+
 def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):	
     '''
     Model used for as dimension as you want.
@@ -51,6 +53,8 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
         - sigmas is a vector containing all the covariances of the ISI distributions.
         - weights is a vector of weight on the labels
     '''
+    
+    global theta_save
     
     features=dict_data['features']
 
@@ -90,7 +94,9 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
         labels=dist.Categorical('labels', p=weights,size=features.shape[0],rseed=True)
     else:
         labels=dist.Categorical('labels', p=alpha0,size=features.shape[0],rseed=True)
-            
+    
+    theta_save=thetas
+    
     @pm.stochastic(observed=True,dtype=object)
     def mixture(value = dict_data, thetas = thetas, covs = covs, labels = labels,sigmas = sigmas, S = S):
         '''
@@ -100,19 +106,44 @@ def generate_mcmc_model(dict_data,nprior,adapt_weights=False,use_ISI=False):
         
         print "a"
 
-        for j, (theta, cov) in enumerate(zip(thetas, covs)):
+        global theta_save
+        
+        print (thetas!=theta_save)
+        if (thetas!=theta_save).any():
+
+            print "b"
+            for j, (theta, cov) in enumerate(zip(thetas, covs)):
+                
+                cluster_points = labels == j
+                this_features = value['features'][cluster_points]
+
+                ch = np.linalg.cholesky(cov)
+                loglike += pm.mv_normal_chol_like(this_features, theta, ch)
+
+                if sigmas is not None:
+                    this_time = value['time_vector'][cluster_points]
+                    isi = np.diff(this_time)
+                    if isi.size>0:
+                        loglike += pm.lognormal_like(isi, mu = S[j], tau = sigmas[j])
+                        
+            theta_save=thetas
+
+        else:
             
-            cluster_points = labels == j
-            this_features = value['features'][cluster_points]
+            for j, (theta, cov) in enumerate(zip(thetas, covs)):
+                
+                cluster_points = labels == j
+                this_features = value['features'][cluster_points]
 
-            ch = np.linalg.cholesky(cov)
-            loglike += pm.mv_normal_chol_like(this_features, theta, ch)
+                ch = np.linalg.cholesky(cov)
+                loglike += pm.mv_normal_chol_like(this_features, theta, ch)
 
-            if sigmas is not None:
-                this_time = value['time_vector'][cluster_points]
-                isi = np.diff(this_time)
-                if isi.size>0:
-                    loglike += pm.lognormal_like(isi, mu = S[j], tau = sigmas[j])
+                if sigmas is not None:
+                    this_time = value['time_vector'][cluster_points]
+                    isi = np.diff(this_time)
+                    if isi.size>0:
+                        loglike += pm.lognormal_like(isi, mu = S[j], tau = sigmas[j])
+
         
         #~ print "mixture ! ", loglike
         
