@@ -17,6 +17,7 @@ Note install on windows:
    4. - pip install quantities
    5. - pip install neo
    6. - pip install sqlalchemy-migrate
+   7. - pip install joblib
    7. - Download pyton blosc (http://pypi.python.org/pypi/blosc/1.0.3) and install it
    8. - Downlod python mysql (http://www.lfd.uci.edu/~gohlke/pythonlibs/)
 PB   9. - Download lz4 http://pypi.python.org/pypi/lz4
