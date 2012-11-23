@@ -4,8 +4,11 @@
 NON:   http://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
 OUI:  http://www.microsoft.com/en-us/download/details.aspx?id=18950
 
+Ajouter 
 
 distutils.cfg dans C:\WinPython-64bit-2.7.3.1\python-2.7.3.amd64\Lib
+[build]
+compiler=mingw32
 
 
 
