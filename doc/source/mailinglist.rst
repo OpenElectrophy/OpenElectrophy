@@ -6,3 +6,5 @@ If you want to get informed about the project or to ask other users for help, yo
 
 http://groups.google.fr/group/openelectrophy
 
+For discussion about devellopement:
+http://groups.google.fr/group/openelectrophy-dev

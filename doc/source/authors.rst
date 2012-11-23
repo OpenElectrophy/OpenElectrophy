@@ -24,6 +24,11 @@ Main authors:
     | nfourcau@olfac.univ-lyon1.fr
     | 
     | Our lab : http://olfac.univ-lyon1.fr/
+    |
+    | Chris Rodger
+    | xrodgers@gmail.com
+    |
+    |
 
 
 
@@ -48,6 +53,10 @@ Contributors:
     | 75006 Paris
     | France
     | christophe.pouzat@univ-paris5.fr
+    |
+    | Christelle Hund
+    |
+    | Astrid Gentilini
 
 
 

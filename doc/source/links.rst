@@ -11,7 +11,8 @@ For more information on python, scipy, mysql, etc:
     
 
 Neuralensemble is a forge hosting Neuroscience projects written in python:
-
+    * http://neuralensemble.org
+    * https://github.com/NeuralEnsemble
     * http://neuralensemble.org/trac/PyNN
     * http://neuralensemble.org/trac/neo
     * http://neuralensemble.org/trac/sumatra
@@ -29,6 +30,7 @@ Here is a list of other (and competitor) projects that can help to analyze elect
     * http://find.bccn.uni-freiburg.de/
     * http://www.carmen.org.uk/
     * http://www.vis.caltech.edu/~rodri/Wave_clus/Wave_clus_home.htm
+    * http://caton.googlecode.com/hg/doc/_build/html/index.html
 
 
 

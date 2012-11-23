@@ -1,5 +1,11 @@
-This is the new OpenElectrophy repository for starting branche 0.3.
+OpenElectrophy is a python module for electrophysioly data analysis (intra- and extra-cellular).
+OpenElectrophy is build on top of Neo :
+    * It includes the powerful Neo IO that can read a quantity of data formats (Plexon, NeuroExplorer, Spike2, TDT, Axon, BlackRock, ...) 
+    * Neo object ready for analyses (AnalogSIgnal, SpikeTrain, RecordingChannel, Segment, Block ...)
 
-Old branches (0.1 0.2) are still here : https://www.neuralensemble.org/trac/OpenElectrophy
-
-Samuel
+But OpenElectrophy also provide:
+    * A GUI for exploring dataset
+    * A complete offline spikesorting tool chain = GUI and/or command line.
+    * A timefrequency toolbox = fast wavelet scalogram plotting +  transient oscillation in LFP detection.
+    * Viewers for neo objects.
+    * A database for storage.
