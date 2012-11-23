@@ -149,12 +149,12 @@ class LineDetector():
         
         self.scalogram_method = scalogram_method
         
-        self.f_start = assume_quantity(f_start, units = 'Hz')
-        self.f_stop = assume_quantity(f_stop, units = 'Hz')
-        self.deltafreq = assume_quantity(deltafreq, units = 'Hz')
-        self.sampling_rate = assume_quantity(sampling_rate, units = 'Hz')
-        self.t_start = assume_quantity(t_start, units = 's')
-        self.t_stop = assume_quantity(t_stop, units = 's')
+        self.f_start = f_start
+        self.f_stop = f_stop
+        self.deltafreq = deltafreq
+        self.sampling_rate = sampling_rate
+        self.t_start = t_start
+        self.t_stop = t_stop
         self.f0= f0
         self.normalisation = normalisation
 
@@ -165,10 +165,6 @@ class LineDetector():
 
         # detection_zone
         self.detection_zone = detection_zone
-        self.detection_zone[0] = assume_quantity(detection_zone[0], units = 's')
-        self.detection_zone[1] = assume_quantity(detection_zone[1], units = 's')
-        self.detection_zone[2] = assume_quantity(detection_zone[2], units = 'Hz')
-        self.detection_zone[3] = assume_quantity(detection_zone[3], units = 'Hz')
         
         #~ self.detection_zone[1] = min(self.detection_zone[1], self.anaSig.t()[-1] )
         
@@ -177,11 +173,6 @@ class LineDetector():
         self.abs_threshold = abs_threshold
         self.std_relative_threshold = std_relative_threshold
         self.reference_zone = reference_zone
-        self.reference_zone[0] = assume_quantity(reference_zone[0], units = 's')
-        self.reference_zone[1] = assume_quantity(reference_zone[1], units = 's')
-        self.reference_zone[2] = assume_quantity(reference_zone[2], units = 'Hz')
-        self.reference_zone[3] = assume_quantity(reference_zone[3], units = 'Hz')
-        
 
         # clean 
         self.minimum_cycle_number= minimum_cycle_number
@@ -196,7 +187,28 @@ class LineDetector():
         self.list_max = None
     
     def update(self, **params):
-        self.__dict__.update(params)
+        for k, v in params.items():
+            setattr(self, k, v)
+        #~ self.__dict__.update(params)
+    
+    def __setattr__(self,k,v):
+        # here we check if quantites or not
+        # for compatibilities
+        if k in [ 'f_start', 'f_stop', 'sampling_rate', 'deltafreq' ]:
+            self.__dict__[k] = assume_quantity(v, units = 'Hz')
+        elif k in [ 't_start', 't_stop' ]:
+            self.__dict__[k] = assume_quantity(v, units = 's')
+        elif k in ['detection_zone', 'reference_zone']:
+            v2 = [None]*4
+            v2[0] = assume_quantity(v[0], units = 's')
+            v2[1] = assume_quantity(v[1], units = 's')
+            v2[2] = assume_quantity(v[2], units = 'Hz')
+            v2[3] = assume_quantity(v[3], units = 'Hz')
+            #~ print k, v2
+            self.__dict__[k] = v2
+        else:
+            self.__dict__[k] = v
+        #~ object.__setattr__(self,k,v)
     
     def checkParam(self):
         """ Perform checks and corrections to parameters t_start, t_stop, 
@@ -209,7 +221,7 @@ class LineDetector():
         #~ self.detection_zone[1] = min(self.detection_zone[1], self.anaSig.t()[-1]+1./self.anaSig.sampling_rate )
         self.detection_zone[1] = min(self.detection_zone[1], self.anaSig.t_stop+self.anaSig.sampling_period )
         self.reference_zone[0] = max(self.reference_zone[0], self.anaSig.t_start )
-        print  self.reference_zone
+        #~ print  self.reference_zone
         
     
     def computeAllStep(self):
@@ -248,7 +260,7 @@ class LineDetector():
             f = self.timeFreq.freqs
             t1,t2,f1,f2 = self.reference_zone
             subMap =  map[ (t>=t1) & (t<t2), :][: ,  (f>=f1) & (f<f2)]
-            print subMap.shape, t1, t2
+            #~ print subMap.shape, t1, t2
             subMap = abs(subMap)
             self.threshold = numpy.mean(subMap) + self.std_relative_threshold*numpy.std(subMap)
         return self.threshold
@@ -265,7 +277,7 @@ class LineDetector():
         
         new_t =  t[ (t>=t1) & (t<t2) ]
         new_f = f[ (f>=f1) & (f<f2)]
-        print self.threshold
+        #~ print self.threshold
         self.computeThreshold()
         
         ind_t,ind_f = numpy.array(max_detection(abs(subMap),threshold= self.threshold))

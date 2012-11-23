@@ -22,7 +22,7 @@ class ImageSerie(OEBase):
     attributes =[ ('name', str),
                                                 ('t_start', pq.Quantity, 0),
                                                 ('sampling_rate', pq.Quantity, 0),
-                                                ('images', pq.Quantity, 3),
+                                                ('images', np.ndarray, 3),
                                                 ]
     one_to_many_relationship = [ ]
     many_to_one_relationship = [ 'Segment' ]

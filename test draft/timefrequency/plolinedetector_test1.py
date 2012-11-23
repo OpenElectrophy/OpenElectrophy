@@ -24,6 +24,7 @@ def test1():
                  deltafreq = 1.,
                  sampling_rate = 400.,
                  t_start = -np.inf, 
+                 #~ t_start = 0., 
                  t_stop = np.inf,
                  f0=2.5, 
                  normalisation = 0.,

@@ -16,7 +16,8 @@ params = [
         {'name': 'Float', 'type': 'float', 'value': 10.5, 'step': 0.1},
         {'name': 'String', 'type': 'str', 'value': "hi"},
         {'name': 'ylims', 'type': 'range', 'value': [-5.,5.]},
-        {'name': 'xsize', 'type': 'logfloat', 'value': 10.}
+        {'name': 'xsize', 'type': 'logfloat', 'value': 10.},
+        {'name': 'choice', 'type': 'list', 'values': {"one": 1, "two": 2, "three": 3}, 'value': 2},
         
         ]
 
@@ -46,9 +47,28 @@ def test2():
     app.exec_()
 
 
+def test3():
+    import copy
+    params.append( {'name': 'subparam', 'type': 'group', 'children': copy.deepcopy(params)} )
+    
+    app = QApplication([ ])
+    p = Parameter.create(name='params', type='group', children=params)
+    t = ParameterTree()
+    t.setParameters(p, showTop=False)
+    t.show()
+    app.exec_()
+    print get_dict_from_group_param(p, cascade = False)
+
+    print get_dict_from_group_param(p, cascade = True)
+    #~ print Parameter
+    #~ print p.to_dict(cascade = False)
+    #~ print p.to_dict(cascade = True)
+
+
 
 if __name__ == '__main__':
     #~ test1()
-    test2()
+    #~ test2()
+    test3()
 
     

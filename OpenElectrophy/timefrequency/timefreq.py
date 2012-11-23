@@ -63,6 +63,7 @@ def reduce_signal(ana, t_start = None, t_stop = None):
     # Reduce signal to time limits
     if t_start is not None:
         ana = ana[ana.times>=t_start]
+        ana.t_start = max(t_start, ana.t_start)
     if t_start is not None:
         ana = ana[ana.times<=t_stop]
     return ana

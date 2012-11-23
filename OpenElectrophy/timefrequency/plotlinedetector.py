@@ -11,6 +11,8 @@ import matplotlib
 from matplotlib import pyplot
 import numpy
 
+from ..tools import fft_passband_filter
+
 class PlotLineDetector():
     def __init__(self, figure = None,
                             lineDetector = None):
@@ -108,6 +110,11 @@ class PlotLineDetector():
             self.axSig.lines.remove(self.lineSig)
         
         #TODO
+        ana = self.lineDetector.anaSig
+        nq = ana.sampling_rate.magnitude/2.
+        sig_f = fft_passband_filter(ana.magnitude, f_low =f1.magnitude/nq,f_high=f2.magnitude/nq)
+        self.lineSig, = self.axSig.plot(ana.times, sig_f , color = 'g')
+        
         #~ self.lineSig, = self.lineDetector.anaSig.plot_filtered(ax = self.axSig , 
                                                                 #~ f1 = f1,
                                                                 #~ f2 = f2,
@@ -154,10 +161,10 @@ class PlotLineDetector():
         for osci in self.lineDetector.list_oscillation:
             l = self.axMap.plot( osci.time_line, osci.freq_line , linewidth = 3, color='m')
             self.lineOscillations1 += l
-            #~ l = osci.plot_line_on_signal(ax = self.axSig,
-                                                #~ color = 'm',
+            l = osci.plot_line_on_signal(ax = self.axSig,
+                                                color = 'm',
                                                 #~ sampling_rate =self.lineDetector.anaSig.sampling_rate,
-                                                #~ )
+                                                )
             self.lineOscillations2 += l
 
         self.axMap.set_xlim(xl)

@@ -6,6 +6,7 @@ import numpy as np
 
 from base import OEBase
 
+import scipy.signal
 
 class Oscillation(OEBase):
     """
@@ -28,7 +29,7 @@ class Oscillation(OEBase):
                                                 ('amplitude_max', float),
                                                 ('time_line', pq.Quantity, 1),
                                                 ('freq_line', pq.Quantity, 1),
-                                                ('value_line', pq.Quantity, 1),
+                                                ('value_line', np.ndarray, 1),
                                                 ]
     one_to_many_relationship = [ ]
     many_to_one_relationship = [ 'AnalogSignal' ]
@@ -49,7 +50,7 @@ class Oscillation(OEBase):
         """
         if self.time_line.size>1:
             old_dt = self.time_line[1]-self.time_line[0]
-            x = numpy.arange(self.time_start, self.time_stop+old_dt, 1./sampling_rate)
+            x = np.arange(self.time_start, self.time_stop+old_dt, 1./sampling_rate)
         else:
             x=self.time_line
         v = self.value_line
@@ -58,12 +59,12 @@ class Oscillation(OEBase):
         # Before resampling, in order to avoid slow down due the use of ifft in scipy.resample
         # y is padded with 0 proportionnally to the distance from x.size to the next 2**N 
         # QUESTION: does it lead to some strange edge effects???
-        N=numpy.ceil(numpy.log2(x.size))
-        vv=numpy.r_[v,numpy.zeros(numpy.floor(v.size*(2**N-x.size)/x.size))]
+        N=np.ceil(np.log2(x.size))
+        vv=np.r_[v,np.zeros(np.floor(v.size*(2**N-x.size)/x.size))]
         vv = signal.resample( vv, 2**N)
         v = vv[:x.size]
 
-        y2 = numpy.angle(v)
+        y2 = np.angle(v)
 
 
 
@@ -73,6 +74,38 @@ class Oscillation(OEBase):
         phases[ d==0 ] = nan # all points outside the range where the oscillation is known
         return phases
 
+    def plot_line_on_signal(self,   color ='m',
+                                                    sampling_rate = None,
+                                                    **kargs):
+        if 'ax'in kargs:
+            ax = kargs['ax']
+        
+        if sampling_rate is None:
+            x = self.time_line
+            v = self.value_line
+            y = np.cos(np.angle(v))*np.abs(v)
+        else :
+            if self.time_line.size>1:
+                old_dt = self.time_line[1]-self.time_line[0]
+                x = np.arange(self.time_start, self.time_stop+old_dt, 1./sampling_rate.rescale('Hz').magnitude)
+                #~ l = int((self.time_stop-self.time_start)*sampling_rate.rescale('Hz').magnitude)
+                #~ x = self.time_start + np.arange(l) / sampling_rate.rescale('Hz').magnitude
+                
+            else:
+                x=self.time_line
+            v = self.value_line
+            y = np.cos(np.angle(v))*np.abs(v)
+            
+            # Before resampling, in order to avoid slow down due the use of ifft in scipy.resample
+            # y is padded with 0 proportionnally to the distance from x.size to the next 2**N 
+            # QUESTION: does it lead to some strange edge effects???
+            N=np.ceil(np.log2(x.size))
+            yy=np.r_[y,np.zeros(np.floor(y.size*(2**N-x.size)/x.size))]
+            yy = scipy.signal.resample( yy, 2**N)
+            y = yy[:x.size]
+        
+        l = ax.plot(x,y  , linewidth = 1, color=color)
+        return l
 
 
     

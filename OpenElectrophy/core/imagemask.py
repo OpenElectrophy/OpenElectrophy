@@ -18,7 +18,7 @@ class ImageMask(OEBase):
     tablename = 'ImageMask'
     neoclass = None
     attributes = [ ('name', str),
-                                                ('info', pq.Quantity, 0),
+                                                ('info', str),
                                                 ('mask', np.ndarray, 2),
                                                 ]
     one_to_many_relationship = [ ]

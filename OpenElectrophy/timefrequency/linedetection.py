@@ -5,6 +5,8 @@
 from numpy import ediff1d,array,r_,digitize,arange
 from ..core.oscillation import Oscillation
 
+import quantities as pq
+
 def detect_one_line_from_max(powermap,
             max_t,
             max_f,
@@ -109,8 +111,8 @@ def detect_oscillations(map,
             if not(known):
                 line_t,line_f=detect_one_line_from_max(abs(map),max_t,max_f,threshold)
                 osc=Oscillation()
-                osc.time_line=t_start+1.*line_t/sampling_rate
-                osc.freq_line=f_start+1.*line_f*deltafreq
+                osc.time_line=(t_start+1.*line_t/sampling_rate)*pq.s
+                osc.freq_line=(f_start+1.*line_f*deltafreq)*pq.Hz
                 osc.value_line=map[line_t,line_f]
                 #~ osc.amplitude_max=abs(map[max_t,max_f])
                 #~ osc.time_max=t_start+1.*max_t/sampling_rate

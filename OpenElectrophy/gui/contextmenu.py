@@ -161,6 +161,7 @@ class EditRecordingChannelGroups(MenuItem):
 
 
 
+from .oscillationdetection import OscillationDetection
 
 
 class EditOscillation(MenuItem):
@@ -168,6 +169,15 @@ class EditOscillation(MenuItem):
     table = 'AnalogSignal'
     mode = 'unique'
     icon = ':/oscillation.png'
+    def execute(self, session,explorer,tablename,  id, treedescription,settings,  **kargs):
+        class_ = treedescription.tablename_to_class[tablename]
+        ana = session.query(class_).get(id)
+        
+        w = OscillationDetection(analogsignal = ana, settings =settings, session = session, mapped_classes = treedescription.dbinfo.mapped_classes)
+        w.db_changed.connect(explorer.refresh)
+        w.setParent(explorer)
+        w.setWindowFlags(Qt.Window)
+        w.show()
 
 
 from .spikesorting import SpikeSortingWindow
@@ -185,7 +195,6 @@ class SpikeSorting(MenuItem):
         # FIXME: this load every in a block because of cascade = True
         # do a hack for loading only the rcg
         neo_rcg = rcg.to_neo(cascade = True)
-        print neo_rcg.OEinstance
         
         spikesorter = SpikeSorter(neo_rcg)
         w= SpikeSortingWindow(spikesorter = spikesorter, session = session, dbinfo = treedescription.dbinfo, settings =settings)

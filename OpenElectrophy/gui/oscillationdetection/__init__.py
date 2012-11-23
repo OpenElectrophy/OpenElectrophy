@@ -1,1 +1,2 @@
  
+from oscillationdetection import OscillationDetection

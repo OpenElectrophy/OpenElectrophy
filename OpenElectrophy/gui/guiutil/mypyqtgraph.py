@@ -11,6 +11,25 @@ from pyqtgraph.parametertree import parameterTypes as types
 import numpy as np
 
 
+def get_dict_from_group_param(param, cascade = False):
+    assert param.type() == 'group'
+    d = {}
+    for p in param.children():
+        if p.type() == 'group':
+            if cascade:
+                d[p.name()] = get_dict_from_group_param(p, cascade = True)
+            continue
+        else:
+            d[p.name()] = p.value()
+    return d
+to_dict = get_dict_from_group_param
+
+#~ class Parameter(Parameter):
+    #~ def to_dict(self, cascade = False):
+        #~ return get_dict_from_group_param(self, cascade = cascade)
+#~ print Parameter
+
+
 ##Range
 class RangeWidget(QWidget):
     sigChanged = pyqtSignal()
