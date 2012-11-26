@@ -10,7 +10,7 @@ long_description = open("README.txt").read()
 
 
 if os.name == 'nt':
-    scripts = ['startOpenElectrophy.pyw',]
+    scripts = ['startOpenElectrophy.py',]
     entry_points = {
                                 'gui_scripts' : [ 'startOpenElectrophy = startOpenElectrophy'],
                             }
@@ -40,8 +40,8 @@ setup(
                     'guidata>=1.4.1',
                     'joblib>=0.6.4',
                     'tables>=2.3.1',
-                    'pywt>=0.2.0',
-                    'sklearn>=0.11',
+                    #~ 'pywavelet>=0.2.2',
+                    #~ 'sklearn>=0.11',
                     ],
                     
     requires = [

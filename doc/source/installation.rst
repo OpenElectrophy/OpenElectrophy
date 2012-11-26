@@ -77,7 +77,8 @@ Steps:
         * joblib (http://pypi.python.org/pypi/joblib)
         *  blosc (http://pypi.python.org/pypi/blosc/1.0.3)
         * MySQL-python (http://www.lfd.uci.edu/~gohlke/pythonlibs/)
-        * 
+        * pywavelet (http://pypi.python.org/pypi/PyWavelets/)
+        
     6. Dowlaod pyqtgraph http://www.pyqtgraph.org/:
         * rename pyqtgraph-dev-r223-32.exe  to pyqtgraph-223.0.0.win32-py2.7.exe
         * or rename pyqtgraph-dev-r223-32.exe  to pyqtgraph-223.0.0.amd64-py2.7.exe
