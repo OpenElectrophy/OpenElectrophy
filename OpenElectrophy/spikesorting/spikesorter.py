@@ -290,8 +290,8 @@ class SpikeSorter(object):
 
     def init_seg_spike_slices(self):
         start = 0
-        self.seg_spike_slices = { }
         if self.spike_index_array is None: return
+        self.seg_spike_slices = { }
         for s, ind in enumerate(self.spike_index_array):
             stop = start + ind.size
             self.seg_spike_slices[s] = slice(start, stop)
@@ -350,16 +350,16 @@ class SpikeSorter(object):
         :params s: segment index
         :params c: cluster
         """
-        slice = self.seg_spike_slices[s]
-        clusters_in_seg = self.spike_clusters[slice]
-        spike_indexes = self.spike_index_array[s]
-        sr = self.sig_sampling_rate.rescale('Hz').magnitude
-        t_start = self.rcs[0].analogsignals[s].t_start.rescale('s').magnitude
-        spike_times = spike_indexes[clusters_in_seg == c]/sr+t_start
-        if units is not None:
-            spike_times = (spike_times * pq.s).rescale(units)
-            
-        return spike_times
+        if self.spike_index_array is not None:
+            slice = self.seg_spike_slices[s]
+            clusters_in_seg = self.spike_clusters[slice]
+            spike_indexes = self.spike_index_array[s]
+            sr = self.sig_sampling_rate.rescale('Hz').magnitude
+            t_start = self.rcs[0].analogsignals[s].t_start.rescale('s').magnitude
+            spike_times = spike_indexes[clusters_in_seg == c]/sr+t_start
+            if units is not None:
+                spike_times = (spike_times * pq.s).rescale(units)
+            return spike_times
         
         
         
@@ -383,6 +383,10 @@ class SpikeSorter(object):
         
         if len(self.rcg.units)>0:
             self.seg_spike_slices = { }
+            #~ if all_sigs is not None:
+                #~ self.spike_index_array = np.empty((len(self.segs)), dtype = object)
+            #~ else:
+                #~ self.spike_index_array =None
             self.spike_index_array = np.empty((len(self.segs)), dtype = object)
             pos = 0
             clusters = [ ]
@@ -409,6 +413,8 @@ class SpikeSorter(object):
                         ana = self.rcs[0].analogsignals[s]
                         spike_index.append(np.array((sptr.rescale('s') - ana.t_start.rescale('s'))* ana.sampling_rate.rescale('Hz'), dtype = 'i8'))
                         #~ print 's', s, 'u', u, spike_index[-1].size
+                    elif sptr.sampling_rate is not None:
+                        spike_index.append(np.array((sptr.rescale('s') - sptr.t_start.rescale('s'))* sptr.sampling_rate.rescale('Hz'), dtype = 'i8'))
                     
                     if sptr.waveforms is not None :
                         waveforms.append(sptr.waveforms.magnitude)
@@ -420,7 +426,12 @@ class SpikeSorter(object):
                 
                 self.seg_spike_slices[s] = slice(pos, pos+nb_spike_in_segs)
                 pos += nb_spike_in_segs
+                
                 self.spike_index_array[s] = np.concatenate(spike_index)
+                #~ if all_sigs is not None:
+                    #~ self.spike_index_array[s] = np.concatenate(spike_index)
+                #~ else:
+                    #~ self.spike_index_array = None
                 #~ print 's',s, self.spike_index_array[s].size
                 
             self.spike_clusters = np.concatenate(clusters)
