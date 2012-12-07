@@ -151,37 +151,42 @@ class OEBase(object):
                     kargs[k] = getattr(self, k)
                 self.neoinstance = self.neoclass(**kargs)
                 self.neoinstance.OEinstance = self
-                # cascade relationships
-                if cascade:
-                    for childname in self.many_to_many_relationship:
-                        for child in getattr(self, childname.lower()+'s'):
-                            neochild = child.neoinstance
-                            if neochild is None:
-                                neochild = child.to_neo(cascade = True)
-                            if neochild is not None and neochild not in getattr(self.neoinstance, childname.lower()+'s'):
-                                getattr(self.neoinstance, childname.lower()+'s').append( neochild )
-                                getattr(neochild, self.tablename.lower()+'s').append( self.neoinstance )
-                    for childname in self.one_to_many_relationship:
-                        for child in getattr(self, childname.lower()+'s'):
+            # cascade relationships
+            if cascade:
+                for childname in self.many_to_many_relationship:
+                    for child in getattr(self, childname.lower()+'s'):
+                        neochild = child.neoinstance
+                        if neochild is None:
                             neochild = child.to_neo(cascade = True)
-                            neochildren = getattr(self.neoinstance, childname.lower()+'s')
+                        #~ if neochild is not None and neochild not in getattr(self.neoinstance, childname.lower()+'s'):
+                        if neochild is not None and not list_contains(getattr(self.neoinstance, childname.lower()+'s'), neochild):
+                            getattr(self.neoinstance, childname.lower()+'s').append( neochild )
+                            getattr(neochild, self.tablename.lower()+'s').append( self.neoinstance )
+                for childname in self.one_to_many_relationship:
+                    for child in getattr(self, childname.lower()+'s'):
+                        neochild = child.to_neo(cascade = True)
+                        
+                        neochildren = getattr(self.neoinstance, childname.lower()+'s')
+                        if not list_contains(neochildren, neochild):
                             neochildren.append(neochild)
-                            #~ if neochild is not None and neochild not in neochildren:
-                                #~ neochildren.append(neochild)
-                    for parentname in self.many_to_one_relationship:
-                        if hasattr(self, parentname.lower()):
-                            OEparent = getattr(self, parentname.lower())
-                            if OEparent is None: continue
-                            neoparent = OEparent.neoinstance
-                            if neoparent is None:
-                                neoparent = OEparent.to_neo(cascade=True)
-                                #~ neoparent = OEparent.to_neo(cascade=False)
-                            if neoparent is not None:
-                                setattr(self.neoinstance, parentname.lower(), neoparent)
+                        #~ if neochild is not None and neochild not in neochildren:
+                            #~ neochildren.append(neochild)
+                for parentname in self.many_to_one_relationship:
+                    if hasattr(self, parentname.lower()):
+                        OEparent = getattr(self, parentname.lower())
+                        if OEparent is None: continue
+                        neoparent = OEparent.neoinstance
+                        if neoparent is None:
+                            neoparent = OEparent.to_neo(cascade=True)
+                            #~ neoparent = OEparent.to_neo(cascade=False)
+                        if neoparent is not None:
+                            setattr(self.neoinstance, parentname.lower(), neoparent)
             
             return self.neoinstance
-        
-            
-            
-            
-            
+
+
+# some hack for python list when contain numpy.array
+def list_contains(l, e):
+    # should be
+    # return s in l
+    return np.any([ e is e2 for e2 in l ])

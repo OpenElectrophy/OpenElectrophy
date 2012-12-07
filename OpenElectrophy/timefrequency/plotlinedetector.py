@@ -163,7 +163,7 @@ class PlotLineDetector():
             self.lineOscillations1 += l
             l = osci.plot_line_on_signal(ax = self.axSig,
                                                 color = 'm',
-                                                #~ sampling_rate =self.lineDetector.anaSig.sampling_rate,
+                                                sampling_rate =self.lineDetector.anaSig.sampling_rate,
                                                 )
             self.lineOscillations2 += l
 

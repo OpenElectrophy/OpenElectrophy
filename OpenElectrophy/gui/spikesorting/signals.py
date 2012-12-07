@@ -41,6 +41,10 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             # fixme: fast seek or not ?
             self.timerSeeker.time_changed.connect(viewer.seek)
             self.timerSeeker.fast_time_changed.connect(viewer.seek)
+        
+        # FIXME set it for all sgements
+        #~ self.timerSeeker.set_start_stop(sps.segs[0].analogsignals[0].t_start.magnitude-2,sps.segs[0].analogsignals[0].t_stop.magnitude+2)
+        
 
             
 

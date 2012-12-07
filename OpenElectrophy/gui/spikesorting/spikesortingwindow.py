@@ -30,7 +30,7 @@ class SpikeSortingWindow(QMainWindow):
         self.dbinfo = dbinfo
         self.settings = settings
         
-        
+        sps.check_display_attributes()
         
         self.setWindowTitle('Spike sorting for RecordingChannelGroup.name={}'.format(sps.rcg.name))
         self.setAnimated(False)

@@ -101,6 +101,119 @@ import neo
 
 class SpikeSorter(object):
     """
+    This is a hight level object for spike sorting.
+    
+    Arguments:
+        * the only args is one neo.RecordingChannelGroup (see neo schema)
+          This should include everything and every cases:
+             1. One or several segment.
+             2. Detected spike or only signal or already sorted spiketrain, ...
+             
+    We deliberatly choose a state vision of the spike sorting pipeline because sorting is
+    not one pipeline but several possible pipeline (and nested).
+    
+
+    NbRC : number of neo.RecordingChannel inside this neo.RecordingChannelGroup
+    NbSeg : numer of neo.Segment inside neo.Block
+    NbSpk : number tatal of detected spikes
+    NbClus : number of cluster
+    
+    So SpikeSorter is defined by its attributes and attributes can be grouped in category:
+    
+        1. **Attributes for filtering and detection**:
+            
+            ..notes::
+                Theses following attributes are accecible by (segment) or (channel, segment).
+                This fit the well the neo representation for spike sorting.
+            
+            * **full_band_sigs** : 2D numpy array of objects that points towards neo.AnalogSignal
+                                             shape = (NbRC, NbSeg) 
+            * **sig_sampling_rate** sampling_rate of signals (both filtered and full band)
+            * **filtered_sigs** : 2D numpy array of objects that points towards neo.AnalogSignal
+                                            shape = (NbRC, NbSeg)
+            * **spike_index_array** : 1D np.array of object that point themself to np.array of indices, int64
+                                                    shape = (NbSeg,)
+                                                    Each array can be seen as the spike times but in sample units.
+        
+        2. **Attributes for waveforms, features, and cluster**:
+            ..notes::
+                For efficiency reasons, theses following attributes are big and comptact arrays of waveforms
+                or features even if spikes belong to differents segments. This explain the reason
+                of the attribute *seg_spike_slices*
+        
+            * **seg_spike_slices** : a dict of slices. Key is segment number, value is slice
+                                                along the main axis. Example with 3 segment and 20 spikes { 0 : slice(0,7), 1: slice(7:14), 2: slice(14,20) }
+            * **spike_waveforms** : 3D np.array (dtype float) that concatenate all detected spikes waveform
+                                                  shape = (NbSpk, trodness, nb_point)
+                                                  (this can be sliced by self.seg_spike_slices for splitting back to original neo.Segment)
+            * **wf_sampling_rate**: samplingrate of theses waveform
+            * **left_sweep** : nb point on left for that sweep
+            * **right_sweep** : nb point on right for that sweep
+            .. notes::
+                self.spike_waveforms.shape[2] = self.left_sweep+ 1 + self.right_sweep
+            * **waveform_features** :  2D np.array (dtype=float) to handle typical PCA or wavelet projecttion
+                                                      shape = (NbSpk, ndimension)
+                                                      (this can be sliced by self.seg_spike_slices for splitting back to original neo.Segment)
+            * **feature_names** : an np.array (dtype = unicode) that handle label of each feature
+                                                ex: ['pca1', 'pca2', 'pca3', 'pca4'] or ['max_amplitude', 'peak_to valley', ]
+                                                shape = (ndimension, )
+            * **spike_clusters** : 1D np.array (dtype in) to handle wich spijke belong to wich cluster
+            * **cluster_names** : a dict of possible clusters ( keys = unique(self.spike_clusters) )
+        
+        3. **Attributes to handle the futur of spike sorting world = probalistic clustering**
+            * **spike_clusters_probabilistic** : A 2D that give for each spike the probality to belong to a cluster
+                                                                  shape = ( NbSpk, NbClus)
+                                                                  This attr is quite speculative at the moment.
+        
+        4. **Attributes util when init and save**:
+            * **seg_t_start** : a quantity vector that define t_start for each segment.
+                                        shape: (NbSeg, )
+            * **seg_t_stop** : see seg_t_start
+            * **wf_units** : units for the waveforms
+            
+        5. **Attributes are for plotting**:
+            * **cluster_colors** : a dict  (keys = unique(self.spike_clusters)  and value = colors are a tuple of (r,g,b)
+            * **displayed_subset_size** : undensify big cluster for plotting
+            * **cluster_displayed_subset** : a dict (keys = unique(self.spike_clusters) and value = vector of selected indexes
+            * **selected_spikes** : a vector bool to deal with spikes that are selected shpae = (NbSpk,)
+        
+
+    
+    ..Notes:
+        SpikeSorter include some magics. (because __getattr__ and __setattr__).
+        In short when one attribute is updated other attributes could also
+        be automagicaly but naturaly updated. Ex: if SpikeSorter.spike_index_array
+        is changed SpikeSorter.spike_waveforms and SpikeSorter.waveform_features
+        are reset to None.
+    
+    The main idea is to apply a chain of methods to get detected and classifiyed spikes.
+    This chain depend of course of the initial state.
+    
+    This one possible chain for the case *from full band signal to detected spikes*::
+        
+        spikesorter = SpikeSorter(rcg)
+        spikesorter.ButterworthFilter( f_low = 200.)
+        spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6.,)
+        spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
+        spikesorter.PcaFeature(n_components = 4)
+        spikesorter.SklearnKMeans(n_cluster = 3)
+    
+    
+    This is a shorter chain for the case *Spike are already detected and wevefroms aligned*::
+    
+        spikesorter = SpikeSorter(rcg)
+        spikesorter.PcaFeature(n_components = 4)
+        spikesorter.HaarWaveletFeature(n_cluster = 3)
+    
+    See OpenElectropy.spikesorting.methods to get all possible methods.
+    
+    
+    ..notes::
+        SpikeSorter also contains attributes for plotting. So in the GUI all displaying widget
+        take as only entry a SpikeSorter object.
+        
+    .. notes::
+        SpikeSorter can also be used inside an interactive console like ipython.
     
     
     Example::
@@ -142,91 +255,52 @@ class SpikeSorter(object):
         """
         self.rcg = rcg
         
-        # for convinience
         self.rcs = rcg.recordingchannels
         self.segs = rcg.block.segments
         
         
         self.history=[ ]
         
-        # Each state comes with its own variables:
-        
-        # NbRC : number of neo.RecordingChannel inside this neo.RecordingChannelGroup
-        # NbSeg : numer of neo.Segment inside neo.Block
-        # NbSpk : number tatal of detected spikes
-        # NbClus : number of cluster
-        
-        # 1. Full band raw signals
-        self.full_band_sigs=None # 2D numpy array of objects that points towards neo.AnalogSignal
-                                            # shape = (NbRC, NbSeg) 
+        self.full_band_sigs=None
         self.sig_sampling_rate = None
+        self.filtered_sigs=None
+        self.spike_index_array = None
         
-        # 2. Filtered signals
-        self.filtered_sigs=None # 2D numpy array of objects that points towards neo.AnalogSignal
-                                            # shape = (NbRC, NbSeg) 
-        # 3. Detected spike times
-        self.spike_index_array = None # 1D np.array of object that point themself to np.array of indices, int64
-                                                        #shape = (NbSeg,)
-        
-        # After that point data are concatenated in compact arrays
-        # even if they come from different segment for efficiency reason, PCA need arrays compact)
-        # so we need a dictionnary of size NbSeg that have key=segment num and value=a slice
-        # to go back from the compact array (spikeWaveforms,spikeWaveformFeatures, spikeClusters, ...)
-        # to individual segments
         self.seg_spike_slices = { }
+        self.spike_waveforms = None
+        self.wf_sampling_rate = None
+        self.left_sweep = None
+        self.right_sweep = None
+        self.waveform_features = None
+        self.feature_names = None
         
-        # 4. Aligned spike waveforms
-        self.spike_waveforms = None # 3D np.array (dtype float) that concatenate all detected spikes waveform
-                                                         # shape = (NbSpk, trodness, nb_point)
-                                                         # this can be sliced by self.spikeMembership for splitting back to original neo.Segment
-        self.wf_sampling_rate = None # samplingrate of theses waveform
-        self.left_sweep = None # nb point on left for that sweep
-        self.right_sweep = None # nb point on right for that sweep (this could be a propertis!)
-        # self.spikeWaveforms.shape[2] = self.leftSweep+ 1 + self.rightSweep
+        self.spike_clusters = None
+        self.cluster_names = { }
+        self.spike_clusters_probabilistic = None
         
+        self.seg_t_start = None
+        self.seg_t_stop = None
+        self.wf_units = None
         
-        # 5. Projected spike waveforms
-        self.waveform_features = None # 2D np.array (dtype=float) to handle typical PCA or wavelet projecttion
-                                                            # shape = (NbSpk, ndimension)
-        self.feature_names = None # an np.array (dtype = unicode) that handle label of each feature
-                                                    # ex: ['pca1', 'pca2', 'pca3', 'pca4'] or ['max_amplitude', 'peak_to valley', ]
-                                                    # shape = (ndimension, )
-        
-        #6. Cluster definition/estimation/after learning
-        # this state is not very precise in our mind now
-        # this could be 'list of template waveform' or 'cluster centroid + covariance' of gaussian or ..
-        # this is method dependant and to be discuss
-        
-        # 7. Spikes (all) attributed to clusters
-        self.spike_clusters = None # 1D np.array (dtype in) to handle wich spijke belong to wich cluster
-                                                    # shape = (NbSpk, )
-        self.cluster_names = { } # a dict of possible clusters ( keys = unique(self.spike_clusters) )
-        
-        # 8. Spike are attributed probalistically to clusters
-        self.spike_clusters_probabilistic = None # A 2D that give for each spike the probality to belong to a cluster
-                                                                    #shape = ( NbSpk, NbClus)
-        
-        
-        # Theses attributes are for plotting and GUI purpose: colors, random subselection when cluster are too big, ...
-        self.cluster_colors = { } # a dict  (keys = unique(self.spike_clusters)  and value = colors are a tuple of (r,g,b)
-        self.displayed_subset_size = 100 # undensify big cluster for plotting
-        self.cluster_displayed_subset = { } # a dict (keys = unique(self.spike_clusters) and value = vector of selected indexes
-        self.selected_spikes = None # a vector bool to deal with spikes that are selected shpae = (NbSpk,)
+        self.cluster_colors = { }
+        self.displayed_subset_size = 100
+        self.cluster_displayed_subset = { }
+        self.selected_spikes = None
         
         self.initialize_from_rcg(rcg)
     
+
     
     aliases = { 'recordingchannels'  : 'rcs',
                 'segments' : 'segs',
                 'recordingchannelgroup' : 'rcg',
                 }
     
+    interdependent_attributes = ['full_band_sigs', 'filtered_sigs', 'spike_index_array', 
+                                                    'seg_spike_slices', 'spike_waveforms', 'waveform_features', 
+                                                    'spike_clusters', 
+                                                    ]
     
-
-        
-        
-        
-        
     def __setattr__(self, name, value):
         """
         Do aliases and check changes
@@ -261,10 +335,6 @@ class SpikeSorter(object):
         name = self.aliases.get(name, name)
         return object.__getattribute__(self, name)
 
-    interdependent_attributes = ['full_band_sigs', 'filtered_sigs', 'spike_index_array', 
-                                                    'seg_spike_slices', 'spike_waveforms', 'waveform_features', 
-                                                    'spike_clusters', 
-                                                    ]
 
     def check_change_on_attributes(self, name):
         """
@@ -354,88 +424,132 @@ class SpikeSorter(object):
             slice = self.seg_spike_slices[s]
             clusters_in_seg = self.spike_clusters[slice]
             spike_indexes = self.spike_index_array[s]
-            sr = self.sig_sampling_rate.rescale('Hz').magnitude
-            t_start = self.rcs[0].analogsignals[s].t_start.rescale('s').magnitude
+            if self.sig_sampling_rate is not None:
+                sr = self.sig_sampling_rate.rescale('Hz').magnitude
+            else:
+                sr = self.wf_sampling_rate.rescale('Hz').magnitude
+            t_start = self.seg_t_start[s].magnitude
             spike_times = spike_indexes[clusters_in_seg == c]/sr+t_start
             if units is not None:
                 spike_times = (spike_times * pq.s).rescale(units)
             return spike_times
+    
+    def get_spike_waveforms(self, s, c):
+        if self.spike_waveforms is not None:
+            sl = self.seg_spike_slices[s]
+            clusters_in_seg = self.spike_clusters[sl]
+            all_wf = self.spike_waveforms[sl, :, :]
+            wf = all_wf[clusters_in_seg == c]
+            return wf
         
-        
-        
-        
-        
+    def get_spike_features(self, s, c):
+        if self.spike_waveforms is not None:
+            sl = self.seg_spike_slices[s]
+            clusters_in_seg = self.spike_clusters[sl]
+            all_features = self.spike_features[sl, :, :]
+            f = all_features[clusters_in_seg == c]
+            return f
     
     def initialize_from_rcg(self,recordingChannelGroup):
+        """
+        Initialize SpikeSorter from a neo.RecordingChannelGroup
+        
+        Rules:
+            * The number of RecordingChannel define the trodness
+            * If RecordingChannels have AnalogSIgnals *full_band_sigs*, *filtered_sigs* and 
+              *sig_sampling_rate* are initialized. So spikes can be detected or re-detected.
+            * If RecordingChannels have SpikeTrains so all other attributes are initialized.
+               In that case spikes can be (re-)featured and (re-)clustered
+            * seg_t_start and seg_t_stop are taken for AnologSignals if exist otherwise
+               from SpikeTrain.
+        """
+        
+        # t_start and t_stop for each segments
+        self.seg_t_start = np.nan*np.zeros(len(self.segs))*pq.s
+        self.seg_t_stop = np.nan*np.zeros(len(self.segs))*pq.s
+        self.wf_units = None
         
         # Signals
+        self.full_band_sigs = None
+        self.filtered_sigs = None
+        self.sig_sampling_rate = None
         if len(self.rcs[0].analogsignals) == len(self.segs):
-            all_sigs= np.empty( (len(self.rcs), len(self.segs)), dtype = object)
-            for i, rc in enumerate(self.rcs):
-                for j, seg in enumerate(self.segs):
-                    all_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
+            self.full_band_sigs= np.empty( (len(self.rcs), len(self.segs)), dtype = object)
+            for j, seg in enumerate(self.segs):
+                self.seg_t_start[j] = self.rcs[0].analogsignals[j].t_start.rescale('s')
+                self.seg_t_stop[j] = self.rcs[0].analogsignals[j].t_stop.rescale('s')
+                for i, rc in enumerate(self.rcs):
+                    self.full_band_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
+                    
             self.sig_sampling_rate = self.rcs[0].analogsignals[0].sampling_rate
-        else:
-            all_sigs = None
-        self.full_band_sigs = all_sigs
-        self.filtered_sigs = all_sigs
+            self.filtered_sigs = all_sigs.copy()
+            self.wf_units = self.rcs[0].analogsignals[0].units
         
-        
+        cluster_names = { }
         if len(self.rcg.units)>0:
             self.seg_spike_slices = { }
-            #~ if all_sigs is not None:
-                #~ self.spike_index_array = np.empty((len(self.segs)), dtype = object)
-            #~ else:
-                #~ self.spike_index_array =None
             self.spike_index_array = np.empty((len(self.segs)), dtype = object)
             pos = 0
             clusters = [ ]
             waveforms = [ ]
             features = [ ]
             for s, seg in enumerate(self.segs):
-                
                 nb_spike_in_segs = 0
                 spike_index =  [ ]
                 for u, unit in enumerate(self.rcg.units):
-                    self.cluster_names[u] = unit.name
-                    
+                    cluster_names[u] = unit.name
+                    #~ print unit.name
                     #~ sptr = seg.spiketrains[u]
+                    # LE bug est dans to_neo car pas de spiketrain unit
                     sptr = None
-                    for sptr in seg.spiketrains:
-                        if sptr.unit == unit:
+                    for sptr2 in seg.spiketrains:
+                        #~ print sptr2.unit, unit
+                        #~ print 'init', u, sptr2.size, sptr2.OEinstance.id, unit.OEinstance.id
+                        if sptr2.unit == unit:
+                            sptr = sptr2
                             break
+                    
                     assert sptr is not None
+                    
+                    
+                    if np.isnan(self.seg_t_start[s]):
+                        self.seg_t_start[s] = sptr.t_start.rescale('s')
+                        self.seg_t_stop[s] = sptr.t_stop.rescale('s')
+                    else:
+                        if sptr.t_start<self.seg_t_start[s]: 
+                            self.seg_t_start[s] = sptr.t_start.rescale('s')
+                        if sptr.t_stop>self.seg_t_stop[s]:
+                            self.seg_t_stop[s] = sptr.t_stop.rescale('s')
+                    
                     
                     nb_spike_in_segs += sptr.size
                     clusters.append(np.ones(sptr.size, dtype = int)*u)
                     
-                    if all_sigs is not None:
+                    # FIXME : this is ugly
+                    if self.full_band_sigs is not None:
                         ana = self.rcs[0].analogsignals[s]
                         spike_index.append(np.array((sptr.rescale('s') - ana.t_start.rescale('s'))* ana.sampling_rate.rescale('Hz'), dtype = 'i8'))
-                        #~ print 's', s, 'u', u, spike_index[-1].size
                     elif sptr.sampling_rate is not None:
                         spike_index.append(np.array((sptr.rescale('s') - sptr.t_start.rescale('s'))* sptr.sampling_rate.rescale('Hz'), dtype = 'i8'))
                     
                     if sptr.waveforms is not None :
+                        
                         waveforms.append(sptr.waveforms.magnitude)
                         self.wf_sampling_rate = sptr.sampling_rate
                         self.left_sweep = int((sptr.left_sweep*sptr.sampling_rate).simplified.magnitude)
                         self.right_sweep = sptr.waveforms.shape[2]-1-self.left_sweep
+                        if self.wf_units is None:
+                           self.wf_units =  sptr.waveforms.units
                     if 'waveform_features' in sptr.annotations:
                         features.append(sptr.annotations['waveform_features'])
                 
                 self.seg_spike_slices[s] = slice(pos, pos+nb_spike_in_segs)
                 pos += nb_spike_in_segs
-                
                 self.spike_index_array[s] = np.concatenate(spike_index)
-                #~ if all_sigs is not None:
-                    #~ self.spike_index_array[s] = np.concatenate(spike_index)
-                #~ else:
-                    #~ self.spike_index_array = None
-                #~ print 's',s, self.spike_index_array[s].size
-                
+            
             self.spike_clusters = np.concatenate(clusters)
-            #~ print self.spike_clusters.size
+            #this reset names so
+            self.cluster_names = cluster_names
 
             if waveforms != []:
                 self.spike_waveforms = np.concatenate(waveforms)
@@ -548,9 +662,17 @@ class SpikeSorter(object):
                 ind = ind[:self.displayed_subset_size]
             self.cluster_displayed_subset[c]  = ind
     
-    def populate_recordingchannelgroup(self,): # save_empty = True
+    def populate_recordingchannelgroup(self,with_waveforms = True,
+                                                                        with_features = False,
+                                                                        ):
         """
         Populate neo.RecordingChannelGroup  with new sorting.
+        It delete previous Unit and SpikeTrain and populate with new ones.
+        
+        Arguments:
+            * with_waveforms : True (default) waveforms of spikes are saved included in SpikeTrain 
+            * with_features : True (default) feature_waveforms of spikes are saved included in SpikeTrain 
+        
         """
         rcg = self.rcg
         bl = rcg.block
@@ -558,8 +680,6 @@ class SpikeSorter(object):
         for u, unit in enumerate(rcg.units):
             for s, seg in enumerate(bl.segments):
                 for sptr in unit.spiketrains:
-                    #~ if sptr in seg.spiketrains:
-                        #~ seg.spiketrains.remove(sptr)
                     if list_contains(seg.spiketrains, sptr):
                         list_remove(seg.spiketrains, sptr)
         rcg.units = [ ]
@@ -569,19 +689,30 @@ class SpikeSorter(object):
             unit = neo.Unit(name = name)
             rcg.units.append(unit)
             for s, seg in enumerate(bl.segments):
-                ana = self.rcs[0].analogsignals[s]
-                sptr = neo.SpikeTrain(self.get_spike_times(s, c, units = 's'), t_start = ana.t_start, t_stop = ana.t_stop)
+                sptr = neo.SpikeTrain(self.get_spike_times(s, c, units = 's'),
+                                    t_start = self.seg_t_start[s], t_stop = self.seg_t_stop[s])
+                if with_waveforms:
+                    sptr.waveforms = self.get_spike_waveforms(s, c) * self.wf_units
+                    sptr.sampling_rate = self.wf_sampling_rate
+                    sptr.left_sweep = (self.left_sweep/self.wf_sampling_rate).rescale('s')
+                if with_features:
+                    sptr.annotations['waveform_features'] = self.get_spike_features(s, c)
+                sptr.sort()
+                
                 unit.spiketrains.append(sptr)
                 seg.spiketrains.append(sptr)
         
         return rcg
+
     
     def save_in_database(self, session, dbinfo):
         rcg = self.rcg.OEinstance
         bl = rcg.block
         
+        
         for u, unit in enumerate(rcg.units):
             for s, seg in enumerate(bl.segments):
+                #~ seg.neoinstance = None
                 for sptr in unit.spiketrains:
                     #~ if sptr in seg.spiketrains:
                         #~ seg.spiketrains.remove(sptr)
@@ -592,6 +723,8 @@ class SpikeSorter(object):
             unit.neoinstance.OEinstance = None
             session.delete(unit)
         session.commit()
+        #~ bl.neoinstance = None
+        
         
         neorcg = self.populate_recordingchannelgroup()
         for u, neounit in enumerate(neorcg.units):
@@ -602,9 +735,9 @@ class SpikeSorter(object):
                 sptr = OEBase.from_neo(neosptr, dbinfo.mapped_classes, cascade = False)
                 unit.spiketrains.append(sptr)
                 neoseg.OEinstance.spiketrains.append(sptr)
+                #~ print 'save',u,  sptr.times.size
         session.commit()
 
-        
 
 
 # some hack for python list when contain numpy.array
@@ -619,10 +752,4 @@ def list_remove(l, e):
     ind,  = np.where([ e is e2 for e2 in l ])
     if ind.size>=1:
         l.pop(ind[0])
-
-    
-    
-    
-    
-    
 

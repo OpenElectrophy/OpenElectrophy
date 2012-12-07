@@ -35,11 +35,13 @@ class TryItIO(BaseIO):
                                     duration = 60.,
                                     nb_segment = 5,
                                     nb_epocharrays = 2,
+                                    nb_unit = 6,
                                     ):
         t_start = -2
         bl = spikesorting.generate_block_for_sorting(duration = duration*pq.s,
                                                                                 nb_segment = nb_segment,
-                                                                                t_start =t_start*pq.s)
+                                                                                t_start =t_start*pq.s,
+                                                                                nb_unit = nb_unit)
         
         # add some oscillation
         for seg in bl.segments:

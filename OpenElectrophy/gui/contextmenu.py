@@ -191,9 +191,9 @@ class SpikeSorting(MenuItem):
     def execute(self, session,explorer,tablename,  id, treedescription,settings,  **kargs):
         class_ = treedescription.tablename_to_class[tablename]
         rcg = session.query(class_).get(id)
-        
+       
         # FIXME: this load every in a block because of cascade = True
-        # do a hack for loading only the rcg
+        # do a hack for loading only the rcg and related units, signals and segment not everything in the block
         neo_rcg = rcg.to_neo(cascade = True)
         
         spikesorter = SpikeSorter(neo_rcg)
