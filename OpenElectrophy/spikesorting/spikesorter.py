@@ -482,7 +482,7 @@ class SpikeSorter(object):
                     self.full_band_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
                     
             self.sig_sampling_rate = self.rcs[0].analogsignals[0].sampling_rate
-            self.filtered_sigs = all_sigs.copy()
+            self.filtered_sigs = self.full_band_sigs.copy()
             self.wf_units = self.rcs[0].analogsignals[0].units
         
         cluster_names = { }
