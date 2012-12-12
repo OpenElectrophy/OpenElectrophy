@@ -89,7 +89,7 @@ class TimeSeeker(QWidget) :
             self.slider.setOrientation( Qt.Horizontal )
             self.slider.setMaximum(1000)
             self.slider.setMinimum(0)
-            self.slider.setMinimumWidth(400)
+            self.slider.setMinimumWidth(200)
             self.slider.valueChanged.connect(self.sliderChanged)
         
         if show_spinbox:
@@ -131,12 +131,13 @@ class TimeSeeker(QWidget) :
         t = self.t +  self.refresh_interval*self.speed
         self.seek(t)
     
-    def set_start_stop(self, t_start, t_stop):
+    def set_start_stop(self, t_start, t_stop, seek = True):
         #~ print 't_start', t_start, 't_stop', t_stop
         assert t_stop>t_start
         self.t_start = t_start
         self.t_stop = t_stop
-        self.seek(self.t_start)
+        if seek:
+            self.seek(self.t_start)
         if self.show_spinbox:
             self.spinbox.setMinimum(t_start)
             self.spinbox.setMaximum(t_stop)

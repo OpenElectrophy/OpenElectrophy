@@ -22,7 +22,7 @@ oebl = session.query(Block).first()
 if oebl is None:
     print 'do not exists: so create'
     bl = generate_block_for_sorting(nb_unit = 6,
-                                                        duration = 10.*pq.s,
+                                                        duration = 60.*pq.s,
                                                         noise_ratio = 0.2,
                                                         nb_segment = 2,
                                                         )
@@ -39,13 +39,13 @@ rcg = bl.recordingchannelgroups[0]
 
 spikesorter = SpikeSorter(rcg)
 
-#~ if True:
-    #~ spikesorter.ButterworthFilter( f_low = 200.)
-    #~ spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6.,)
-    #~ spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
-    #~ spikesorter.PcaFeature(n_components = 4)
-    #~ spikesorter.CombineFeature(use_peak = True, use_peak_to_valley = True, n_pca = 3, n_ica = 3, n_haar = 3, sign = '-')
-    #~ spikesorter.SklearnKMeans(n_cluster = 5)
+if True:
+    spikesorter.ButterworthFilter( f_low = 200.)
+    spikesorter.MedianThresholdDetection(sign= '-', median_thresh = 6.,)
+    spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
+    spikesorter.PcaFeature(n_components = 4)
+    spikesorter.CombineFeature(use_peak = True, use_peak_to_valley = True, n_pca = 3, n_ica = 3, n_haar = 3, sign = '-')
+    spikesorter.SklearnKMeans(n_cluster = 5)
 
     
     
