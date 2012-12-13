@@ -40,8 +40,8 @@ setup(
                     'guidata>=1.4.1',
                     'joblib>=0.6.4',
                     'tables>=2.3.1',
-                    #~ 'pywavelet>=0.2.2',
-                    #~ 'sklearn>=0.11',
+                    'pywavelets>=0.2.2',
+                    'scikit-learn>=0.11',
                     ],
                     
     requires = [

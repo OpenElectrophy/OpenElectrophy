@@ -21,6 +21,7 @@ def test1():
     w2 = FilteredBandSignal(spikesorter = spikesorter)
     w2.refresh()
     w2.show()
+    w2.spike_clusters_changed.connect(w2.refresh)
 
 
     #~ w3 = SignalStatistics(spikesorter = spikesorter)
@@ -35,3 +36,4 @@ def test1():
 
 if __name__ == '__main__' :
     test1()
+
