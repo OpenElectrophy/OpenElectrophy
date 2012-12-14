@@ -597,8 +597,48 @@ class SpikeSorter(object):
     
     ## Manul clustering utilities
     def delete_one_cluster(self, c):
-        #TODO
-        raise(NotImplementedError)
+        # spike_index_array first
+        for i in range(len(self.segs)):
+            sl = self.seg_spike_slices[i]
+            ind = (self.spike_clusters[sl] == c)
+            self.spike_index_array[i] = self.spike_index_array[i][self.spike_clusters[sl] != c]
+        
+        keep = self.spike_clusters != c
+        if self.spike_waveforms is not None:
+            object.__setattr__(self, 'spike_waveforms', self.spike_waveforms[keep,:,:])
+        if self.waveform_features is not None:
+            object.__setattr__(self, 'waveform_features', self.waveform_features[keep,:])
+        object.__setattr__(self, 'spike_clusters', self.spike_clusters[keep])
+        
+        self.init_seg_spike_slices()
+
+
+        #~ self.full_band_sigs=None
+        #~ self.sig_sampling_rate = None
+        #~ self.filtered_sigs=None
+        #~ self.spike_index_array = None
+        
+        #~ self.seg_spike_slices = { }
+        #~ self.spike_waveforms = None
+        #~ self.wf_sampling_rate = None
+        #~ self.left_sweep = None
+        #~ self.right_sweep = None
+        #~ self.waveform_features = None
+        #~ self.feature_names = None
+        
+        #~ self.spike_clusters = None
+        #~ self.cluster_names = { }
+        #~ self.spike_clusters_probabilistic = None
+        
+        #~ self.seg_t_start = None
+        #~ self.seg_t_stop = None
+        #~ self.wf_units = None
+        
+        #~ self.cluster_colors = { }
+        #~ self.displayed_subset_size = 100
+        #~ self.cluster_displayed_subset = { }
+        #~ self.selected_spikes = None
+
     
     def add_one_spike(self, s, time, c = 0):
         if self.filtered_sigs is None:

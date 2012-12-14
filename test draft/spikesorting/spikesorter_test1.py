@@ -124,8 +124,41 @@ def test3():
     print sps.spike_clusters
 
 
+
+def test4():
+    # add a spike
+    #save  to neo
+    bl = generate_block_for_sorting(nb_unit = 6,
+                                                        duration = 1.*pq.s,
+                                                        noise_ratio = 0.2,
+                                                        nb_segment = 2,
+                                                        )
+    rcg = bl.recordingchannelgroups[0]
+
+    sps = spikesorter = SpikeSorter(rcg)
+    
+    print sps.spike_index_array[0].shape
+    print sps.spike_waveforms.shape
+    print sps.seg_spike_slices
+    print sps.waveform_features
+    print sps.spike_clusters
+    
+    sps.delete_one_cluster(0)
+    print 
+    
+    print sps.spike_index_array[0].shape
+    print sps.spike_waveforms.shape
+    print sps.seg_spike_slices
+    print sps.waveform_features
+    print sps.spike_clusters
+
+
+
 if __name__ =='__main__':
     #~ test1()
     #~ test2()
-    test3()
+    #~ test3()
+    test4()
+    
+    
 
