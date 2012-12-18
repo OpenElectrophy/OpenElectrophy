@@ -29,6 +29,7 @@ Contents:
    installation
    screenshots
    gettingstarted
+   script_examples
    licence
    authors
    mailinglist

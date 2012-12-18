@@ -15,6 +15,8 @@ import sys, os
 sys.path.append( '../..')
 import OpenElectrophy
 
+sys.path.append( '../examples')
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
