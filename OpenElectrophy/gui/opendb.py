@@ -130,7 +130,7 @@ class TypePostgresSQL(DbConnectWithDBList):
                                                                                                     password =  PasswordItem('password', default = '' ),
                                                                                                     ) )
     ParametersCreate = type('ParametersCreate',(DataSet,), dict(host = StringItem('host', default = 'localhost'),
-                                                                                                    #~ port =  IntItem('port', 5432),
+                                                                                                    port =  IntItem('port', 5432),
                                                                                                     adminName = StringItem('adminName', default = ''),
                                                                                                     adminPassword =  PasswordItem('adminPassword', default = '' ),
                                                                                                     user = StringItem('user', default = ''),
