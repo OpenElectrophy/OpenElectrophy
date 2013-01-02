@@ -49,7 +49,7 @@ class Oscillation(OEBase):
         It is advised to have an original sampling rate of at least 4 times the oscillation frequency
         """
         if self.time_line.size>1:
-            old_dt = self.time_line[1]-self.time_line[0]
+            old_dt = (self.time_line[1]-self.time_line[0]).rescale('s').magnitude
             x = np.arange(self.time_start, self.time_stop+old_dt, 1./sampling_rate)
         else:
             x=self.time_line
@@ -61,17 +61,17 @@ class Oscillation(OEBase):
         # QUESTION: does it lead to some strange edge effects???
         N=np.ceil(np.log2(x.size))
         vv=np.r_[v,np.zeros(np.floor(v.size*(2**N-x.size)/x.size))]
-        vv = signal.resample( vv, 2**N)
+        vv = scipy.signal.resample( vv, 2**N)
         v = vv[:x.size]
 
         y2 = np.angle(v)
 
 
 
-        d = digitize( times , x )
+        d = np.digitize( times , x )
         d[d==len(v)] = 0 # points above the highest time value where the oscillation phase is known
         phases = y2[d]
-        phases[ d==0 ] = nan # all points outside the range where the oscillation is known
+        phases[ d==0 ] = np.nan # all points outside the range where the oscillation is known
         return phases
 
     def plot_line_on_signal(self,   color ='m',
@@ -86,7 +86,7 @@ class Oscillation(OEBase):
             y = np.cos(np.angle(v))*np.abs(v)
         else :
             if self.time_line.size>1:
-                old_dt = self.time_line[1]-self.time_line[0]
+                old_dt = (self.time_line[1]-self.time_line[0]).rescale('s').magnitude
                 x = np.arange(self.time_start, self.time_stop+old_dt, 1./sampling_rate.rescale('Hz').magnitude)
                 #~ l = int((self.time_stop-self.time_start)*sampling_rate.rescale('Hz').magnitude)
                 #~ x = self.time_start + np.arange(l) / sampling_rate.rescale('Hz').magnitude

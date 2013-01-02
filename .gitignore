@@ -2,4 +2,8 @@
 *.pyc
 *.h5
 *.sqlite
+*.sqlite-journal
+*.plx
+*.*~
 doc/build/
+OpenElectrophy.egg-info/

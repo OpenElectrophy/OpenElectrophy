@@ -69,7 +69,7 @@ class OEBase(object):
         return session.query(cls).get(id)
     
     @classmethod
-    def from_neo(cls, neoinstance, mapped_classes, cascade =False):
+    def from_neo(cls, neoinstance, mapped_classes = None, cascade =False):
         """
         Create a generic OE instance from a neo object.
         Util for inseritng in db.
@@ -84,6 +84,11 @@ class OEBase(object):
           >>> bl2 = OEBase.from_neo(bl, generic_classes) # this give a generic OE Block
           >>> bl2.save()
         """
+        if mapped_classes is None:
+            from sqlmapper import globaldbinfo
+            mapped_classes = globaldbinfo.mapped_classes
+        assert mapped_classes is not None, 'You must give a mapped_classes'
+        
         if hasattr(neoinstance, 'OEinstance'):
             OEinstance = neoinstance.OEinstance
         else:
@@ -183,6 +188,9 @@ class OEBase(object):
                             setattr(self.neoinstance, parentname.lower(), neoparent)
             
             return self.neoinstance
+
+# alias
+neo_to_oe = OEBase.from_neo
 
 
 # some hack for python list when contain numpy.array

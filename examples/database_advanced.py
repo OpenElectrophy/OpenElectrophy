@@ -8,8 +8,8 @@ OpenElectrophy.core is an tiny layer on top of sqlalchemy. (http://www.sqlalchem
 
 User with experience with sqlalchemy must known this:
     * when open_db if the database is empty the schema is constructed the first time
-    * if the schema exist, the metadata is reflected from the db (often the case)
-    * the mapped object are also reflected from the db (less often the case) : attributes and relation
+    * if the schema exist, the metadata is reflected from the db.
+    * the mapped **objects** are also reflected from the db  : attributes and relationship
       are guessed from teh schema
 
 Rules of reflexion:

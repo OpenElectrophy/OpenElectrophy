@@ -22,7 +22,7 @@ def test1():
                  f_start=5.,
                  f_stop=100.,
                  deltafreq = 1.,
-                 sampling_rate = 400.,
+                 sampling_rate = 400. * pq.Hz,
                  t_start = -np.inf, 
                  #~ t_start = 0., 
                  t_stop = np.inf,

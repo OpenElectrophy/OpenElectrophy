@@ -1,7 +1,7 @@
 .. _scripting_page:
 
 ********************************
-Scripting with OpenElectrophy
+Simple examples for scripting
 ********************************
 
 
@@ -40,14 +40,9 @@ The following list of examples are in the directory OpenElectrophy/examples. You
 .. literalinclude:: ../../examples/database_advanced.py
 
 
-2 - Read file
-===================
-
-.. automodule:: database_create_a_dataset
-.. literalinclude:: ../../examples/database_create_a_dataset.py
 
 
-3 - Execute SQL in python
+2 - Execute SQL in python
 ===================
 
 .. automodule:: sql_in_python_basic
@@ -60,49 +55,50 @@ The following list of examples are in the directory OpenElectrophy/examples. You
 .. literalinclude:: ../../examples/sql_in_python_variable.py
 
 
-Plotting 
-=============
 
-.. automodule:: plot_basic
-.. literalinclude:: ../../examples/plot_basic.py
+3 - OpenElectrophy and neo
+===================
 
-.. automodule:: plot_embeded
-.. literalinclude:: ../../examples/plot_embeded.py
-
-
-
-Preprocessing
-=================
-
-.. automodule:: spikesorting
-.. literalinclude:: ../../examples/spikesorting.py
-
-
-.. automodule:: oscillation_line_detection
-.. literalinclude:: ../../examples/oscillation_line_detection.py
+.. automodule:: neo_and_oe
+.. literalinclude:: ../../examples/neo_and_oe.py
 
 
 
 
-Analysis
-================
+
+4 - Spike sorting with interactive console
+===========================================
+
+.. automodule:: spikesorting_interactive
+.. literalinclude:: ../../examples/spikesorting_interactive.py
+
+.. automodule:: spikesorting_interactive_viewers
+.. literalinclude:: ../../examples/spikesorting_interactive_viewers.py
 
 
-timefrequency
-------------------
+5 - Time frequency maps and Transient oscillation detection
+===================================
 
 
-spike phaselocking on lfp
----------------------------------------------------
+.. automodule:: timefreq_plotting
+.. literalinclude:: ../../examples/timefreq_plotting.py
+
+
+.. automodule:: timefreq_oscillation_detection
+.. literalinclude:: ../../examples/timefreq_oscillation_detection.py
+
+
+6 - Vierwers for neo object
+===========================
+
+.. automodule:: viewer_timefreq
+.. literalinclude:: ../../examples/viewer_timefreq.py
+
+
+7 - spike phaselocking on lfp
+==============================
 
 .. automodule:: spike_phaselocking_on_lfp
 .. literalinclude:: ../../examples/spike_phaselocking_on_lfp.py
 
-
-signal averaging on trigger
-------------------------------
-
-
-spiketrains
-------------------
 

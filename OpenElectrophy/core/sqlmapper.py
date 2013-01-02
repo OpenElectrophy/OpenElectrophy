@@ -267,7 +267,8 @@ python_to_sa_conversion = {
 
 global globalsesession
 globalsesession = None
-
+global globaldbinfo
+globaldbinfo = None
 
 
 
@@ -1100,13 +1101,16 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     Session = orm.scoped_session(orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True))
     #~ Session = orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True)
     
-    if use_global_session:
-        global globalsesession
-        globalsesession = Session()
     
     dbinfo = DataBaseConnectionInfo( url =url,mapped_classes = generated_classes,Session = Session,
                                                 metadata = metadata, cache = cache, numpy_storage_engine = numpy_storage_engine,
                                                 compress = compress)
+
+    if use_global_session:
+        global globalsesession
+        globalsesession = Session()
+        global globaldbinfo
+        globaldbinfo = dbinfo
     
     return dbinfo
     
