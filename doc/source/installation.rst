@@ -45,7 +45,7 @@ Linux
     **Step 1, dependencies**::
     
             sudo apt-get install python python-scipy python-numpy python-matplotlib python-qt4 python-mysqldb python-pip python-psycopg2 python-dev gfortran python-pywt python-sqlalchemy python-migrate python-tables python-joblib  python-guidata python-sklearn
-            pip install quantities neo
+            pip install quantities neo pyqtgraph
 
 
     **Step 2, OpenElectrophy**:
@@ -78,14 +78,10 @@ Steps:
         *  blosc (http://pypi.python.org/pypi/blosc/1.0.3)
         * MySQL-python (http://www.lfd.uci.edu/~gohlke/pythonlibs/)
         * pywavelet (http://pypi.python.org/pypi/PyWavelets/)
+        * pyqtgraph (http://pypi.python.org/pypi/pyqtgraph/0.9.3)
         
-    6. Dowlaod pyqtgraph http://www.pyqtgraph.org/:
-        * rename pyqtgraph-dev-r223-32.exe  to pyqtgraph-223.0.0.win32-py2.7.exe
-        * or rename pyqtgraph-dev-r223-32.exe  to pyqtgraph-223.0.0.amd64-py2.7.exe
-        
-        Instal it with control panel.
-    7. Dowload OPenElectrophy (http://pypi.python.org/pypi/OpenElectrophy) and install it.
-    8. In the controal panel> Advanced>register your python
+    6. Dowload OPenElectrophy (http://pypi.python.org/pypi/OpenElectrophy) and install it.
+    7. In the controal panel> Advanced>register your python
 
 .. warning::
     python-snappy and lz4 are hard to install under windows because they need a compiler at installation times.

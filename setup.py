@@ -19,6 +19,28 @@ else:
     entry_points = None
 
 
+install_requires=[
+                'numpy>=1.3.0',
+                'quantities>=0.9.0',
+                'neo>=0.2',
+                'scipy>=0.9.0',
+                'matplotlib>=1.1.0',
+                'sqlalchemy>=0.7',
+                'sqlalchemy-migrate>=0.7',
+                'pyqtgraph>=0.9.3',
+                'guidata>=1.4.1',
+                'joblib>=0.6.4',
+                'tables>=2.3.1',
+                'pywavelets>=0.2.2',
+                'scikit-learn>=0.11',
+                ]
+
+# these are optional because hard to instal on win32:
+   #~ 'MySQLdb (>=1.2.3)',
+   #~ 'psycopg2',
+   #~ 'blosc',
+   #~ 'snappy',
+   #~ 'lz4',
 
 
 setup(
@@ -28,29 +50,8 @@ setup(
     scripts = scripts,
     entry_points = entry_points,
     include_package_data=True,
-    install_requires=[
-                    'numpy>=1.3.0',
-                    'quantities>=0.9.0',
-                    'neo>=0.2',
-                    'scipy>=0.9.0',
-                    'matplotlib>=1.1.0',
-                    'sqlalchemy>=0.7',
-                    'sqlalchemy-migrate>=0.7',
-                    'pyqtgraph>=223',
-                    'guidata>=1.4.1',
-                    'joblib>=0.6.4',
-                    'tables>=2.3.1',
-                    'pywavelets>=0.2.2',
-                    'scikit-learn>=0.11',
-                    ],
-                    
-    requires = [
-                   'MySQLdb (>=1.2.3)',
-                   'psycopg2'
-                   'blosc',
-                   'snappy',
-                   'lz4',
-                  ],
+    install_requires = install_requires,
+    requires = [ ],
     author = "OpenElectrophy authors and contributors",
     author_email = "sam.garcia.die@gmail.com",
     maintainer = "Samuel Garcia",
