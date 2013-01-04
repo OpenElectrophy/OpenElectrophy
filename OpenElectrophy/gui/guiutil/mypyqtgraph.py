@@ -33,17 +33,26 @@ to_dict = get_dict_from_group_param
 ##Range
 class RangeWidget(QWidget):
     sigChanged = pyqtSignal()
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, 
+                        value = [-1., 1],
+                        orientation  = Qt.Vertical,
+                        limits = [-np.inf, np.inf],
+                        ):
         QWidget.__init__(self, parent)
         self._val = None
-        mainlayout = QVBoxLayout()
+        if orientation == Qt.Horizontal:
+            mainlayout = QHBoxLayout()
+        else:
+            mainlayout = QVBoxLayout()
+        
         self.setLayout(mainlayout)
         self.spins = [ QDoubleSpinBox(), QDoubleSpinBox()]
         for s in self.spins:
             mainlayout.addWidget(s)
             s.valueChanged.connect(self.spinChanged)
-            s.setMaximum(np.inf)
-            s.setMinimum(-np.inf)
+            s.setMaximum(limits[1])
+            s.setMinimum(limits[0])
+        self.setValue(value)
         
     def spinChanged(self, val):
         self._val = [ spin.value() for spin in self.spins[::-1] ]
@@ -55,8 +64,9 @@ class RangeWidget(QWidget):
     def setValue(self, val):
         self._val = val
         for spin, v in zip(self.spins[::-1], val):
+            spin.valueChanged.disconnect(self.spinChanged)
             spin.setValue(v)
-        
+            spin.valueChanged.connect(self.spinChanged)
     
     def updateDisplayLabel(self, value=None):
         if value is None:
@@ -96,6 +106,7 @@ class SpinAndSliderWidget(QWidget):
     """this combinate a spin box and a slider in log scale"""
     sigChanged = pyqtSignal()
     def __init__(self, parent = None,
+                            value = 1.,
                             limits = [0.001, 1000],
                             orientation  = Qt.Horizontal,
                             ):
@@ -119,6 +130,7 @@ class SpinAndSliderWidget(QWidget):
         
         self.spinbox.valueChanged.connect(self.spinbox_changed)
         self.slider.valueChanged.connect(self.slider_changed)
+        self.setValue(value)
  
     def value(self):
         return self._val

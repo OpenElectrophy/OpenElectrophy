@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Theses widget display individual spike on signals.
-Widget based on: viewers.signalviewer
 
 """
 
@@ -11,7 +10,8 @@ Widget based on: viewers.signalviewer
 
 from .base import *
 
-from ..viewers import SignalViewer, TimeSeeker, XSizeChanger, YLimsChanger
+from ..viewers import TimeSeeker
+from ..guiutil import *
 
 import pyqtgraph as pg
 
@@ -124,11 +124,11 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         # winsize
         self.xsize = .5
         tb.addWidget(QLabel(u'X size (s)'))
-        self.xsize_changer = XSizeChanger(xsize = self.xsize, xzoom_limits = (0.001, 10.),orientation  = Qt.Horizontal,)
-        self.xsize_changer.set_targets([self] )
+        self.xsize_changer = SpinAndSliderWidget(value = self.xsize, limits = [0.001, 10.],orientation  = Qt.Horizontal)
+        self.xsize_changer.sigChanged.connect(self.xsize_changed)
         tb.addWidget(self.xsize_changer)
         tb.addSeparator()
-        self.xsize_changer.xsize_changed.connect(self.refresh, type = Qt.QueuedConnection)
+        self.xsize_changer.sigChanged.connect(self.refresh, type = Qt.QueuedConnection)
         
         
         # ylims
@@ -138,19 +138,26 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             self.ylims[1] = max(self.ylims[1], sig.max())
         
         tb.addWidget(QLabel(u'Y limits'))
-        self.ylims_changer = YLimsChanger(orientation  = Qt.Horizontal,)
-        self.ylims_changer.set_ylims(self.ylims)
-        self.ylims_changer.set_targets( [self] )
+        
+        self.ylims_changer = RangeWidget(value = self.ylims, orientation  = Qt.Horizontal)
+        self.ylims_changer.sigChanged.connect(self.ylims_changed)
         tb.addWidget(self.ylims_changer)
         tb.addSeparator()
-        self.ylims_changer.ylims_changed.connect(self.refresh, type = Qt.QueuedConnection)
+        self.ylims_changer.sigChanged.connect(self.refresh, type = Qt.QueuedConnection)
+
         
         # add spike
         self.act_add_one_spike = QAction(u'+', self,icon =QIcon(':/list-add.png'), checkable = True)
         tb.addAction(self.act_add_one_spike)
         self.act_enable_spike_selection = QAction(u'+', self,icon =QIcon(':/color-picker.png'), checkable = True)
         tb.addAction(self.act_enable_spike_selection)
-        
+    
+    def xsize_changed(self):
+        self.xsize = self.xsize_changer.value()
+    
+    def ylims_changed(self):
+        self.ylims = self.ylims_changer.value()
+    
 
     def seek(self, t):
         sps = self.spikesorter
@@ -160,9 +167,11 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         pos = sps.spike_index_array[s]
         if self.auto_zoom_x and np.sum(sel)==1:
             self.xsize = 0.05
-            self.xsize_changer.set_xsize(self.xsize)
+            #~ self.xsize_changer.setValue(self.xsize)
+            #~ self.timerSeeker.fast_time_changed.disconnect(self.seek)
             t = (pos[sel]/sps.sig_sampling_rate+sps.seg_t_start[s]).simplified.magnitude
-
+            #~ self.timerSeeker.seek(t)
+            #~ self.timerSeeker.fast_time_changed.connect(self.seek)
         
         self.time_by_seg[s] = t
         sr = sps.sig_sampling_rate.rescale('Hz').magnitude
@@ -269,7 +278,8 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             d = np.diff(self.ylims)[0]
             self.ylims[0] = m - (d/2)*factor
             self.ylims[1] = m + (d/2)*factor
-        self.ylims_changer.set_ylims(self.ylims)
+        #~ self.ylims_changer.set_ylims(self.ylims)
+        self.ylims_changer.setValue(self.ylims)
         self.refresh()
     
     def clicked_at_x(self, x):
@@ -286,7 +296,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             sps.add_one_spike(s, x, c = c)
             self.spike_clusters_changed.emit()
             self.refresh()
-    
+        
         #~ elif self.act_enable_spike_selection.isChecked():
             #~ print 'select spiek at', x, s
             
@@ -311,6 +321,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             sps.selected_spikes[sl] = ind_clicked == pos
             self.spike_selection_changed.emit()
             self.refresh()
+        
             
             
 

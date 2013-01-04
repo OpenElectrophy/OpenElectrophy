@@ -3,15 +3,16 @@ import numpy as np
 import quantities as pq
 import neo
 
-nb_sig = 1
+nb_sig = 3
 nb_epocharrays = 4
 
 #~ sig_size = 3.6e8
 #~ sig_size = 1e7
-sig_size = 1e6
+sig_size = 1e5
 nb_spike =  10e3
 #~ nb_spike =  0
-fs = 10.e3
+#~ fs = 10.e3
+fs = 500
 t = np.arange(sig_size)/fs
 t_start = -5.
 epoch_size = 100
@@ -23,7 +24,9 @@ for i in range(nb_sig):
     sig = 7*np.sin(t*np.pi*2*25.) + np.random.randn(sig_size)*6
     spikepos = np.random.randint(sig.size, size =nb_spike)
     sig[spikepos] += 15
-    analogsignals.append(neo.AnalogSignal(sig, units = 'uV', t_start=t_start*pq.s, sampling_rate = fs*pq.Hz, channel_index = i, color = 'w'))
+    sig *= 1+i/10.
+    color = 'w' if i<2 else None
+    analogsignals.append(neo.AnalogSignal(sig, units = 'uV', t_start=t_start*pq.s, sampling_rate = fs*pq.Hz, channel_index = i, color = color))
     spiketrains_on_signals.append([ ])
     for i in range(2):
         color = ['magenta', 'green', 'blue', 'red'][i%4]

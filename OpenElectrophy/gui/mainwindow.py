@@ -62,9 +62,9 @@ class MainWindow(QMainWindow) :
                                                                 icon =QIcon(':/open-db.png'))
         self.actionOpenDb.triggered.connect(self.openDatabase)
         
-        self.actionImport = QAction(u'&Import data in this db', self,
-                                                                icon =QIcon(':/svn-update.png'))
-        self.actionImport.triggered.connect(self.openImportData)
+        #~ self.actionImport = QAction(u'&Import data in this db', self,
+                                                                #~ icon =QIcon(':/svn-update.png'))
+        #~ self.actionImport.triggered.connect(self.openImportData)
         
 
         self.actionOpenFile = QAction(u'Open read only file with neo (in memory DB)', self,
@@ -110,7 +110,7 @@ class MainWindow(QMainWindow) :
         self.fileMenu = self.menuBar().addMenu(self.tr("&Dataset"))
         self.fileMenu.addAction(self.actionCreateDb)
         self.fileMenu.addAction(self.actionOpenDb)
-        self.fileMenu.addAction(self.actionImport)
+        #~ self.fileMenu.addAction(self.actionImport)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.actionOpenFile)
         
@@ -187,13 +187,13 @@ class MainWindow(QMainWindow) :
         num = self.tabDatabases.currentIndex()
         return self.explorers[num]
             
-    def openImportData(self):
-        if len( self.explorers) == 0: return
-        explorer = self.getCurrentExporer()
-        w = ImportData(dbinfo = explorer.dbinfo)
-        w.setWindowTitle('Import new data in database')
-        if w.exec_():
-            explorer.refresh()
+    #~ def openImportData(self):
+        #~ if len( self.explorers) == 0: return
+        #~ explorer = self.getCurrentExporer()
+        #~ w = ImportData(dbinfo = explorer.dbinfo)
+        #~ w.setWindowTitle('Import new data in database')
+        #~ if w.exec_():
+            #~ explorer.refresh()
 
     #~ def openTableDesign(self):
         #~ d = TableDesign(metadata =self.getCurrentExporer().metadata,

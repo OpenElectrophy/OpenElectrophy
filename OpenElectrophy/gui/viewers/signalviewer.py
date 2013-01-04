@@ -9,12 +9,47 @@ from tools import *
 import pyqtgraph as pg
 #~ from pyqtgraph.parametertree import Parameter, ParameterTree
 
-
+from .multichannelparam import MultiChannelParam
 
 from matplotlib.cm import get_cmap
 from matplotlib.colors import ColorConverter
 
+param_global = [
+    {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1},
+    {'name': 'ylims', 'type': 'range', 'value': [-10., 10.] },
+    {'name': 'background_color', 'type': 'color', 'value': 'k' },
+    ]
 
+param_by_channel = [ 
+    {'name': 'channel_name', 'type': 'str', 'value': '','readonly' : True},
+    {'name': 'channel_index', 'type': 'str', 'value': '','readonly' : True},
+    {'name': 'color', 'type': 'color', 'value': "FF0"},
+    #~ {'name': 'width', 'type': 'float', 'value': 1. , 'step': 0.1},
+    #~ {'name': 'style', 'type': 'list', 
+                #~ 'values': OrderedDict([ ('SolidLine', Qt.SolidLine), ('DotLine', Qt.DotLine), ('DashLine', Qt.DashLine),]), 
+                #~ 'value': Qt.SolidLine},
+    {'name': 'gain', 'type': 'float', 'value': 1, 'step': 0.1},
+    {'name': 'offset', 'type': 'float', 'value': 0., 'step': 0.1},
+    {'name': 'visible', 'type': 'bool', 'value': True},
+    ]        
+
+class MyViewBox(pg.ViewBox):
+    clicked = pyqtSignal()
+    zoom_in = pyqtSignal()
+    zoom_out = pyqtSignal()
+    def __init__(self, *args, **kwds):
+        pg.ViewBox.__init__(self, *args, **kwds)
+    def mouseClickEvent(self, ev):
+        self.clicked.emit()
+        ev.accept()
+    def mouseDragEvent(self, ev):
+        ev.ignore()
+    def wheelEvent(self, ev):
+        if ev.delta()>0:
+            self.zoom_in.emit()
+        else:
+            self.zoom_out.emit()
+        ev.accept()
 
 
 class SignalViewer(ViewerBase):
@@ -33,7 +68,6 @@ class SignalViewer(ViewerBase):
                             analogsignals = [ ],
                             spiketrains_on_signals = None,
                             xsize = 10.,
-                            #~ ylims ='auto',
                             max_point_if_decimate = 2000,
                             with_time_seeker = False,
                             **kargs
@@ -46,46 +80,26 @@ class SignalViewer(ViewerBase):
         self.mainlayout = QVBoxLayout()
         self.setLayout(self.mainlayout)
         
-        
-        #~ if ylims =='auto' and len(analogsignals)>0:
-            #~ ylims = [0,0]
-            #~ for ana in analogsignals:
-                #~ ylims[1] = max([max(ana.magnitude) , ylims[1]])
-                #~ ylims[0] = min([min(ana.magnitude), ylims[0]])
-        #~ elif type(ylims) == list:
-            #~ ylims = list(ylims)
-        #~ else:
-            #~ ylims = [-10,10]
-        #~ self.ylims_changer.set_ylims(ylims)
-        
-        viewBox = OptionsViewBox()
-        viewBox.clicked.connect(self.open_configure_dialog)
+        self.viewBox = MyViewBox()
+        self.viewBox.clicked.connect(self.open_configure_dialog)
         
         self.graphicsview  = pg.GraphicsView()#useOpenGL = True)
         self.mainlayout.addWidget(self.graphicsview)
         
-        self.plot = pg.PlotItem(viewBox = viewBox)
+        self.plot = pg.PlotItem(viewBox = self.viewBox)
         self.graphicsview.setCentralItem(self.plot)
-
         
         
-
-        self.paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
-                                                    children = [ {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1},
-                                                                        {'name': 'ylims', 'type': 'range', 'value': [-10., 10.] },
-                                                                        {'name': 'background_color', 'type': 'color', 'value': 'k' },
-                                                                    ])
+        self.paramGlobal = pg.parametertree.Parameter.create( name='Global options',
+                                                    type='group', children =param_global)
         
         
         
         # inialize
         self.clear_all()
         self.set_analosignals(analogsignals)
-        self.set_spiketrains_on_signals(spiketrains_on_signals)
         self.set_xsize(xsize)
-        self.set_ylims([-10, 10])
         
-        self.paramGlobal.sigTreeStateChanged.connect(lambda : self.refresh(fast = True))
         
         if with_time_seeker:
             self.timeseeker = TimeSeeker()
@@ -102,11 +116,6 @@ class SignalViewer(ViewerBase):
         self.paramGlobal.param('xsize').setValue(xsize)
     xsize = property(get_xsize, set_xsize)
 
-    def get_ylims(self):
-        return self.paramGlobal.param('ylims').value()
-    def set_ylims(self,ylims):
-        self.paramGlobal.param('ylims').setValue(ylims)
-    ylims = property(get_ylims, set_ylims)
     
     def clear_all(self):
         self.plot.clear()
@@ -116,78 +125,75 @@ class SignalViewer(ViewerBase):
         self.analogsignal_curves = [ ]
         
 
-    def set_analosignals(self, analogsignals):
+    def set_analosignals(self, analogsignals, magic_color = True, magic_scale = True):
         self.analogsignals = analogsignals
         
-        self.signalViewerParameters = SignalViewerParameters(paramGlobal = self.paramGlobal, analogsignals = analogsignals, parent= self)
-        self.signalViewerParameters.setWindowFlags(Qt.Window)
-        self.paramSignals = self.signalViewerParameters.paramSignals
+        # pre compute std and max
+        self.all_std = np.array([ np.std(anasig.magnitude) for anasig in self.analogsignals ])
+        self.all_max = np.array([ np.max(anasig.magnitude) for anasig in self.analogsignals ])
+        self.all_min = np.array([ np.min(anasig.magnitude) for anasig in self.analogsignals ])
         
+        ylims = [np.min(self.all_min), np.max(self.all_max) ]
+        self.paramGlobal.param('ylims').setValue(ylims)
         
+        # Create parameters
+        all = [ ]
+        for i, ana in enumerate(self.analogsignals):
+            if 'channel_index' in ana.annotations:
+                name = 'AnalogSignal {} name={} channel_index={}'.format(i, ana.name, ana.annotations['channel_index'])
+            else:
+                name = 'AnalogSignal {} name={}'.format(i, ana.name)
+            all.append({ 'name': name, 'type' : 'group', 'children' : param_by_channel})
+        self.paramSignals = pg.parametertree.Parameter.create(name='AnalogSignals', type='group', children=all)
+        self.allParams = pg.parametertree.Parameter.create(name = 'all param', type = 'group', children = [self.paramGlobal,self.paramSignals  ])
         
+        self.paramControler = SignalViewerControler(viewer = self)
+        self.viewBox.zoom_in.connect(lambda : self.paramControler.gain_zoom(1.2))
+        self.viewBox.zoom_out.connect(lambda : self.paramControler.gain_zoom(.8))
         
+        if magic_color:
+            self.paramControler.automatic_color(cmap_name = 'jet')
+        if magic_scale:
+            self.paramControler.automatic_gain_offset(gain_adaptated = False, apply_for_selection = False)
+        
+        # Create curve items
         self.analogsignal_curves = [ ]
-        self.times_familly = { }# signal sharing same size sampling and t_start are in the same familly
+        # signal sharing same size sampling and t_start are in the same familly
+        self.times_familly = { }
         for i,anasig in enumerate(analogsignals):
             key = (float(anasig.t_start.rescale('s').magnitude), float(anasig.sampling_rate.rescale('Hz').magnitude), anasig.size)
             if  key in self.times_familly:
                 self.times_familly[key].append(i)
             else:
                 self.times_familly[key] = [ i ]
-            color = anasig.annotations.get('color', 'w')
+            color = anasig.annotations.get('color', None)
+            if color is not None:
+                self.paramSignals.children()[i].param('color').setValue(color)
+            else:
+                color = self.paramSignals.children()[i].param('color').value()
             curve = self.plot.plot([np.nan], [np.nan], pen = color)
             self.analogsignal_curves.append(curve)
-            self.paramSignals[i].param('color').setValue(color)
         
-        for p in self.paramSignals:
-            p.sigTreeStateChanged.connect(self.refreshColorAndStyle)
-        
-    
-    def set_spiketrains_on_signals(self, spiketrains_on_signals):
-        self.spiketrains_on_signals = spiketrains_on_signals
-        if spiketrains_on_signals is None: return
-        for c, curves in enumerate(self.spikeonsignal_curves):
-            for s, curve in enumerate(curves):
-                self.plot.delItem(curve)
-        assert len(spiketrains_on_signals)==len(self.analogsignals), 'must have same size'
-        self.spikeonsignal_curves = [ ]
-        for c,spiketrains in enumerate(spiketrains_on_signals):
-            self.spikeonsignal_curves.append([])
-            for s,sptr in enumerate(spiketrains):
-                color = sptr.annotations.get('color', ['red', 'green', 'blue', ][s%3])
-                if type(color) == tuple or type(color) == list:
-                    r,g,b = color
-                    color = QColor( r*255,g*255,b*255  )
-                else:
-                    color = QColor(color)
+        self.paramSignals.sigTreeStateChanged.connect(self.refreshColors)
+        self.proxy = pg.SignalProxy(self.allParams.sigTreeStateChanged, rateLimit=5, delay=0.1, slot=lambda : self.refresh(fast = False))
 
-                markersize = sptr.annotations.get('markersize', 7)
-                # Note symbolPen = autour      symbolBrush = dedans
-                curve =  pg.ScatterPlotItem(x=[ 0], y=[ 0], pen=None, brush=color, size=10, pxMode = True)
-                self.plot.addItem(curve)
-                self.spikeonsignal_curves[-1].append(curve)
-                
-                # compute index and signal value for times
-                ana = self.analogsignals[c]
-                spike_indexes = np.round(((sptr-ana.t_start)*ana.sampling_rate).simplified.magnitude).astype(int)
-                spike_values = ana[spike_indexes].magnitude
-        
-    def open_configure_dialog(self):
-        self.signalViewerParameters.setWindowFlags(Qt.Window)
-        self.signalViewerParameters.show()
     
-    def refreshColorAndStyle(self, param, changes):
-        n = self.paramSignals.index(param)
-        #~ pen = pg.mkPen(color = param.param('color').value(),  width = param.param('width').value())
-        pen = pg.mkPen(color = param.param('color').value())
-        self.analogsignal_curves[n].setPen(pen)
-        self.refresh(fast = True)
+    def open_configure_dialog(self):
+        self.paramControler.setWindowFlags(Qt.Window)
+        self.paramControler.show()
+    
+    def refreshColors(self):
+        for i,anasig in enumerate(self.analogsignals):
+            p = self.paramSignals.children()[i]
+            #~ pen = pg.mkPen(color = p.param('color').value(),  width = p.param('width').value())
+            pen = pg.mkPen(color = p.param('color').value())
+            self.analogsignal_curves[i].setPen(pen)
     
     def refresh(self, fast = False):
         """
         When fast it do decimate.
         """
-        #~ t1 = time.time()
+        t1 = time.time()
         #~ print 'self.refresh', fast
         
         color = self.paramGlobal.param('background_color').value()
@@ -204,7 +210,8 @@ class SignalViewer(ViewerBase):
                                                         return_t_vect = True,decimate = decimate,)
             for c in sig_nums:
                 curve = self.analogsignal_curves[c]
-                if not self.paramSignals[c].param('visible').value():
+                p = self.paramSignals.children()[c]
+                if not p.param('visible').value():
                     curve.setData([np.nan], [np.nan])
                     continue
                 ana = self.analogsignals[c]
@@ -213,59 +220,27 @@ class SignalViewer(ViewerBase):
                 if chunk.size==0:
                     curve.setData([np.nan], [np.nan])
                 else:
-                    g = self.paramSignals[c].param('gain').value()
-                    o = self.paramSignals[c].param('offset').value()
+                    g = p.param('gain').value()
+                    o = p.param('offset').value()
                     curve.setData(t_vect, chunk*g+o)
-                
-        if self.spiketrains_on_signals is not None:
-            for c, curves in enumerate(self.spikeonsignal_curves):
-                for s, curve in enumerate(curves):
-                    sptr = self.spiketrains_on_signals[c][s]
-                    ana = self.analogsignals[c]
-                    times = sptr[(sptr>=t_start*pq.s) & (sptr<t_stop*pq.s)]
-                    pos = np.round(((times-ana.t_start)*ana.sampling_rate).simplified.magnitude).astype(int)
-                    curve.setData(times, ana.magnitude[pos])
-                
+        
         self.vline.setPos(self.t)
         self.plot.setXRange( t_start, t_stop)
-        self.plot.setYRange( *self.ylims )
-        
-        # 700ms
-        #~ self.plot.replot()
-        #~ t2 = time.time()
-        #~ print fast, self.__class__, t2-t1
-        #~ print
+        ylims  = self.paramGlobal.param('ylims').value()
+        self.plot.setYRange( *ylims )
         
         self.is_refreshing = False
 
 
 
 
-class SignalViewerParameters(QWidget):
-    def __init__(self, parent = None, analogsignals = [ ], paramGlobal = None):
-        super(SignalViewerParameters, self).__init__(parent)
+class SignalViewerControler(QWidget):
+    def __init__(self, parent = None, viewer = None):
+        super(SignalViewerControler, self).__init__(parent)
         
-        param_by_channel = [ 
-                        {'name': 'channel_name', 'type': 'str', 'value': '','readonly' : True},
-                        {'name': 'channel_index', 'type': 'str', 'value': '','readonly' : True},
-                        {'name': 'color', 'type': 'color', 'value': "FF0"},
-                        #~ {'name': 'width', 'type': 'int', 'value': 2},
-                        #~ {'name': 'style', 'type': 'list', 
-                                    #~ 'values': OrderedDict([ ('SolidLine', Qt.SolidLine), ('DotLine', Qt.DotLine), ('DashLine', Qt.DashLine),]), 
-                                    #~ 'value': Qt.SolidLine},
-                        {'name': 'gain', 'type': 'float', 'value': 1, 'step': 0.1},
-                        {'name': 'offset', 'type': 'float', 'value': 0., 'step': 0.1},
-                        {'name': 'visible', 'type': 'bool', 'value': True},
-                    ]        
-        
-        self.analogsignals = analogsignals
-        self.paramGlobal = paramGlobal
-        
-        #~ self.all_abs_max = np.array([ np.max(np.abs(anasig.magnitude)) for anasig in self.analogsignals ])
-        self.all_abs_max = np.array([ np.abs(np.std(anasig.magnitude)) for anasig in self.analogsignals ])
-        
-        
+        self.viewer = viewer
 
+        #layout
         self.mainlayout = QVBoxLayout()
         self.setLayout(self.mainlayout)
         t = u'Options for AnalogSignals'
@@ -275,52 +250,30 @@ class SignalViewerParameters(QWidget):
         h = QHBoxLayout()
         self.mainlayout.addLayout(h)
         
-        self.paramRoot = pg.parametertree.Parameter.create(name='AnalogSignals', type='group', children=[ ])
-        self.paramSignals = [ ]
-        for i, anasig in enumerate(self.analogsignals):
-            pSignal = pg.parametertree.Parameter.create( name='AnalogSignal {}'.format(i), type='group', children = param_by_channel)
-            for k in ['channel_name', 'channel_index']:
-                if k in anasig.annotations:
-                    pSignal.param(k).setValue(anasig.annotations[k])
-            self.paramSignals.append(pSignal)
-            self.paramRoot.addChild(pSignal)
+        self.treeParamSignal = pg.parametertree.ParameterTree()
+        self.treeParamSignal.header().hide()
+        h.addWidget(self.treeParamSignal)
+        self.treeParamSignal.setParameters(self.viewer.paramSignals, showTop=True)
         
-        self.tree2 = pg.parametertree.ParameterTree()
-        self.tree2.header().hide()
-        h.addWidget(self.tree2, 4)
-        self.tree2.setParameters(self.paramRoot, showTop=True)
-        self.tree2.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        
-        for pSignal in self.paramSignals:
-            treeitem = pSignal.items.keys()[0]
-            if treeitem is not None:
-                treeitem.setExpanded(False)
-
-        
+        if len(self.viewer.analogsignals)>1:
+            self.multi = MultiChannelParam( all_params = self.viewer.paramSignals, param_by_channel = param_by_channel)
+            h.addWidget(self.multi)
         
         v = QVBoxLayout()
         h.addLayout(v)
         
-        self.tree3 = pg.parametertree.ParameterTree()
-        self.tree3.header().hide()
-        v.addWidget(self.tree3)
-        self.tree3.setParameters(self.paramGlobal, showTop=True)
+        self.treeParamGlobal = pg.parametertree.ParameterTree()
+        self.treeParamGlobal.header().hide()
+        v.addWidget(self.treeParamGlobal)
+        self.treeParamGlobal.setParameters(self.viewer.paramGlobal, showTop=True)
 
-        self.paramSelection = pg.parametertree.Parameter.create( name='Multiple change for selection', type='group',
-                                                    children = param_by_channel[2:], tip= u'This options apply on selection AnalogSignal on left list')
-        self.paramSelection.sigTreeStateChanged.connect(self.paramSelectionChanged)
-        self.tree1 = pg.parametertree.ParameterTree()
-        self.tree1.header().hide()
-        v.addWidget(self.tree1)
-        self.tree1.setParameters(self.paramSelection, showTop=True)
-        
         # Gain and offset
         v.addWidget(QLabel(u'<b>Automatic gain and offset:<\b>'))
-        but = QPushButton('Center all (gain = 1, offset = 0)')
+        but = QPushButton('Real scale (gain = 1, offset = 0)')
         but.clicked.connect(self.center_all)
         v.addWidget(but)        
-        for apply_for_selection, labels in enumerate([[ 'Spread all identical gain', 'Spread all adapted gain'],
-                                                            ['Spread selection identical gain', 'Spread selection adapted gain' ]] ):
+        for apply_for_selection, labels in enumerate([[ 'fake scale (all  + same gain)', 'fake scale (all)'],
+                                                            ['fake scale (selection  + same gain)', 'fake scale (selection)' ]] ):
             for gain_adaptated, label in enumerate(labels):
                 but = QPushButton(label)
                 but.gain_adaptated  = gain_adaptated
@@ -330,56 +283,74 @@ class SignalViewerParameters(QWidget):
 
         v.addWidget(QLabel(self.tr('<b>Automatic color:<\b>'),self))
         but = QPushButton('Progressive')
-        but.clicked.connect(self.automatic_color)
+        but.clicked.connect(lambda : self.automatic_color(cmap_name = None))
         v.addWidget(but)
 
+        v.addWidget(QLabel(self.tr('<b>Gain zoom (mouse wheel on graph):<\b>'),self))
+        h = QHBoxLayout()
+        v.addLayout(h)
+        but = QPushButton('-')
+        but.clicked.connect(lambda : self.gain_zoom(.8))
+        h.addWidget(but)
+        but = QPushButton('+')
+        but.clicked.connect(lambda : self.gain_zoom(1.2))
+        h.addWidget(but)
+        
+
     def center_all(self):
-        for pSignal in self.paramSignals:
-            pSignal.param('gain').setValue(1)
-            pSignal.param('offset').setValue(0)
-            pSignal.param('visible').setValue(True)
+        ylims = [np.min(self.viewer.all_min), np.max(self.viewer.all_max) ]
+        self.viewer.paramGlobal.param('ylims').setValue(ylims)
+        for p in self.viewer.paramSignals.children():
+            p.param('gain').setValue(1)
+            p.param('offset').setValue(0)
+            p.param('visible').setValue(True)
     
-    def automatic_gain_offset(self):
-        selected =  np.ones(len(self.paramSignals), dtype = bool)
-        gains = np.zeros(len(self.paramSignals), dtype = float)
-        if self.sender().apply_for_selection :
-            ind = np.zeros(len(self.paramSignals), dtype = bool)
-            for i, pSignal in enumerate(self.paramSignals):
-                treeitem = pSignal.items.keys()[0]
-                selected[i] = treeitem in self.tree2.selectedItems()
+    def automatic_gain_offset(self, gain_adaptated = None, apply_for_selection = None):
+        if gain_adaptated is None:
+            gain_adaptated = self.sender().gain_adaptated
+        if apply_for_selection is None:
+            apply_for_selection = self.sender().apply_for_selection
+        
+        nsig = len(self.viewer.analogsignals)
+        gains = np.zeros(nsig, dtype = float)
+        
+        if apply_for_selection :
+            selected =  np.zeros(nsig, dtype = bool)
+            selected[self.multi.selectedRows()] = True
             if not selected.any(): return
+        else:
+            selected =  np.ones(nsig, dtype = bool)
         
         n = np.sum(selected)
-        ylims  = self.paramGlobal.param('ylims').value()
-        dy = np.diff(ylims)[0]/(n+1)
-        gains = np.zeros(self.all_abs_max.size, dtype = float)
-        if self.sender().gain_adaptated:
-            gains = dy/n/self.all_abs_max
+        ylims  = [-.5, nsig-.5 ]
+        self.viewer.paramGlobal.param('ylims').setValue(ylims)
+        
+        dy = np.diff(ylims)[0]/(n)
+        gains = np.zeros(self.viewer.all_std.size, dtype = float)
+        if gain_adaptated:
+            gains = dy/n/self.viewer.all_std
         else:
-            gains = np.ones(self.all_abs_max.size, dtype = float) * dy/n/max(self.all_abs_max[selected])
+            gains = np.ones(self.viewer.all_std.size, dtype = float) * dy/n/max(self.viewer.all_std[selected])
+        gains *= .3
         
         o = .5
-        for i, pSignal in enumerate(self.paramSignals):
-            pSignal.param('visible').setValue(selected[i])
+        for i, p in enumerate(self.viewer.paramSignals.children()):
+            p.param('visible').setValue(selected[i])
             if selected[i]:
-                pSignal.param('gain').setValue(gains[i]*2)
-                pSignal.param('offset').setValue(dy*o+ylims[0])
+                p.param('gain').setValue(gains[i]*2)
+                p.param('offset').setValue(dy*o+ylims[0])
                 o+=1
     
-    def automatic_color(self):
-        n = len(self.analogsignals)
-        cmap = get_cmap('jet' , n)
-        for i, pSignal in enumerate(self.paramSignals):
+    def automatic_color(self, cmap_name = None):
+        if cmap_name is None:
+            cmap_name = 'jet'
+        nsig = len(self.viewer.analogsignals)
+        cmap = get_cmap(cmap_name , nsig)
+        for i, p in enumerate(self.viewer.paramSignals.children()):
             color = [ int(c*255) for c in ColorConverter().to_rgb(cmap(i)) ] 
-            pSignal.param('color').setValue(color)
-       
+            p.param('color').setValue(color)
+    
+    def gain_zoom(self, factor):
+        for i, p in enumerate(self.viewer.paramSignals.children()):
+            p.param('gain').setValue(p.param('gain').value()*factor)
             
-    def paramSelectionChanged(self, param, changes):
-        for pSignal in self.paramSignals:
-            treeitem =  pSignal.items.keys()[0]
-            for param, change, data in changes:
-                if treeitem in self.tree2.selectedItems():
-                    pSignal.param(param.name()).setValue(data)        
-
-
-

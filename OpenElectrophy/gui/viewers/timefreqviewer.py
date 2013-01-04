@@ -12,6 +12,7 @@ import time
 
 import pyqtgraph as pg
 
+from ...timefrequency import generate_wavelet_fourier
 
 from matplotlib import cm 
 from matplotlib.colors import ColorConverter
@@ -196,6 +197,9 @@ class TimeFreqViewer(ViewerBase):
         
         self.freqs = np.arange(p['f_start'],p['f_stop'],p['deltafreq'])
         self.need_recreate_thread = True
+        
+        self.sig_chunk_size = int(np.rint(self.xsize*self.global_sampling_rate))
+        self.empty_sigs = [np.zeros(self.sig_chunk_size, dtype = ana.dtype) for ana in self.analogsignals]
     
     def refresh(self, fast = False):
         if self.is_computing.any():
@@ -211,14 +215,20 @@ class TimeFreqViewer(ViewerBase):
                     self.threads[i].finished.connect(self.map_computed)
             self.is_computing[i] = True
             sl = get_analogsignal_slice(anasig,self.t_start*pq.s, self.t_stop*pq.s,
-                                                return_t_vect = False)
+                                                return_t_vect = False,clip = True)
             chunk = anasig.magnitude[sl]
-            if np.abs(chunk.size-self.global_sampling_rate*(self.t_stop-self.t_start))<1.:
-                self.threads[i].sig = chunk
-                self.threads[i].start()
-            else:
-                self.maps[i][:] = 0.
-                self.map_computed(i)
+            if np.abs(chunk.size-self.sig_chunk_size)>=1.:
+                sl2 = get_analogsignal_slice(anasig,self.t_start*pq.s, self.t_stop*pq.s,
+                                                return_t_vect = False, clip = False)                
+                chunk2 = self.empty_sigs[i]
+                chunk2[:]=0
+                i1 = -sl2.start if sl2.start<0 else 0
+                i2 = i1+chunk.size
+                chunk2[i1:i2] = chunk
+                chunk = chunk2
+            self.threads[i].sig = chunk
+            self.threads[i].start()
+                
         
         self.need_recreate_thread = False
         self.is_refreshing = False
@@ -240,7 +250,7 @@ class ThreadComputeTF(QThread):
         self.wf = wf
         self.win = win
         self.n = n
-        self.factor = factor # thsi compensate subsampling
+        self.factor = factor # this compensate subsampling
         
     def run(self):
         
@@ -253,7 +263,7 @@ class ThreadComputeTF(QThread):
         
         self.parent().maps[self.n] = abs(wt)
         self.finished.emit(self.n)
-        self.parent().grid_changing.unlock()
+        #~ self.parent().grid_changing.unlock()
 
 
 class TimefreqViewerParameters(QWidget):
@@ -334,40 +344,8 @@ class TimefreqViewerParameters(QWidget):
 
 
 
-#TODO remove this when tiomefreq module is donne
-def generate_wavelet_fourier(len_wavelet,
-            f_start,
-            f_stop,
-            deltafreq,
-            sampling_rate,
-            f0,
-            normalisation,
-            ):
-    """
-    Compute the wavelet coefficients at all scales and makes its Fourier transform.
-    When different signal scalograms are computed with the exact same coefficients, 
-        this function can be executed only once and its result passed directly to compute_morlet_scalogram
-        
-    Output:
-        wf : Fourier transform of the wavelet coefficients (after weighting), Fourier frequencies are the first 
-    """
-    # compute final map scales
-    scales = f0/np.arange(f_start,f_stop,deltafreq)*sampling_rate
-    # compute wavelet coeffs at all scales
-    xi=np.arange(-len_wavelet/2.,len_wavelet/2.)
-    xsd = xi[:,np.newaxis] / scales
-    wavelet_coefs=np.exp(complex(1j)*2.*np.pi*f0*xsd)*np.exp(-np.power(xsd,2)/2.)
 
-    weighting_function = lambda x: x**(-(1.0+normalisation))
-    wavelet_coefs = wavelet_coefs*weighting_function(scales[np.newaxis,:])
 
-    # Transform the wavelet into the Fourier domain
-    #~ wf=fft(wavelet_coefs.conj(),axis=0) <- FALSE
-    wf=fftpack.fft(wavelet_coefs,axis=0)
-    wf=wf.conj() # at this point there was a mistake in the original script
-    
-    return wf
-        
-        
+
         
         

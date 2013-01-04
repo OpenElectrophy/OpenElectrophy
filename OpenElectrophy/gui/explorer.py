@@ -15,7 +15,7 @@ from guiutil.icons import icons
 
 from viewdesigner import ViewDesigner
 from schemadesign import SchemaDesign
-
+from importdata import ImportData
 
 
 
@@ -121,6 +121,11 @@ class MainExplorer(QWidget) :
         self.deepRefresh()
 
     def createAction(self):
+        self.actionImport = QAction(u'&Import data in this db', self,
+                                                                icon =QIcon(':/svn-update.png'))
+        self.actionImport.triggered.connect(self.openImportData)
+        self.addAction(self.actionImport)
+        
         self.actionRefresh = QAction(self.tr("&Refresh view"), self,
                                                                 icon = QIcon(':/view-refresh.png'),
                                                                 shortcut = QKeySequence("F5"),
@@ -157,6 +162,9 @@ class MainExplorer(QWidget) :
     def createConfigureMenu(self):
         self.menuConfigure = QMenu()
         self.menuConfigure.addAction(self.actionRefresh)
+        self.menuConfigure.addSeparator()
+        self.menuConfigure.addAction(self.actionImport)
+        self.menuConfigure.addSeparator()
         self.menuConfigure.addAction(self.actionAddTab)
         self.menuConfigure.addAction(self.actionDelTab)
         self.menuConfigure.addAction(self.actionEditTab)
@@ -182,6 +190,7 @@ class MainExplorer(QWidget) :
             self.tabViews.addTab(sqltreeview , td.name)
         
     def refresh(self):
+        self.dbinfo.Session.expire_all()
         for i in range(len(self.listTreeDescription)):
             sqltreeview = self.tabViews.widget(i)
             sqltreeview.refresh()
@@ -240,4 +249,10 @@ class MainExplorer(QWidget) :
         # open the data again to remap everything
         dia = self.sender()
         self.deepRefresh(dbinfo = dia.dbinfo)
+
+    def openImportData(self):
+        w = ImportData(dbinfo = self.dbinfo)
+        w.setWindowTitle('Import new data in database')
+        if w.exec_():
+            self.refresh()
 

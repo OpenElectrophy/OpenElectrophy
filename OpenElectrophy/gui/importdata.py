@@ -154,7 +154,7 @@ class ImportData(QDialog) :
             filter = '{} files ('.format(self.name)
             for ext in self.ioclass.extensions:
                 filter += '*.{}'.format(ext)
-            filter += ')'
+            filter += ');;'
             fd.setFilter(filter)
         
         if self.ioclass.mode =='file':
@@ -259,7 +259,7 @@ class QImportThread(QThread):
 
 
 def read_and_import(name, ioclass,io_kargs, dbinfo, options):
-    #~ print 'read_and_import', name
+    print 'read_and_import', name
     
     if ioclass.mode =='file':
         reader = ioclass(filename = name  )
