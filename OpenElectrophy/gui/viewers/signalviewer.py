@@ -3,11 +3,9 @@
 Signal viewers
 """
 
-#TODO: look at signal proxy for fast and slow refresh when global parmaters change
 
 from tools import *
 import pyqtgraph as pg
-#~ from pyqtgraph.parametertree import Parameter, ParameterTree
 
 from .multichannelparam import MultiChannelParam
 
@@ -21,8 +19,8 @@ param_global = [
     ]
 
 param_by_channel = [ 
-    {'name': 'channel_name', 'type': 'str', 'value': '','readonly' : True},
-    {'name': 'channel_index', 'type': 'str', 'value': '','readonly' : True},
+    #~ {'name': 'channel_name', 'type': 'str', 'value': '','readonly' : True},
+    #~ {'name': 'channel_index', 'type': 'str', 'value': '','readonly' : True},
     {'name': 'color', 'type': 'color', 'value': "FF0"},
     #~ {'name': 'width', 'type': 'float', 'value': 1. , 'step': 0.1},
     #~ {'name': 'style', 'type': 'list', 
@@ -148,8 +146,8 @@ class SignalViewer(ViewerBase):
         self.allParams = pg.parametertree.Parameter.create(name = 'all param', type = 'group', children = [self.paramGlobal,self.paramSignals  ])
         
         self.paramControler = SignalViewerControler(viewer = self)
-        self.viewBox.zoom_in.connect(lambda : self.paramControler.gain_zoom(1.2))
-        self.viewBox.zoom_out.connect(lambda : self.paramControler.gain_zoom(.8))
+        self.viewBox.zoom_in.connect(lambda : self.paramControler.gain_zoom(.8))
+        self.viewBox.zoom_out.connect(lambda : self.paramControler.gain_zoom(1.2))
         
         if magic_color:
             self.paramControler.automatic_color(cmap_name = 'jet')
@@ -290,10 +288,10 @@ class SignalViewerControler(QWidget):
         h = QHBoxLayout()
         v.addLayout(h)
         but = QPushButton('-')
-        but.clicked.connect(lambda : self.gain_zoom(.8))
+        but.clicked.connect(lambda : self.gain_zoom(1.2))
         h.addWidget(but)
         but = QPushButton('+')
-        but.clicked.connect(lambda : self.gain_zoom(1.2))
+        but.clicked.connect(lambda : self.gain_zoom(.8))
         h.addWidget(but)
         
 

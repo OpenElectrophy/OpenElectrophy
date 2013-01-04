@@ -12,6 +12,7 @@ import time
 
 import pyqtgraph as pg
 
+from .multichannelparam import MultiChannelParam
 from ...timefrequency import generate_wavelet_fourier
 
 from matplotlib import cm 
@@ -24,15 +25,60 @@ for i in range(10000):
 jet_lut = np.array(lut, dtype = np.uint8)
 
 
+param_global = [
+    {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
+    {'name': 'nb_column', 'type': 'int', 'value': 1},
+    ]
 
-class OptionsGraphicsView(pg.GraphicsView):
+param_timefreq = [ 
+    {'name': 'f_start', 'type': 'float', 'value': 3., 'step': 1.},
+    {'name': 'f_stop', 'type': 'float', 'value': 90., 'step': 1.},
+    {'name': 'deltafreq', 'type': 'float', 'value': 3., 'step': 1.,  'limits' : (0.001, 1.e6)},
+    {'name': 'f0', 'type': 'float', 'value': 2.5, 'step': 0.1},
+    {'name': 'normalisation', 'type': 'float', 'value': 0., 'step': 0.1},
+    ]
+
+param_by_channel = [ 
+                #~ {'name': 'channel_name', 'type': 'str', 'value': '','readonly' : True},
+                #~ {'name': 'channel_index', 'type': 'str', 'value': '','readonly' : True},
+                {'name': 'visible', 'type': 'bool', 'value': True},
+                {'name': 'clim', 'type': 'float', 'value': 10.},
+            ]
+
+class MyViewBox(pg.ViewBox):
     clicked = pyqtSignal()
+    zoom_in = pyqtSignal()
+    zoom_out = pyqtSignal()
+    def __init__(self, *args, **kwds):
+        pg.ViewBox.__init__(self, *args, **kwds)
+    def mouseClickEvent(self, ev):
+        self.clicked.emit()
+        ev.accept()
+    def mouseDragEvent(self, ev):
+        ev.ignore()
+    def wheelEvent(self, ev):
+        if ev.delta()>0:
+            self.zoom_in.emit()
+        else:
+            self.zoom_out.emit()
+        ev.accept()
+
+
+class MyGraphicsView(pg.GraphicsView):
+    clicked = pyqtSignal()
+    zoom_in = pyqtSignal()
+    zoom_out = pyqtSignal()    
     def __init__(self, *args, **kwds):
         pg.GraphicsView.__init__(self, *args, **kwds)
     def mousePressEvent(self, ev):
         QGraphicsView.mousePressEvent(self, ev)
         self.clicked.emit()
-
+    def wheelEvent(self, ev):
+        if ev.delta()>0:
+            self.zoom_in.emit()
+        else:
+            self.zoom_out.emit()
+        ev.accept()
 
 class TimeFreqViewer(ViewerBase):
     """
@@ -64,27 +110,29 @@ class TimeFreqViewer(ViewerBase):
         
         nb_column = np.rint(np.sqrt(n))
         
+        # Create parameters
         self.paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
-                                                    children = [ {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
-                                                                        {'name': 'nb_column', 'type': 'int', 'value': nb_column},
-                                                                    ])
+                                                    children =param_global)
+        self.paramGlobal.param('nb_column').setValue(nb_column)
         
-        self.paramTimeFreq = pg.parametertree.Parameter.create( name='Time frequency options', type='group',
-                                                    children = [{'name': 'f_start', 'type': 'float', 'value': 3., 'step': 1.},
-                                                                        {'name': 'f_stop', 'type': 'float', 'value': 90., 'step': 1.},
-                                                                        {'name': 'deltafreq', 'type': 'float', 'value': 3., 'step': 1.,  'limits' : (0.001, 1.e6)},
-                                                                        {'name': 'f0', 'type': 'float', 'value': 2.5, 'step': 0.1},
-                                                                        {'name': 'normalisation', 'type': 'float', 'value': 0., 'step': 0.1},
-                                                                    ])
-        
-        
-        self.timefreqViewerParameters = TimefreqViewerParameters(paramGlobal = self.paramGlobal, 
-                                                                                                                                paramTimeFreq = self.paramTimeFreq, 
-                                                                                                                                analogsignals = analogsignals, parent= self)
-        self.timefreqViewerParameters.setWindowFlags(Qt.Window)
-        self.paramSignals = self.timefreqViewerParameters.paramSignals
+        self.paramTimeFreq = pg.parametertree.Parameter.create( name='Time frequency options', 
+                                                    type='group', children = param_timefreq)
 
-        self.views = [ ]
+        all = [ ]
+        for i, ana in enumerate(self.analogsignals):
+            if 'channel_index' in ana.annotations:
+                name = 'AnalogSignal {} name={} channel_index={}'.format(i, ana.name, ana.annotations['channel_index'])
+            else:
+                name = 'AnalogSignal {} name={}'.format(i, ana.name)
+            all.append({ 'name': name, 'type' : 'group', 'children' : param_by_channel})
+        self.paramSignals = pg.parametertree.Parameter.create(name='AnalogSignals', type='group', children=all)
+        
+        self.allParams = pg.parametertree.Parameter.create(name = 'all param', type = 'group', 
+                                                        children = [self.paramGlobal,self.paramSignals, self.paramTimeFreq  ])
+        
+        self.paramControler = TimefreqViewerControler(viewer = self)
+        
+        self.graphicsviews = [ ]
         self.grid_changing =QReadWriteLock()
         self.create_grid()
         
@@ -98,7 +146,7 @@ class TimeFreqViewer(ViewerBase):
         self.paramGlobal.param('xsize').sigValueChanged.connect(self.initialize_time_freq_and_refresh)
         self.paramGlobal.param('nb_column').sigValueChanged.connect(self.change_grid)
         self.paramTimeFreq.sigTreeStateChanged.connect(self.initialize_time_freq_and_refresh)
-        for p in self.paramSignals:
+        for p in self.paramSignals.children():
             p.param('visible').sigValueChanged.connect(self.change_grid)
             p.param('clim').sigValueChanged.connect(self.clim_changed)
 
@@ -106,6 +154,7 @@ class TimeFreqViewer(ViewerBase):
             self.timeseeker = TimeSeeker()
             mainlayout.addWidget(self.timeseeker)
             self.timeseeker.set_start_stop(*find_best_start_stop(analogsignals =analogsignals))
+            self.timeseeker.seek(analogsignals[0].t_start.magnitude)
             self.timeseeker.time_changed.connect(self.seek)
             self.timeseeker.fast_time_changed.connect(self.fast_seek)        
 
@@ -129,32 +178,40 @@ class TimeFreqViewer(ViewerBase):
         self.initialize_time_freq()
         self.refresh()
         
-    
     def clim_changed(self, param):
-        i = self.paramSignals.index( param.parent())
-        clim = self.paramSignals[i].param('clim').value()
+        i = self.paramSignals.children().index( param.parent())
+        clim = param.value()
         self.images[i].setImage(self.maps[i], lut = jet_lut, levels = [0,clim])
         
-
     def open_configure_dialog(self):
-        self.timefreqViewerParameters.setWindowFlags(Qt.Window)
-        self.timefreqViewerParameters.show()
+        self.paramControler.setWindowFlags(Qt.Window)
+        self.paramControler.show()
         
-    
     def create_grid(self):
         n = len(self.analogsignals)
-        for view in self.views:
-            if view is not None:
-                view.hide()
-                self.grid.removeWidget(view)
-        self.views =  [ None for i in range(n)]
+        for graphicsview in self.graphicsviews:
+            if graphicsview is not None:
+                graphicsview.hide()
+                self.grid.removeWidget(graphicsview)
+        self.plots =  [ None for i in range(n)]
+        self.graphicsviews =  [ None for i in range(n)]
         r,c = 0,0
         for i, anasig in enumerate(self.analogsignals):
-            if not self.paramSignals[i].param('visible').value(): continue
-            view = OptionsGraphicsView()
-            view.clicked.connect(self.open_configure_dialog)
-            self.views[i] = view
-            self.grid.addWidget(view, r,c)
+            if not self.paramSignals.children()[i].param('visible').value(): continue
+
+            viewBox = MyViewBox()
+            viewBox.clicked.connect(self.open_configure_dialog)
+            viewBox.zoom_in.connect(lambda : self.paramControler.clim_zoom(1.2))
+            viewBox.zoom_out.connect(lambda : self.paramControler.clim_zoom(.8))
+            
+            graphicsview  = pg.GraphicsView()#useOpenGL = True)
+            plot = pg.PlotItem(viewBox = viewBox)
+            graphicsview.setCentralItem(plot)
+            self.graphicsviews[i] = graphicsview
+            
+            self.plots[i] = plot
+            self.grid.addWidget(graphicsview, r,c)
+            
             c+=1
             if c==self.paramGlobal.param('nb_column').value():
                 c=0
@@ -179,21 +236,26 @@ class TimeFreqViewer(ViewerBase):
         self.factor = p['sampling_rate']/self.global_sampling_rate # this compenate unddersampling in FFT.
         
         self.len_wavelet = int(self.xsize*p['sampling_rate'])
-        self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq)[:,::-1]# reversed for plotting
+        self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq)#[:,::-1]# reversed for plotting
         self.win = fftpack.ifftshift(np.hamming(self.len_wavelet))
         
         for i, anasig in enumerate(self.analogsignals):
-            if not self.paramSignals[i].param('visible').value(): continue
-            view = self.views[i]
+            if not self.paramSignals.children()[i].param('visible').value(): continue
+            plot = self.plots[i]
             self.maps[i] = np.zeros(self.wf.shape)
             if self.images[i] is not None:# for what ???
-                view.removeItem(self.images[i])# for what ???
-            image = pg.ImageItem(border='w')
-            view.addItem(image)
+                plot.removeItem(self.images[i])# for what ???
+            image = pg.ImageItem()
+            plot.addItem(image)
+            plot.setYRange(p['f_start'], p['f_stop'])
             self.images[i] =image
-            clim = self.paramSignals[i].param('clim').value()
+            clim = self.paramSignals.children()[i].param('clim').value()
             self.images[i].setImage(self.maps[i], lut = jet_lut, levels = [0,clim])
-            view.setRange(QRectF(0, 0, self.wf.shape[0],self.wf.shape[1] ))
+            
+            self.t_start, self.t_stop = self.t-self.xsize/3. , self.t+self.xsize*2./3.
+            f_start, f_stop = self.params_time_freq['f_start'], self.params_time_freq['f_stop']
+            image.setRect(QRectF(self.t_start, f_start,self.xsize, f_stop-f_start))
+            
         
         self.freqs = np.arange(p['f_start'],p['f_stop'],p['deltafreq'])
         self.need_recreate_thread = True
@@ -209,7 +271,7 @@ class TimeFreqViewer(ViewerBase):
         self.t_start, self.t_stop = self.t-self.xsize/3. , self.t+self.xsize*2./3.
 
         for i, anasig in enumerate(self.analogsignals):
-            if not self.paramSignals[i].param('visible').value(): continue
+            if not self.paramSignals.children()[i].param('visible').value(): continue
             if self.need_recreate_thread:
                     self.threads[i] = ThreadComputeTF(None, self.wf, self.win,i, self.factor, parent = self)
                     self.threads[i].finished.connect(self.map_computed)
@@ -228,7 +290,13 @@ class TimeFreqViewer(ViewerBase):
                 chunk = chunk2
             self.threads[i].sig = chunk
             self.threads[i].start()
-                
+
+            #~ self.vline.setPos(self.t)
+            self.plots[i].setXRange( self.t_start, self.t_stop)
+            
+            f_start, f_stop = self.params_time_freq['f_start'], self.params_time_freq['f_stop']
+            self.images[i].setRect(QRectF(self.t_start, f_start,self.xsize, f_stop-f_start))
+
         
         self.need_recreate_thread = False
         self.is_refreshing = False
@@ -236,6 +304,8 @@ class TimeFreqViewer(ViewerBase):
     def map_computed(self, i):
         if self.grid_changing.tryLockForRead():
             if self.images[i] is not None:
+                #~ f_start, f_stop = self.params_time_freq['f_start'], self.params_time_freq['f_stop']
+                #~ self.images[i].setRect(QRectF(self.t_start, f_start,self.xsize, f_stop-f_start))
                 self.images[i].updateImage(self.maps[i])
             self.is_computing[i] = False
             self.grid_changing.unlock()
@@ -266,86 +336,78 @@ class ThreadComputeTF(QThread):
         #~ self.parent().grid_changing.unlock()
 
 
-class TimefreqViewerParameters(QWidget):
-    def __init__(self, parent = None, analogsignals = [ ], paramGlobal = None, paramTimeFreq = None):
-        super(TimefreqViewerParameters, self).__init__(parent)
-        
-        param_by_channel = [ 
-                        {'name': 'channel_name', 'type': 'str', 'value': '','readonly' : True},
-                        {'name': 'channel_index', 'type': 'str', 'value': '','readonly' : True},
-                        {'name': 'visible', 'type': 'bool', 'value': True},
-                        {'name': 'clim', 'type': 'float', 'value': 10.},
-                    ]
-        
-        self.analogsignals = analogsignals
-        self.paramGlobal = paramGlobal
-        self.paramTimeFreq = paramTimeFreq
+class TimefreqViewerControler(QWidget):
+    def __init__(self, parent = None, viewer = None):
+        super(TimefreqViewerControler, self).__init__(parent)
 
+        self.viewer = viewer
+
+        #layout
         self.mainlayout = QVBoxLayout()
         self.setLayout(self.mainlayout)
-        
-        t = u'Options for Time Frequency maps'
+        t = u'Options for AnalogSignals'
         self.setWindowTitle(t)
         self.mainlayout.addWidget(QLabel('<b>'+t+'<\b>'))
-
+        
         h = QHBoxLayout()
         self.mainlayout.addLayout(h)
-        
-        self.paramRoot = pg.parametertree.Parameter.create(name='AnalogSignals', type='group', children=[ ])
-        self.paramSignals = [ ]
-        for i, anasig in enumerate(self.analogsignals):
-            pSignal = pg.parametertree.Parameter.create( name='AnalogSignal {}'.format(i), type='group', children = param_by_channel)
-            for k in ['channel_name', 'channel_index']:
-                if k in anasig.annotations:
-                    pSignal.param(k).setValue(anasig.annotations[k])
-            self.paramSignals.append(pSignal)
-            self.paramRoot.addChild(pSignal)
-        
-        self.tree2 = pg.parametertree.ParameterTree()
-        self.tree2.header().hide()
-        h.addWidget(self.tree2, 4)
-        self.tree2.setParameters(self.paramRoot, showTop=True)
-        self.tree2.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        
-        for pSignal in self.paramSignals:
-            treeitem = pSignal.items.keys()[0]
-            if treeitem is not None:
-                treeitem.setExpanded(False)        
-        
+
         v = QVBoxLayout()
         h.addLayout(v)
         
-        self.tree3 = pg.parametertree.ParameterTree()
-        self.tree3.header().hide()
-        v.addWidget(self.tree3)
-        self.tree3.setParameters(self.paramGlobal, showTop=True)
-
-        self.tree4 = pg.parametertree.ParameterTree()
-        self.tree4.header().hide()
-        v.addWidget(self.tree4)
-        self.tree4.setParameters(self.paramTimeFreq, showTop=True)
+        self.treeParamGlobal = pg.parametertree.ParameterTree()
+        self.treeParamGlobal.header().hide()
+        v.addWidget(self.treeParamGlobal)
+        self.treeParamGlobal.setParameters(self.viewer.paramGlobal, showTop=True)
         
-
-        self.paramSelection = pg.parametertree.Parameter.create( name='Multiple change for selection', type='group',
-                                                    children = param_by_channel[2:], tip= u'This options apply on selection AnalogSignal on left list')
-        self.paramSelection.sigTreeStateChanged.connect(self.paramSelectionChanged)
-        self.tree1 = pg.parametertree.ParameterTree()
-        self.tree1.header().hide()
-        v.addWidget(self.tree1)
-        self.tree1.setParameters(self.paramSelection, showTop=True)
-
-    def paramSelectionChanged(self, param, changes):
-        for pSignal in self.paramSignals:
-            treeitem =  pSignal.items.keys()[0]
-            for param, change, data in changes:
-                if treeitem in self.tree2.selectedItems():
-                    pSignal.param(param.name()).setValue(data)     
-
-
-
-
-
-
-
+        self.treeParamTimeFreq = pg.parametertree.ParameterTree()
+        self.treeParamTimeFreq.header().hide()
+        v.addWidget(self.treeParamTimeFreq)
+        self.treeParamTimeFreq.setParameters(self.viewer.paramTimeFreq, showTop=True)
         
+        v.addWidget(QLabel(self.tr('<b>Automatic color scale:<\b>'),self))
+        but = QPushButton('Identic')
+        but.clicked.connect(lambda: self.auto_clim( identic = True))
+        v.addWidget(but)
+        but = QPushButton('Independent')
+        but.clicked.connect(lambda: self.auto_clim( identic = False))
+        v.addWidget(but)
         
+        h2 = QHBoxLayout()
+        v.addLayout(h2)
+        but = QPushButton('-')
+        but.clicked.connect(lambda : self.clim_zoom(.8))
+        h2.addWidget(but)
+        but = QPushButton('+')
+        but.clicked.connect(lambda : self.clim_zoom(1.2))
+        h2.addWidget(but)        
+        
+        self.treeParamSignal = pg.parametertree.ParameterTree()
+        self.treeParamSignal.header().hide()
+        h.addWidget(self.treeParamSignal)
+        self.treeParamSignal.setParameters(self.viewer.paramSignals, showTop=True)
+        
+        if len(self.viewer.analogsignals)>1:
+            self.multi = MultiChannelParam( all_params = self.viewer.paramSignals, param_by_channel = param_by_channel)
+            h.addWidget(self.multi)
+
+    def auto_clim(self, identic = True):
+        
+        if identic:
+            all = [ ]
+            for i, p in enumerate(self.viewer.paramSignals.children()):
+                if p.param('visible').value():
+                    all.append(np.max(self.viewer.maps[i]))
+            clim = np.max(all)*1.1
+            for i, p in enumerate(self.viewer.paramSignals.children()):
+                if p.param('visible').value():
+                    p.param('clim').setValue(clim)
+        else:
+            for i, p in enumerate(self.viewer.paramSignals.children()):
+                if p.param('visible').value():
+                    clim = np.max(self.viewer.maps[i])*1.1
+                    p.param('clim').setValue(clim)
+    
+    def clim_zoom(self, factor):
+        for i, p in enumerate(self.viewer.paramSignals.children()):
+            p.param('clim').setValue(p.param('clim').value()*factor)

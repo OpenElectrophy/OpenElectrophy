@@ -11,6 +11,16 @@ from tools import *
 from matplotlib.cm import get_cmap
 from matplotlib.colors import ColorConverter
 
+class OptionsViewBox(pg.ViewBox):
+    clicked = pyqtSignal()
+    def __init__(self, *args, **kwds):
+        pg.ViewBox.__init__(self, *args, **kwds)
+    def mouseClickEvent(self, ev):
+        self.clicked.emit()
+    def mouseDragEvent(self, ev):
+        ev.ignore()
+    def wheelEvent(self, ev):
+        ev.ignore()
 
 
 class RectItem(pg.GraphicsWidget):

@@ -289,16 +289,7 @@ def get_analogsignal_slice(ana, t_start, t_stop,
             return slice(ind_start, ind_stop, step)
 
 
-class OptionsViewBox(pg.ViewBox):
-    clicked = pyqtSignal()
-    def __init__(self, *args, **kwds):
-        pg.ViewBox.__init__(self, *args, **kwds)
-    def mouseClickEvent(self, ev):
-        self.clicked.emit()
-    def mouseDragEvent(self, ev):
-        ev.ignore()
-    def wheelEvent(self, ev):
-        ev.ignore()
+
 
 
 
