@@ -9,6 +9,7 @@ from PyQt4.QtGui import *
 
 from .editdb import EditFieldsDialog, ChangeParentDialog, EditRecordingChannelGroupsDialog
 
+import neo
 
 #TODO : fix delete on close for QWidget.show() here.
 
@@ -85,14 +86,46 @@ class CreateTop(MenuItem):
         session.commit()
         explorer.refresh()
     
+    
+from importdata import ImportData
+class MenuImportData(MenuItem):
+    name = 'Import data in this db'
+    table = None
+    mode = 'empty'
+    icon = ':/svn-update.png'
+    def execute(self, session, explorer, treedescription, **kargs):
+        w = ImportData(dbinfo = treedescription.dbinfo)
+        w.setWindowTitle('Import new data in database')
+        if w.exec_():
+            explorer.refresh()
 
 
 
 class SaveToFile(MenuItem):
     name = 'Save Block(s) to file'
     table = 'Block'
-    mode = 'homogeneous'
+    mode = 'unique'
     icon = ':/document-save.png'
+    def execute(self, session,treeview, id, tablename,treedescription, explorer,  **kargs):
+        class_ = treedescription.tablename_to_class[tablename]
+        bl = session.query(class_).get(id)
+        
+        filters = u''
+        ext_to_io = { }
+        for io in neo.io.iolist:
+            if neo.Block in  io.writeable_objects and len(io.extensions)>0:
+                filters += u'{} (*.{});;'.format(io.name, io.extensions[0])
+                ext_to_io[io.extensions[0]] = io
+        
+        filename = QFileDialog.getSaveFileName(treeview,u'Save File',
+                            bl.name or u'',filters)
+        if filename != '':
+            filename = unicode(filename)
+            for ext, io in ext_to_io.items():
+                if filename.endswith('.{}'.format(ext)):
+                    io(filename = filename).write(bl.to_neo(cascade = True))
+                    return
+
 
 # Open Viewers
 from .viewers import SegmentViewer, SignalViewer, TimeFreqViewer
@@ -105,7 +138,6 @@ class DrawSegment(MenuItem):
     def execute(self, session,treeview, id, tablename,treedescription, explorer,  **kargs):
         class_ = treedescription.tablename_to_class[tablename]
         neo_seg = session.query(class_).get(id).to_neo(cascade = True)
-        print len(neo_seg.analogsignals)
         w= SegmentViewer(segment = neo_seg, parent = treeview)
         w.setWindowFlags(Qt.Window)
         w.show()
@@ -214,7 +246,7 @@ class DetectRespiratoryCycle(MenuItem):
 
 
 
-context_menu = [ Delete, Edit, ChangeParent,CreateTop, 
+context_menu = [ Delete, Edit, ChangeParent,MenuImportData, CreateTop, 
                 DrawSegment, DrawAnalogSignal, DrawTimeFreqViewer, 
                 EditRecordingChannelGroups, SaveToFile,
                 EditOscillation, 
