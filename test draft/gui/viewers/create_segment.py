@@ -38,9 +38,11 @@ for i in range(nb_epocharrays):
     durations = np.random.rand(epoch_size)*(dur/epoch_size/2)
     interv = np.random.rand(epoch_size)*(dur/epoch_size/2)+dur/epoch_size/4
     times = np.cumsum(durations)+np.cumsum(interv)
+    color = 'r' if i<2 else 'w'
     ea = neo.EpochArray(times = times,
                                         durations = durations,
-                                        name = 'epoch {}'.format(i))
+                                        name = 'epoch {}'.format(i),
+                                        color = color)
     epocharrays.append(ea)
 
 
