@@ -30,6 +30,8 @@ class SegmentViewer(MultiViewer):
         if len(self.seg.analogsignals) > 0:
             self.add_analogsignals( analogsignals = self.seg.analogsignals )
             #~ self.add_timefreqs( analogsignals = self.seg.analogsignals)
+        if len(self.seg.spiketrains) > 0:
+            self.add_spiketrains(spiketrains = self.seg.spiketrains)
         if len(self.seg.epocharrays) > 0:
             self.add_epochs(epocharrays = self.seg.epocharrays)
         

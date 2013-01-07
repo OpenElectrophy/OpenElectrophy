@@ -8,7 +8,7 @@ from .signalviewer import SignalViewer
 from .epochviewer import EpochViewer
 from .segmentviewer import SegmentViewer
 from .timefreqviewer import TimeFreqViewer
-
+from .spiketrainviewer import SpikeTrainViewer
 
 
 

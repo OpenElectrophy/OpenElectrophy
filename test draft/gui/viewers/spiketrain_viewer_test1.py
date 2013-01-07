@@ -9,7 +9,7 @@ import quantities as pq
 import neo
 
 
-from OpenElectrophy.gui.viewers.epochviewer import *
+from OpenElectrophy.gui.viewers.spiketrainviewer import *
 
 from create_segment import *
 
@@ -22,7 +22,8 @@ def test1():
     s.show()
     s.set_start_stop(analogsignals[0].t_start.magnitude-2,analogsignals[0].t_stop.magnitude+2)
     
-    w1 = EpochViewer(epocharrays = seg.epocharrays)
+    
+    w1 = SpikeTrainViewer(spiketrains = seg.spiketrains)
     w1.show()
     
     s.time_changed.connect(w1.seek)

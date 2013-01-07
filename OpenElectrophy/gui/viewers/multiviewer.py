@@ -8,6 +8,7 @@ from tools import *
 from .signalviewer import *
 from .timefreqviewer import *
 from .epochviewer import *
+from .spiketrainviewer import *
 
 class SubViewer(object):
     def __init__(self, 
@@ -91,6 +92,16 @@ class MultiViewer(QMainWindow):
     def add_epochs(self, epocharrays = [ ], name = 'Epoch Arrays',
                                 t_start_correction = 0., sampling_rate_factor = 1., **kargs):
         subviewer = SubViewer(viewer = EpochViewer(epocharrays = epocharrays, **kargs),
+                                                    name = name,
+                                                    t_start_correction = t_start_correction,
+                                                    sampling_rate_factor = sampling_rate_factor,
+                                                    )
+        self.addDockWidget(Qt.BottomDockWidgetArea, subviewer.dock, Qt.Vertical)
+        self.subviewers.append(subviewer)
+    
+    def add_spiketrains(self, spiketrains = [ ], name = 'Epoch Arrays',
+                                t_start_correction = 0., sampling_rate_factor = 1., **kargs):
+        subviewer = SubViewer(viewer = SpikeTrainViewer(spiketrains = spiketrains, **kargs),
                                                     name = name,
                                                     t_start_correction = t_start_correction,
                                                     sampling_rate_factor = sampling_rate_factor,
