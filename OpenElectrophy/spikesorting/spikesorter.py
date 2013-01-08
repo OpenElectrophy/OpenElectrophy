@@ -287,6 +287,8 @@ class SpikeSorter(object):
         self.cluster_displayed_subset = { }
         self.selected_spikes = None
         
+        #~ self.__setattr__ = self.__setattr__after
+        
         self.initialize_from_rcg(rcg)
     
 
@@ -306,9 +308,10 @@ class SpikeSorter(object):
         Do aliases and check changes
         """
         name = self.aliases.get(name, name)
+        object.__setattr__(self, name, value)
         if name in self.interdependent_attributes:
             self.check_change_on_attributes(name)
-        object.__setattr__(self, name, value)
+        
 
     def __getattr__(self, name):
         """
@@ -347,10 +350,14 @@ class SpikeSorter(object):
             return 
         
         if name == 'spike_index_array':
+            if self.spike_index_array is None:
+                nb_spikes = 0
+            else:
+                nb_spikes = np.sum([len(pos) for pos in self.spike_index_array])
+            self.spike_clusters = np.zeros(nb_spikes, dtype = int)
             self.init_seg_spike_slices()
             object.__setattr__(self, 'spike_waveforms', None)
             object.__setattr__(self, 'waveform_features', None)
-            self.spike_clusters = np.zeros(self.nb_spikes, dtype = int)
         elif name == 'spike_waveforms':
             object.__setattr__(self, 'waveform_features', None)
         elif name == 'spike_clusters':
@@ -359,13 +366,17 @@ class SpikeSorter(object):
         #~ self.selected_spikes is None
 
     def init_seg_spike_slices(self):
+        if self.spike_index_array is None: 
+            return
+        print 'init_seg_spike_slices',
         start = 0
-        if self.spike_index_array is None: return
         self.seg_spike_slices = { }
         for s, ind in enumerate(self.spike_index_array):
             stop = start + ind.size
             self.seg_spike_slices[s] = slice(start, stop)
             start = stop
+        print 'init_seg_spike_slices',self.nb_spikes, self.seg_spike_slices
+        self.selected_spikes = np.zeros(self.nb_spikes, dtype = int)
 
 
     def __repr__(self):

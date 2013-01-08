@@ -170,7 +170,7 @@ class OEBase(object):
                 for childname in self.one_to_many_relationship:
                     for child in getattr(self, childname.lower()+'s'):
                         neochild = child.to_neo(cascade = True)
-                        
+                        if neochild is None: continue
                         neochildren = getattr(self.neoinstance, childname.lower()+'s')
                         if not list_contains(neochildren, neochild):
                             neochildren.append(neochild)

@@ -37,7 +37,7 @@ StdThresholdDetection.dataset = StdThresholdDetection_DataSet
 
 class ManualThresholdDetection_DataSet(DataSet):
     sign = ChoiceItem('Sign of FRONT', ['-', '+'])
-    std_thresh = FloatItem('Absolut threshold (can be + or -) ',-1)
+    threshold = FloatItem('Absolut threshold (can be + or -) ',-1)
     # TODO Quantities item
     #~ sweep_clean_size = 0.8*pq.ms
 ManualThresholdDetection.dataset = ManualThresholdDetection_DataSet

@@ -162,16 +162,14 @@ class SignalAndSpike(SpikeSortingWidgetBase):
     def seek(self, t):
         sps = self.spikesorter
         s =  self.combo.currentIndex()
-        sl = sps.seg_spike_slices[s]
-        sel = sps.selected_spikes[sl]
-        pos = sps.spike_index_array[s]
-        if self.auto_zoom_x and np.sum(sel)==1:
-            self.xsize = 0.05
-            #~ self.xsize_changer.setValue(self.xsize)
-            #~ self.timerSeeker.fast_time_changed.disconnect(self.seek)
-            t = (pos[sel]/sps.sig_sampling_rate+sps.seg_t_start[s]).simplified.magnitude
-            #~ self.timerSeeker.seek(t)
-            #~ self.timerSeeker.fast_time_changed.connect(self.seek)
+        if sps.spike_index_array is not None:
+            sl = sps.seg_spike_slices[s]
+            sel = sps.selected_spikes[sl]
+            pos = sps.spike_index_array[s]
+            # FIXME
+            #~ if self.auto_zoom_x and np.sum(sel)==1:
+                #~ self.xsize = 0.05
+                #~ t = (pos[sel]/sps.sig_sampling_rate+sps.seg_t_start[s]).simplified.magnitude
         
         self.time_by_seg[s] = t
         sr = sps.sig_sampling_rate.rescale('Hz').magnitude
@@ -195,36 +193,37 @@ class SignalAndSpike(SpikeSortingWidgetBase):
                 self.curves[i].setData( [np.nan], [np.nan])
 
         #Spike
-        inwindow = (pos>ind_start) & (pos<ind_stop)
-        
-        # Selected spikes
-        ind = pos[sel & inwindow]
-        for i, scatter in enumerate(self.scatters):
-            color = QColor( 'magenta')
-            color.setAlpha(160)
-            if 'sel' not in scatter:
-                scatter['sel'] = pg.ScatterPlotItem(x=t_vect[ind-ind_start], y=self.sigs[i,s][ind], 
-                                                                    pen=None, brush=color, size=15, pxMode = True)
-                self.plots[i].addItem(scatter['sel'])
-            else :
-                scatter['sel'].setData(t_vect[ind-ind_start], self.sigs[i,s][ind])
-
-        # Spikes by cluster
-        vpos = pos[inwindow]
-        for c in sps.cluster_names.keys():
-            clusters = sps.spike_clusters[sl][inwindow]
-            ind = vpos[clusters == c]
-            r,g,b = sps.cluster_colors[c]
-            color = QColor( r*255,g*255,b*255  )
+        if sps.spike_index_array is not None:
+            inwindow = (pos>ind_start) & (pos<ind_stop)
+            
+            # Selected spikes
+            ind = pos[sel & inwindow]
             for i, scatter in enumerate(self.scatters):
-                if c in scatter:
-                    scatter[c].setData(t_vect[ind-ind_start], self.sigs[i,s][ind])
-                else:
-                    scatter[c] = pg.ScatterPlotItem(x=t_vect[ind-ind_start], y=self.sigs[i,s][ind], 
-                                                                    pen=None, brush=color, size=10, pxMode = True)
-                    self.plots[i].addItem(scatter[c])
-                    scatter[c].sigClicked.connect(self.item_clicked)
-                    #~ scatter[c].vb = self.plots[i].vb
+                color = QColor( 'magenta')
+                color.setAlpha(160)
+                if 'sel' not in scatter:
+                    scatter['sel'] = pg.ScatterPlotItem(x=t_vect[ind-ind_start], y=self.sigs[i,s][ind], 
+                                                                        pen=None, brush=color, size=15, pxMode = True)
+                    self.plots[i].addItem(scatter['sel'])
+                else :
+                    scatter['sel'].setData(t_vect[ind-ind_start], self.sigs[i,s][ind])
+
+            # Spikes by cluster
+            vpos = pos[inwindow]
+            for c in sps.cluster_names.keys():
+                clusters = sps.spike_clusters[sl][inwindow]
+                ind = vpos[clusters == c]
+                r,g,b = sps.cluster_colors[c]
+                color = QColor( r*255,g*255,b*255  )
+                for i, scatter in enumerate(self.scatters):
+                    if c in scatter:
+                        scatter[c].setData(t_vect[ind-ind_start], self.sigs[i,s][ind])
+                    else:
+                        scatter[c] = pg.ScatterPlotItem(x=t_vect[ind-ind_start], y=self.sigs[i,s][ind], 
+                                                                        pen=None, brush=color, size=10, pxMode = True)
+                        self.plots[i].addItem(scatter[c])
+                        scatter[c].sigClicked.connect(self.item_clicked)
+                        #~ scatter[c].vb = self.plots[i].vb
 
         for plot in self.plots:
             plot.setXRange( t1, t2, padding = 0.0)
