@@ -218,7 +218,7 @@ import migrate.changeset
 from sqlalchemy import orm
 
 from sqlalchemy import create_engine  , MetaData
-from sqlalchemy import Table, Column, Integer, String, Float,  Text, UnicodeText, LargeBinary, DateTime, FLOAT
+from sqlalchemy import Table, Column, Integer, String, Float,  Text, UnicodeText, LargeBinary, DateTime, PickleType
 from sqlalchemy import ForeignKey
 from sqlalchemy import Index
 from sqlalchemy import event
@@ -259,14 +259,15 @@ python_to_sa_conversion = {
                                                         int : Integer,
                                                         datetime : DateTime,
                                                         float : Float,
+                                                        object: PickleType,
                                                         }
 #~ sa_to_python_conversion = { }
 #~ for k,v in python_to_sa_conversion.items():
     #~ sa_to_python_conversion[v] = k
 
 
-global globalsesession
-globalsesession = None
+global globalsession
+globalsession = None
 global globaldbinfo
 globaldbinfo = None
 
@@ -1107,8 +1108,8 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
                                                 compress = compress)
 
     if use_global_session:
-        global globalsesession
-        globalsesession = Session()
+        global globalsession
+        globalsession = Session()
         global globaldbinfo
         globaldbinfo = dbinfo
     
@@ -1133,7 +1134,7 @@ def execute_sql(query ,session = None, column_split = True,
     
     """
     if session is None:
-        session = globalsesession
+        session = globalsession
     assert session is not None, 'You must give a session for execute_sql'
     
     pres = session.execute(query, kargs)

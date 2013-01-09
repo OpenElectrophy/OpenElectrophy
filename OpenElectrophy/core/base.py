@@ -45,8 +45,8 @@ class OEBase(object):
     
     def save(self, session = None):
         if session is None:
-            from sqlmapper import globalsesession
-            session = globalsesession
+            from sqlmapper import globalsession
+            session = globalsession
         assert session is not None, 'You must give a session for loading {}'.format(cls.__classname__)
         self.update()
         session.add(self)
@@ -63,8 +63,8 @@ class OEBase(object):
     @classmethod
     def load(cls, id, session = None,):
         if session is None:
-            from sqlmapper import globalsesession
-            session = globalsesession
+            from sqlmapper import globalsession
+            session = globalsession
         assert session is not None, 'You must give a session for loading {}'.format(cls.__classname__)
         return session.query(cls).get(id)
     
