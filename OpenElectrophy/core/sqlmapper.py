@@ -261,7 +261,7 @@ python_to_sa_conversion = {
                                                         datetime : DateTime,
                                                         float : Float,
                                                         #~ object: PickleType,
-                                                        #~ buffer: LargeBinary,
+                                                        buffer: LargeBinary,
                                                         }
 #~ sa_to_python_conversion = { }
 #~ for k,v in python_to_sa_conversion.items():
