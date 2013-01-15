@@ -82,11 +82,13 @@ class MainExplorer(QWidget) :
                             dbinfo = None,
                             settings = None,
                             name = None,
+                            context_menu = context_menu,
                             ):
         QWidget.__init__(self, parent)
         
         self.dbinfo = dbinfo
         self.name = name
+        self.context_menu = context_menu
         
         
         self.setWindowTitle(self.tr('Database explorer'))
@@ -185,7 +187,7 @@ class MainExplorer(QWidget) :
         self.session = self.dbinfo.Session()
         for td in self.listTreeDescription:
             sqltreeview = QtSqlTreeView(session = self.session, treedescription = td, 
-                            settings = self.settings, context_menu = context_menu,
+                            settings = self.settings, context_menu = self.context_menu,
                             explorer = self)
             self.tabViews.addTab(sqltreeview , td.name)
         
@@ -219,7 +221,7 @@ class MainExplorer(QWidget) :
             td = w.getTreeDescription()
             if new:
                 sqltreeview = QtSqlTreeView(session = self.session, treedescription = td, 
-                                settings = self.settings, context_menu = context_menu,
+                                settings = self.settings, context_menu = self.context_menu,
                                 explorer = self)
                 self.tabViews.addTab(sqltreeview , td.name)
                 self.listTreeDescription.append(td)
