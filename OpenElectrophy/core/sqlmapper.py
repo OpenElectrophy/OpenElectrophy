@@ -219,6 +219,7 @@ from sqlalchemy import orm
 
 from sqlalchemy import create_engine  , MetaData
 from sqlalchemy import Table, Column, Integer, String, Float,  Text, UnicodeText, LargeBinary, DateTime, PickleType
+from sqlalchemy import BLOB
 from sqlalchemy import ForeignKey
 from sqlalchemy import Index
 from sqlalchemy import event
@@ -259,7 +260,8 @@ python_to_sa_conversion = {
                                                         int : Integer,
                                                         datetime : DateTime,
                                                         float : Float,
-                                                        object: PickleType,
+                                                        #~ object: PickleType,
+                                                        #~ buffer: LargeBinary,
                                                         }
 #~ sa_to_python_conversion = { }
 #~ for k,v in python_to_sa_conversion.items():
@@ -530,8 +532,14 @@ def create_classes_from_schema_sniffing( engine, oeclasses,
                 # so we must go up in class inheritance
                 t = None
                 for ptype, satype in python_to_sa_conversion.items():
+                    #~ print col.name, ptype, satype, col.type, type(col.type), issubclass(type(col.type), satype)
                     if issubclass(type(col.type), satype):
                         t = ptype
+                #~ if t is None and type(col.type) == BLOB:
+                    #~ t = object
+                    #~ col.type = PickleType
+                    #~ print col.type
+                #~ print col.name, t
                 genclass.usable_attributes[col.name] = t
         generated_classes.append(genclass)
 
