@@ -22,12 +22,18 @@ def get_dict_from_group_param(param, cascade = False):
         else:
             d[p.name()] = p.value()
     return d
-to_dict = get_dict_from_group_param
+get_dict = to_dict = get_dict_from_group_param
 
-#~ class Parameter(Parameter):
-    #~ def to_dict(self, cascade = False):
-        #~ return get_dict_from_group_param(self, cascade = cascade)
-#~ print Parameter
+
+def set_dict_to_param_group(param, d, cascade = False):
+    assert param.type() == 'group'
+    for k, v in d.items():
+        if type(v) == dict:
+            if cascade:
+                set_dict_to_param_group(param.param(k), v, cascade = True)
+        else:
+            param[k] = v
+set_dict = set_dict_to_param_group
 
 
 ##Range

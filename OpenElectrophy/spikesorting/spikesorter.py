@@ -368,14 +368,14 @@ class SpikeSorter(object):
     def init_seg_spike_slices(self):
         if self.spike_index_array is None: 
             return
-        print 'init_seg_spike_slices',
+        #~ print 'init_seg_spike_slices',
         start = 0
         self.seg_spike_slices = { }
         for s, ind in enumerate(self.spike_index_array):
             stop = start + ind.size
             self.seg_spike_slices[s] = slice(start, stop)
             start = stop
-        print 'init_seg_spike_slices',self.nb_spikes, self.seg_spike_slices
+        #~ print 'init_seg_spike_slices',self.nb_spikes, self.seg_spike_slices
         self.selected_spikes = np.zeros(self.nb_spikes, dtype = int)
 
 

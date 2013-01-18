@@ -54,6 +54,9 @@ def test3():
     app = QApplication([ ])
     p = Parameter.create(name='params', type='group', children=params)
     t = ParameterTree()
+    
+    set_dict(p, { 'xsize' : 18. , 'subparam' : {'xsize' : 19.},  }, cascade = True)
+    
     t.setParameters(p, showTop=False)
     t.show()
     app.exec_()
