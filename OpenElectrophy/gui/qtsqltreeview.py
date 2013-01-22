@@ -141,7 +141,9 @@ class TreeItem(object):
                                     from_obj = [childname],
                                     order_by = order_by,
                                     )
-                for id, in session.execute(q):
+                
+                #~ for id, in session.execute(q):
+                for id, in session.bind.execute(q):
                     self.children.append(TreeItem(childname, id, self, row))
                     row +=1
         
@@ -182,7 +184,7 @@ class MyModel(QAbstractItemModel):
                 self.maxColumn = len(fieldnames)
         
         
-        self.total_time = {'rowCount':0.,'index':0., 'parent' : 0., 'data':0. , 'getinst' : 0., '??' : 0.}
+        #~ self.total_time = {'rowCount':0.,'index':0., 'parent' : 0., 'data':0. , 'getinst' : 0., '??' : 0.}
         
         
     
@@ -191,14 +193,14 @@ class MyModel(QAbstractItemModel):
         return self.maxColumn
 
     def rowCount(self, parentIndex):
-        t1 = time.time()
+        #~ t1 = time.time()
         if not parentIndex.isValid():
             n= self.rootItem.children_count(self.session, self.td)
         else:
             item = parentIndex.internalPointer()
             n= item.children_count(self.session, self.td)
-        t2 = time.time()
-        self.total_time['rowCount'] +=t2-t1
+        #~ t2 = time.time()
+        #~ self.total_time['rowCount'] +=t2-t1
         #~ print self.total_time
         return n
 
@@ -208,19 +210,19 @@ class MyModel(QAbstractItemModel):
         
         
     def index(self, row, column, parentIndex):
-        t1 = time.time()
+        #~ t1 = time.time()
         if not parentIndex.isValid():
             ind = self.createIndex(row, column, self.rootItem.get_children(self.session, self.td)[row])
         else:
             parentItem = parentIndex.internalPointer()
             ind = self.createIndex(row, column, parentItem.children[row])
-        t2 = time.time()
-        self.total_time['index'] +=t2-t1
+        #~ t2 = time.time()
+        #~ self.total_time['index'] +=t2-t1
         #~ print self.total_time
         return ind
         
     def parent(self, index):
-        t1 = time.time()
+        #~ t1 = time.time()
         if not index.isValid():
             ind = QModelIndex()
         else:
@@ -229,8 +231,8 @@ class MyModel(QAbstractItemModel):
                 ind = QModelIndex()
             else:
                 ind = self.createIndex(item.parent.row, 0, item.parent)
-        t2 = time.time()
-        self.total_time['parent'] +=t2-t1
+        #~ t2 = time.time()
+        #~ self.total_time['parent'] +=t2-t1
         #~ print self.total_time
         return ind
 
@@ -239,7 +241,7 @@ class MyModel(QAbstractItemModel):
         if not index.isValid():
             return None
             
-        t1 = time.time()
+        #~ t1 = time.time()
         
         
         item = index.internalPointer()
@@ -260,11 +262,11 @@ class MyModel(QAbstractItemModel):
                         item.columns_display[col] =  u'{} : {}'.format( item.tablename, item.id) 
                     else :
 
-                        t3 = time.time()
+                        #~ t3 = time.time()
                         inst = self.session.query(self.td.tablename_to_class[item.tablename]).get(item.id) ##### TROP LENT
-                        t4 = time.time()
+                        #~ t4 = time.time()
 
-                        self.total_time['getinst'] +=t4-t3
+                        #~ self.total_time['getinst'] +=t4-t3
 
                         
                         
@@ -308,8 +310,8 @@ class MyModel(QAbstractItemModel):
         #~ self.total_time['??'] +=t6-t5
 
 
-        t2 = time.time()
-        self.total_time['data'] +=t2-t1
+        #~ t2 = time.time()
+        #~ self.total_time['data'] +=t2-t1
         #~ print self.total_time
         return ret
 

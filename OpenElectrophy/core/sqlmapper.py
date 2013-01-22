@@ -988,7 +988,9 @@ class  MyBasicCache():
         #~ print 'cache size', len(self.d)
         while len(self.d) >= self.maxsize:
             self.d.popleft()
-        
+    
+    def clear(self):
+        self.d.clear()
 
 
 class EventLoadListennerForCache:

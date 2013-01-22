@@ -193,8 +193,12 @@ class MainExplorer(QWidget) :
         
     def refresh(self):
         self.dbinfo.Session.expire_all()
+        if self.dbinfo.cache is not None:
+            self.dbinfo.cache.clear()
+        #~ self.session = self.dbinfo.Session()
         for i in range(len(self.listTreeDescription)):
             sqltreeview = self.tabViews.widget(i)
+            #~ sqltreeview.session = self.session
             sqltreeview.refresh()
 
     def closeCurrentTab(self):
