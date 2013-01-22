@@ -7,6 +7,8 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys, os
 
+from collections import deque
+
 
 from guiutil.icons import icons
 from .guiutil.picklesettings import PickleSettings
@@ -32,6 +34,10 @@ class MainWindow(QMainWindow) :
         
         self.settings = PickleSettings(applicationname=applicationname)
         self.applicationname = applicationname
+
+        self.settings.getValueOrDefault('recently_opened_db', deque())
+        self.settings.save()
+
         
         self.setWindowTitle(self.tr('OpenElectrophy'))
         self.setWindowIcon(QIcon(':/openelectrophy.png'))
@@ -51,6 +57,7 @@ class MainWindow(QMainWindow) :
 
         self.explorers = [ ]
         
+        
     def createActions(self):
         self.actionCreateDb = QAction(u'&Create a new database', self,
                                                                 shortcut = "Ctrl+C",
@@ -60,32 +67,11 @@ class MainWindow(QMainWindow) :
         self.actionOpenDb = QAction(u'&Open a database', self,
                                                                 shortcut = "Ctrl+O",
                                                                 icon =QIcon(':/open-db.png'))
-        self.actionOpenDb.triggered.connect(self.openDatabase)
+        self.actionOpenDb.triggered.connect(self.openDatabaseDialog)
         
-        #~ self.actionImport = QAction(u'&Import data in this db', self,
-                                                                #~ icon =QIcon(':/svn-update.png'))
-        #~ self.actionImport.triggered.connect(self.openImportData)
-        
-
         self.actionOpenFile = QAction(u'Open read only file with neo (in memory DB)', self,
                                                                 icon =QIcon(':/document-open-folder.png'))
         self.actionOpenFile.triggered.connect(self.openNeoFile)
-
-
-        
-        
-        
-        
-        
-        #~ self.actionImport = QAction(self.tr("&Import data in this db"), self)
-        #~ self.actionImport.setShortcut(self.tr("Ctrl+I"))
-        #~ self.actionImport.setIcon(QIcon(':/svn-update.png'))
-        #~ self.connect(self.actionImport, SIGNAL("triggered()"), self.importData)
-        
-        #~ self.actionTableDesign = QAction(self.tr("&Modify database schema (table design)"), self)
-        #~ self.actionTableDesign.setIcon(QIcon(':/vcs_diff.png'))
-        #~ self.connect(self.actionTableDesign, SIGNAL("triggered()"), self.openTableDesign)
-        
 
         self.quitAct = QAction(self.tr("&Quit"), self)
         self.quitAct.setShortcut(self.tr("Ctrl+Q"))
@@ -110,36 +96,45 @@ class MainWindow(QMainWindow) :
         self.fileMenu = self.menuBar().addMenu(self.tr("&Dataset"))
         self.fileMenu.addAction(self.actionCreateDb)
         self.fileMenu.addAction(self.actionOpenDb)
-        #~ self.fileMenu.addAction(self.actionImport)
+        
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.actionOpenFile)
+        self.fileMenu.addSeparator()
         
-        #~ self.fileMenu.addAction(self.actionTableDesign)
+        
+        self.recentlyOpenedMenu = self.fileMenu.addMenu(QIcon(':/view-history.png'), u'Recently opened databases')
+        self.refresh_recentlyOpenedMenu()
+        
         
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.quitAct)
 
         self.menuBar().addSeparator()
-        #~ self.figureMenu = self.menuBar().addMenu(self.tr("&Figure"))
-        #~ for act in self.figureTools.getAllActions():
-            #~ self.figureMenu.addAction(act)
-        #~ self.openFigureMenu = self.figureMenu.addMenu(self.tr("Opened Figures"))
-        
-        #~ self.figureMenu.setEnabled(False)
         
         self.menuBar().addSeparator()
         self.helpMenu = self.menuBar().addMenu(self.tr("&Help"))
         self.helpMenu.addAction(self.aboutAct)
         self.helpMenu.addAction(self.helpAct)
         
+        
+    
+    def refresh_recentlyOpenedMenu(self):
+        self.recentlyOpenedMenu.clear()
+        for kargs in self.settings['recently_opened_db']:
+            act = self.recentlyOpenedMenu.addAction(QIcon(kargs['icon']), kargs['url'])
+            act.kargs = kargs
+            act.triggered.connect(self.open_recently)
+            
 
     def createDatabase(self):
         d = CreateDB(parent = self,settings =self.settings)
         if d.exec_():
             d.create_a_new_db()
     
+    def open_recently(self):
+        self.openDatabase(**self.sender().kargs)
     
-    def openDatabase(self):
+    def openDatabaseDialog(self):
         d = OpenDB(parent = self,settings =self.settings)
         if d.exec_():
             kargs =  d.get_opendb_kargs()
@@ -152,16 +147,38 @@ class MainWindow(QMainWindow) :
             #~ compress = 'blosc'
             #~ max_binary_size = MAX_BINARY_SIZE
             
-            dbinfo = open_db(**kargs)
-            dbinfo.kargs_reopen = kargs # for futur open if schema modified
-            #TODO do this better:
-            name = dbinfo.url.split('/')[-1]
-            explorer = MainExplorer(dbinfo = dbinfo, settings = self.settings, name = name)
-            self.explorers.append(explorer )
-            icon = QIcon(d.get_dbengine().icon)
-            self.tabDatabases.addTab( explorer ,icon,  name)
-            self.tabDatabases.setCurrentIndex(self.tabDatabases.count()-1)
-
+            kargs['icon'] = d.get_dbengine().icon
+            self.openDatabase(**kargs)
+            
+    
+    def openDatabase(self, **kargs):
+        kargs_open = { }
+        kargs_open.update(kargs)
+        kargs_open.pop('icon')
+        dbinfo = open_db(**kargs_open)
+        dbinfo.kargs_reopen = kargs_open # for futur open if schema modified
+        #TODO do this better:
+        name = dbinfo.url.split('/')[-1]
+        explorer = MainExplorer(dbinfo = dbinfo, settings = self.settings, name = name)
+        self.explorers.append(explorer )
+        
+        icon = QIcon(kargs['icon'])
+        
+        self.tabDatabases.addTab( explorer ,icon,  name)
+        self.tabDatabases.setCurrentIndex(self.tabDatabases.count()-1)
+        
+        d = self.settings['recently_opened_db']
+        for recently in d:
+            if recently['url'] == kargs['url']:
+                d.remove(recently)
+                break
+        d.append(kargs)
+        while len(d) >= 5:
+            d.popleft()
+        self.settings['recently_opened_db'] = d
+        self.refresh_recentlyOpenedMenu()
+        
+    
     def openNeoFile(self):
         
         
