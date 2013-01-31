@@ -310,7 +310,7 @@ def create_column_if_not_exists(table, attrname, attrtype):
     elif attrtype in python_to_sa_conversion:
         if attrname not in colnames:
             if attrtype is buffer:
-                col = Column(attrname, python_to_sa_conversion[LargeBinary(MAX_BINARY_SIZE)])
+                col = Column(attrname, LargeBinary(MAX_BINARY_SIZE))
             else:
                 col = Column(attrname, python_to_sa_conversion[attrtype])
             col.create( table )
