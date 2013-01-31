@@ -218,7 +218,7 @@ import migrate.changeset
 from sqlalchemy import orm
 
 from sqlalchemy import create_engine  , MetaData
-from sqlalchemy import Table, Column, Integer, String, Float,  Text, UnicodeText, LargeBinary, DateTime, PickleType
+from sqlalchemy import Table, Column, Integer, String, Float,  Text, UnicodeText, LargeBinary, DateTime, PickleType, Boolean
 from sqlalchemy import BLOB
 from sqlalchemy import ForeignKey
 from sqlalchemy import Index
@@ -262,6 +262,7 @@ python_to_sa_conversion = {
                                                         float : Float,
                                                         #~ object: PickleType,
                                                         buffer: LargeBinary,
+                                                        bool  : Boolean,
                                                         }
 #~ sa_to_python_conversion = { }
 #~ for k,v in python_to_sa_conversion.items():
@@ -308,7 +309,10 @@ def create_column_if_not_exists(table, attrname, attrtype):
             col.create( table)
     elif attrtype in python_to_sa_conversion:
         if attrname not in colnames:
-            col = Column(attrname, python_to_sa_conversion[attrtype])
+            if attrtype is buffer:
+                col = Column(attrname, python_to_sa_conversion[LargeBinary(MAX_BINARY_SIZE)])
+            else:
+                col = Column(attrname, python_to_sa_conversion[attrtype])
             col.create( table )
     else:
         raise NotImplementedError
