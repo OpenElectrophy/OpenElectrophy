@@ -54,18 +54,20 @@ class ImportData(QDialog) :
     def __init__(self  , parent = None ,
                             dbinfo = None,
                             settings = None,
-                            use_thread = True):
+                            use_thread = True,
+                            read_io_list = read_io_list):
         super(ImportData, self).__init__(parent)
         self.settings = settings
         self.dbinfo = dbinfo
         self.use_thread = use_thread
+        self.read_io_list = read_io_list
         
         self.mainLayout = QVBoxLayout()
         self.setLayout(self.mainLayout)
         
         
         self.comboNeoIO = QComboBox()
-        self.comboNeoIO.addItems(read_io_list.keys())
+        self.comboNeoIO.addItems(self.read_io_list.keys())
         self.mainLayout.addWidget(self.comboNeoIO)
         self.comboNeoIO.currentIndexChanged .connect(self.changeIO)
 
@@ -117,8 +119,8 @@ class ImportData(QDialog) :
 
     
     def changeIO(self, num):
-        self.name = read_io_list.keys()[num]
-        self.ioclass = read_io_list[self.name]
+        self.name = self.read_io_list.keys()[num]
+        self.ioclass = self.read_io_list[self.name]
         
         if self.inputOptions is not None :
             self.inputOptions.hide()
