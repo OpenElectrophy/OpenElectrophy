@@ -499,7 +499,8 @@ class SpikeSorter(object):
         cluster_names = { }
         if len(self.rcg.units)>0:
             self.seg_spike_slices = { }
-            self.spike_index_array = np.empty((len(self.segs)), dtype = object)
+            #~ self.spike_index_array = np.empty((len(self.segs)), dtype = object)
+            index_array = np.empty((len(self.segs)), dtype = object)
             pos = 0
             clusters = [ ]
             waveforms = [ ]
@@ -556,8 +557,10 @@ class SpikeSorter(object):
                 
                 self.seg_spike_slices[s] = slice(pos, pos+nb_spike_in_segs)
                 pos += nb_spike_in_segs
-                self.spike_index_array[s] = np.concatenate(spike_index)
+                #~ self.spike_index_array[s] = np.concatenate(spike_index)
+                index_array[s] = np.concatenate(spike_index)
             
+            self.spike_index_array = index_array
             self.spike_clusters = np.concatenate(clusters)
             #this reset names so
             self.cluster_names = cluster_names
