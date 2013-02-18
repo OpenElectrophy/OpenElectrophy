@@ -106,7 +106,8 @@ If you want to test the UI of OpenElectrophy :
      
  * Windows : click (or make a shortcut on your desktop) on::
      
-    C:\\winpython-2.7.3.amd64\\python-2.7.3.amd64\\Lib\\site-packages\\OpenElectrophy.egg\\EGG-INFO\\scripts\\startOpenElectrophy
+    C:\\WinPython-64bit-2.7.3.1\\python-2.7.3.amd64\\Scripts\\startOpenElectrophy
+    
 
 
 If you want to test if  OpenElectrophy module is installed, open an ipython interactive console ::
