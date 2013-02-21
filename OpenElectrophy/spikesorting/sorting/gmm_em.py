@@ -26,11 +26,11 @@ class SklearnGaussianMixtureEm(object):
         
         if version.LooseVersion(sklearn.__version__) <= '0.10':
             classifier = GMM(n_components=n_cluster, cvtype='full')
+            classifier.fit( sps.waveform_features , n_iter = n_iter)
         else:
-            classifier = GMM(n_components=n_cluster, covariance_type='full')
+            classifier = GMM(n_components=n_cluster, covariance_type='full', n_iter = n_iter)
+            classifier.fit( sps.waveform_features)
         
-        classifier.fit( sps.waveform_features , n_iter = n_iter)
-        print sps.waveform_features.shape
         sps.spike_clusters = classifier.predict(sps.waveform_features)
         
         sps.cluster_names = dict( [ (i, 'cluster #{}'.format(i))
