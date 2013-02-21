@@ -1026,6 +1026,14 @@ class DataBaseConnectionInfo(object):
     """
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
+        
+        self.classes_by_name = dict([ (c.__name__, c) for c in self.mapped_classes])
+    
+    def get_class(self, name):
+        return self.classes_by_name.get(name, None)
+    
+        
+        
 
 
 def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_session = True, 
