@@ -130,7 +130,8 @@ class EpochViewer(ViewerBase):
         self.graphicsview.setBackground(color)
         
         t_start, t_stop = self.t-self.xsize/3. , self.t+self.xsize*2/3.
-
+        
+        n = len(self.epocharrays)
         for e, epocharray in enumerate(self.epocharrays):
             for item in self.epocharrays_items[e]:
                 self.plot.removeItem(item)
@@ -142,8 +143,8 @@ class EpochViewer(ViewerBase):
                 color = self.paramEpochs.children()[e].param('color').value()
                 color2 = QColor(color)
                 color2.setAlpha(130)
-                item = RectItem([t[i], e, d[i], .9],  border = color, fill = color2)
-                item.setPos(t[i], e)
+                item = RectItem([t[i], n-e-1, d[i], .9],  border = color, fill = color2)
+                item.setPos(t[i], n-e-1)
                 self.plot.addItem(item)
                 self.epocharrays_items[e].append(item)
         
