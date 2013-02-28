@@ -331,13 +331,15 @@ class SignalViewerControler(QWidget):
             gains = np.ones(self.viewer.all_std.size, dtype = float) * dy/n/max(self.viewer.all_std[selected])
         gains *= .3
         
-        o = .5
+        #~ o = .5
+        o = n-.5
         for i, p in enumerate(self.viewer.paramSignals.children()):
             p.param('visible').setValue(selected[i])
             if selected[i]:
                 p.param('gain').setValue(gains[i]*2)
                 p.param('offset').setValue(dy*o+ylims[0])
-                o+=1
+                #~ o+=1
+                o-=1
     
     def automatic_color(self, cmap_name = None):
         if cmap_name is None:

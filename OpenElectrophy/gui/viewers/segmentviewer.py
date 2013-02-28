@@ -43,7 +43,9 @@ class SegmentViewer(MultiViewer):
         else:
             self.xsize_changer.setValue(xsize)
         for subviewer in self.subviewers:
-            subviewer.viewer.xsize = xsize
+            #~ print subviewer.name
+            if subviewer.dock.isVisible():
+                subviewer.viewer.xsize = xsize
     
 
 
