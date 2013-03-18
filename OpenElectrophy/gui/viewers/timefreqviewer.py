@@ -5,8 +5,8 @@ TimeFreqViewer
 
 from tools import *
 
-#~ from scipy import fftpack
-import numpy.fft as fftpack
+from scipy import fftpack
+#~ import numpy.fft as fftpack
 
 import time
 
@@ -87,6 +87,7 @@ class TimeFreqViewer(ViewerBase):
     All analogsignals need to have same asmpling_rate.
     
     """
+    initialize_tfr_finished = pyqtSignal()
     def __init__(self, parent = None,
                             analogsignals = None,
                             with_time_seeker = False,
@@ -133,19 +134,26 @@ class TimeFreqViewer(ViewerBase):
         self.paramControler = TimefreqViewerControler(viewer = self)
         
         self.graphicsviews = [ ]
-        self.grid_changing =QReadWriteLock()
+        self.grid_changing =False
         self.create_grid()
         
+        self.thread_initialize_tfr = None
         self.need_recreate_thread = True
+        
         self.initialize_time_freq()
+        self.initialize_tfr_finished.connect(self.refresh)
+        
+        # this signal is used when trying to change many time tfr params
+        self.timer_back_initialize = QTimer(singleShot = True, interval = 300)
+        self.timer_back_initialize.timeout.connect(self.initialize_time_freq)
         
         # this signal is a hack when many signal are emited at the same time
         # only the first is taken
         self.need_change_grid.connect(self.do_change_grid, type = Qt.QueuedConnection)
         
-        self.paramGlobal.param('xsize').sigValueChanged.connect(self.initialize_time_freq_and_refresh)
+        self.paramGlobal.param('xsize').sigValueChanged.connect(self.initialize_time_freq)
         self.paramGlobal.param('nb_column').sigValueChanged.connect(self.change_grid)
-        self.paramTimeFreq.sigTreeStateChanged.connect(self.initialize_time_freq_and_refresh)
+        self.paramTimeFreq.sigTreeStateChanged.connect(self.initialize_time_freq)
         for p in self.paramSignals.children():
             p.param('visible').sigValueChanged.connect(self.change_grid)
             p.param('clim').sigValueChanged.connect(self.clim_changed)
@@ -164,19 +172,20 @@ class TimeFreqViewer(ViewerBase):
         self.paramGlobal.param('xsize').setValue(xsize)
     xsize = property(get_xsize, set_xsize)
     
-    
     need_change_grid = pyqtSignal()
     def change_grid(self, param):
-        if  self.grid_changing.tryLockForWrite():
+        if not self.grid_changing:
             self.need_change_grid.emit()
+        
     def do_change_grid(self):
+        self.grid_changing = True
         self.create_grid()
         self.initialize_time_freq()
-        self.refresh()
-        self.grid_changing.unlock()
-    def initialize_time_freq_and_refresh(self):
-        self.initialize_time_freq()
-        self.refresh()
+        self.initialize_tfr_finished.connect(self.grid_changed_done)
+        
+    def grid_changed_done(self):
+        self.initialize_tfr_finished.disconnect(self.grid_changed_done)
+        self.grid_changing = False
         
     def clim_changed(self, param):
         i = self.paramSignals.children().index( param.parent())
@@ -223,22 +232,37 @@ class TimeFreqViewer(ViewerBase):
         
     
     def initialize_time_freq(self):
+        if self.thread_initialize_tfr is not None or self.is_computing.any():
+            # needd to come back later ...
+            if not self.timer_back_initialize.isActive():
+                self.timer_back_initialize.start()
+            return
+        
         # create self.params_time_freq
         p = self.params_time_freq = { }
         for param in self.paramTimeFreq.children():
             self.params_time_freq[param.name()] = param.value()
+        
         
         # we take sampling_rate = f_stop*4 or (original sampling_rate)
         if p['f_stop']*4 < self.global_sampling_rate:
             p['sampling_rate'] = p['f_stop']*4
         else:
             p['sampling_rate']  = self.global_sampling_rate
-        self.factor = p['sampling_rate']/self.global_sampling_rate # this compenate unddersampling in FFT.
+        self.factor = p['sampling_rate']/self.global_sampling_rate # this compensate unddersampling in FFT.
         
-        self.len_wavelet = int(self.xsize*p['sampling_rate'])
-        self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq)#[:,::-1]# reversed for plotting
+        self.xsize2 = self.xsize
+        self.len_wavelet = int(self.xsize2*p['sampling_rate'])
         self.win = fftpack.ifftshift(np.hamming(self.len_wavelet))
+        self.thread_initialize_tfr = ThreadInitializeWavelet(len_wavelet = self.len_wavelet, 
+                                                            params_time_freq = p, parent = self )
+        self.thread_initialize_tfr.finished.connect(self.initialize_tfr_done)
+        self.thread_initialize_tfr.start()
         
+    
+    def initialize_tfr_done(self):
+        self.wf = self.thread_initialize_tfr.wf
+        p = self.params_time_freq
         for i, anasig in enumerate(self.analogsignals):
             if not self.paramSignals.children()[i].param('visible').value(): continue
             plot = self.plots[i]
@@ -252,23 +276,26 @@ class TimeFreqViewer(ViewerBase):
             clim = self.paramSignals.children()[i].param('clim').value()
             self.images[i].setImage(self.maps[i], lut = jet_lut, levels = [0,clim])
             
-            self.t_start, self.t_stop = self.t-self.xsize/3. , self.t+self.xsize*2./3.
-            f_start, f_stop = self.params_time_freq['f_start'], self.params_time_freq['f_stop']
+            self.t_start, self.t_stop = self.t-self.xsize2/3. , self.t+self.xsize2*2./3.
+            f_start, f_stop = p['f_start'], p['f_stop']
             image.setRect(QRectF(self.t_start, f_start,self.xsize, f_stop-f_start))
-            
+
+        self.sig_chunk_size = int(np.rint(self.xsize2*self.global_sampling_rate))
+        self.empty_sigs = [np.zeros(self.sig_chunk_size, dtype = ana.dtype) for ana in self.analogsignals]
         
         self.freqs = np.arange(p['f_start'],p['f_stop'],p['deltafreq'])
         self.need_recreate_thread = True
         
-        self.sig_chunk_size = int(np.rint(self.xsize*self.global_sampling_rate))
-        self.empty_sigs = [np.zeros(self.sig_chunk_size, dtype = ana.dtype) for ana in self.analogsignals]
+        self.thread_initialize_tfr = None
+        self.initialize_tfr_finished.emit()
+    
     
     def refresh(self, fast = False):
-        if self.is_computing.any():
+        if self.thread_initialize_tfr is not None or self.is_computing.any():
             self.is_refreshing = False
             return
         
-        self.t_start, self.t_stop = self.t-self.xsize/3. , self.t+self.xsize*2./3.
+        self.t_start, self.t_stop = self.t-self.xsize2/3. , self.t+self.xsize2*2./3.
 
         for i, anasig in enumerate(self.analogsignals):
             if not self.paramSignals.children()[i].param('visible').value(): continue
@@ -289,27 +316,25 @@ class TimeFreqViewer(ViewerBase):
                 chunk2[i1:i2] = chunk
                 chunk = chunk2
             self.threads[i].sig = chunk
-            self.threads[i].start()
-
+            
             #~ self.vline.setPos(self.t)
             self.plots[i].setXRange( self.t_start, self.t_stop)
             
             f_start, f_stop = self.params_time_freq['f_start'], self.params_time_freq['f_stop']
-            self.images[i].setRect(QRectF(self.t_start, f_start,self.xsize, f_stop-f_start))
-
+            self.images[i].setRect(QRectF(self.t_start, f_start,self.xsize2, f_stop-f_start))
+            self.threads[i].start()
         
         self.need_recreate_thread = False
         self.is_refreshing = False
 
     def map_computed(self, i):
-        if self.grid_changing.tryLockForRead():
-            if self.images[i] is not None:
-                #~ f_start, f_stop = self.params_time_freq['f_start'], self.params_time_freq['f_stop']
-                #~ self.images[i].setRect(QRectF(self.t_start, f_start,self.xsize, f_stop-f_start))
-                self.images[i].updateImage(self.maps[i])
+        if self.sender() is not self.threads[i]:# thread have changes
             self.is_computing[i] = False
-            self.grid_changing.unlock()
-
+            return
+        if not self.grid_changing and self.thread_initialize_tfr is None:
+            if self.images[i] is not None:
+                self.images[i].updateImage(self.maps[i])
+        self.is_computing[i] = False
 
 
 class ThreadComputeTF(QThread):
@@ -323,7 +348,6 @@ class ThreadComputeTF(QThread):
         self.factor = factor # this compensate subsampling
         
     def run(self):
-        
         sigf=fftpack.fft(self.sig)
         n = self.wf.shape[0]
         sigf = np.concatenate([sigf[0:(n+1)/2],  sigf[-(n-1)/2:]])*self.factor
@@ -331,9 +355,20 @@ class ThreadComputeTF(QThread):
         wt_tmp=fftpack.ifft(sigf[:,np.newaxis]*self.wf,axis=0)
         wt = fftpack.fftshift(wt_tmp,axes=[0])
         
-        self.parent().maps[self.n] = abs(wt)
+        self.parent().maps[self.n] = np.abs(wt)
         self.finished.emit(self.n)
-        #~ self.parent().grid_changing.unlock()
+
+class ThreadInitializeWavelet(QThread):
+    finished = pyqtSignal()
+    def __init__(self, len_wavelet = None, params_time_freq = {}, parent = None, ):
+        super(ThreadInitializeWavelet, self).__init__(parent)
+        self.len_wavelet = len_wavelet
+        self.params_time_freq = params_time_freq
+        
+    def run(self):
+        self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq)
+        self.finished.emit()
+        
 
 
 class TimefreqViewerControler(QWidget):

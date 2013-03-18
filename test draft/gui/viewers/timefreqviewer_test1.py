@@ -40,6 +40,7 @@ def test2():
     
     w = TimeFreqViewer(analogsignals = analogsignals, with_time_seeker = True)
     w.show()
+    w.xsize = 60.
     app.exec_()
 
 

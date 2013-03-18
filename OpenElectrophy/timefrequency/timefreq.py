@@ -6,8 +6,8 @@ Higher level object for computing, ploting and manipulating morlet scalogram.
 import numpy as np
 import quantities as pq
 
-#~ from scipy import fftpack
-import numpy.fft as fftpack
+from scipy import fftpack
+#~ import numpy.fft as fftpack
 
 import joblib
 from tempfile import mkdtemp
