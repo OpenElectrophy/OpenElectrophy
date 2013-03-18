@@ -172,7 +172,12 @@ class SignalViewer(ViewerBase):
             curve = self.plot.plot([np.nan], [np.nan], pen = color)
             self.analogsignal_curves.append(curve)
         
-        self.paramSignals.sigTreeStateChanged.connect(self.refreshColors)
+        #~ self.paramSignals.sigTreeStateChanged.connect(self.refreshColors)
+        self.all_param_color = []
+        for i, p in enumerate(self.paramSignals.children()):
+            self.all_param_color.append(p.param('color'))
+            p.param('color').sigValueChanged.connect(self.refreshColors)
+        
         self.proxy = pg.SignalProxy(self.allParams.sigTreeStateChanged, rateLimit=5, delay=0.1, slot=lambda : self.refresh(fast = False))
 
     
@@ -181,17 +186,24 @@ class SignalViewer(ViewerBase):
         self.paramControler.show()
     
     def refreshColors(self):
-        for i,anasig in enumerate(self.analogsignals):
+        i = None
+        if self.sender() in self.all_param_color:
+            i = self.all_param_color.index(self.sender())
             p = self.paramSignals.children()[i]
-            #~ pen = pg.mkPen(color = p.param('color').value(),  width = p.param('width').value())
             pen = pg.mkPen(color = p.param('color').value())
             self.analogsignal_curves[i].setPen(pen)
+        else:
+            for i,anasig in enumerate(self.analogsignals):
+                p = self.paramSignals.children()[i]
+                #pen = pg.mkPen(color = p.param('color').value(),  width = p.param('width').value())
+                pen = pg.mkPen(color = p.param('color').value())
+                self.analogsignal_curves[i].setPen(pen)
     
     def refresh(self, fast = False):
         """
         When fast it do decimate.
         """
-        t1 = time.time()
+        #~ t1 = time.time()
         #~ print 'self.refresh', fast
         
         color = self.paramGlobal.param('background_color').value()
@@ -288,10 +300,10 @@ class SignalViewerControler(QWidget):
         h = QHBoxLayout()
         v.addLayout(h)
         but = QPushButton('-')
-        but.clicked.connect(lambda : self.gain_zoom(1.2))
+        but.clicked.connect(lambda : self.gain_zoom(0.8))
         h.addWidget(but)
         but = QPushButton('+')
-        but.clicked.connect(lambda : self.gain_zoom(.8))
+        but.clicked.connect(lambda : self.gain_zoom(1.2))
         h.addWidget(but)
         
 
@@ -318,7 +330,6 @@ class SignalViewerControler(QWidget):
             if not selected.any(): return
         else:
             selected =  np.ones(nsig, dtype = bool)
-        
         n = np.sum(selected)
         ylims  = [-.5, nsig-.5 ]
         self.viewer.paramGlobal.param('ylims').setValue(ylims)
@@ -330,7 +341,6 @@ class SignalViewerControler(QWidget):
         else:
             gains = np.ones(self.viewer.all_std.size, dtype = float) * dy/n/max(self.viewer.all_std[selected])
         gains *= .3
-        
         #~ o = .5
         o = n-.5
         for i, p in enumerate(self.viewer.paramSignals.children()):
