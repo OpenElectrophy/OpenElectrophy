@@ -17,17 +17,14 @@ from ...timefrequency import generate_wavelet_fourier
 
 from matplotlib import cm 
 from matplotlib.colors import ColorConverter
-lut = [ ]
-cmap = cm.get_cmap('jet' , 10000)
-for i in range(10000):
-    r,g,b =  ColorConverter().to_rgb(cmap(i) )
-    lut.append([r*255,g*255,b*255])
-jet_lut = np.array(lut, dtype = np.uint8)
 
 
 param_global = [
     {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'step': 0.1, 'limits' : (.1, 60)},
     {'name': 'nb_column', 'type': 'int', 'value': 1},
+    {'name': 'background_color', 'type': 'color', 'value': 'k' },
+    {'name': 'colormap', 'type': 'list', 'value': 'jet', 'values' : ['jet', 'gray', 'bone', 'cool', 'hot', ] },
+    
     ]
 
 param_timefreq = [ 
@@ -153,6 +150,7 @@ class TimeFreqViewer(ViewerBase):
         
         self.paramGlobal.param('xsize').sigValueChanged.connect(self.initialize_time_freq)
         self.paramGlobal.param('nb_column').sigValueChanged.connect(self.change_grid)
+        self.paramGlobal.param('colormap').sigValueChanged.connect(self.initialize_time_freq)
         self.paramTimeFreq.sigTreeStateChanged.connect(self.initialize_time_freq)
         for p in self.paramSignals.children():
             p.param('visible').sigValueChanged.connect(self.change_grid)
@@ -190,13 +188,16 @@ class TimeFreqViewer(ViewerBase):
     def clim_changed(self, param):
         i = self.paramSignals.children().index( param.parent())
         clim = param.value()
-        self.images[i].setImage(self.maps[i], lut = jet_lut, levels = [0,clim])
+        self.images[i].setImage(self.maps[i], lut = self.jet_lut, levels = [0,clim])
         
     def open_configure_dialog(self):
         self.paramControler.setWindowFlags(Qt.Window)
         self.paramControler.show()
         
     def create_grid(self):
+        color = self.paramGlobal.param('background_color').value()
+        #~ self.graphicsview.setBackground(color)
+
         n = len(self.analogsignals)
         for graphicsview in self.graphicsviews:
             if graphicsview is not None:
@@ -214,6 +215,7 @@ class TimeFreqViewer(ViewerBase):
             viewBox.zoom_out.connect(lambda : self.paramControler.clim_zoom(.8))
             
             graphicsview  = pg.GraphicsView()#useOpenGL = True)
+            graphicsview.setBackground(color)
             plot = pg.PlotItem(viewBox = viewBox)
             graphicsview.setCentralItem(plot)
             self.graphicsviews[i] = graphicsview
@@ -261,6 +263,16 @@ class TimeFreqViewer(ViewerBase):
         
     
     def initialize_tfr_done(self):
+        colormap = self.paramGlobal.param('colormap').value()
+        lut = [ ]
+        cmap = cm.get_cmap(colormap , 10000)
+        for i in range(10000):
+            r,g,b =  ColorConverter().to_rgb(cmap(i) )
+            lut.append([r*255,g*255,b*255])
+        self.jet_lut = np.array(lut, dtype = np.uint8)
+
+
+        
         self.wf = self.thread_initialize_tfr.wf
         p = self.params_time_freq
         for i, anasig in enumerate(self.analogsignals):
@@ -274,7 +286,7 @@ class TimeFreqViewer(ViewerBase):
             plot.setYRange(p['f_start'], p['f_stop'])
             self.images[i] =image
             clim = self.paramSignals.children()[i].param('clim').value()
-            self.images[i].setImage(self.maps[i], lut = jet_lut, levels = [0,clim])
+            self.images[i].setImage(self.maps[i], lut = self.jet_lut, levels = [0,clim])
             
             self.t_start, self.t_stop = self.t-self.xsize2/3. , self.t+self.xsize2*2./3.
             f_start, f_stop = p['f_start'], p['f_stop']
