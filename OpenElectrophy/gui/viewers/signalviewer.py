@@ -33,8 +33,11 @@ param_by_channel = [
 
 class MyViewBox(pg.ViewBox):
     clicked = pyqtSignal()
-    zoom_in = pyqtSignal()
-    zoom_out = pyqtSignal()
+    #~ zoom_in = pyqtSignal()
+    #~ zoom_out = pyqtSignal()
+    #~ fast_zoom_in = pyqtSignal()
+    #~ fast_zoom_out = pyqtSignal()
+    zoom = pyqtSignal(float)
     def __init__(self, *args, **kwds):
         pg.ViewBox.__init__(self, *args, **kwds)
     def mouseClickEvent(self, ev):
@@ -43,10 +46,20 @@ class MyViewBox(pg.ViewBox):
     def mouseDragEvent(self, ev):
         ev.ignore()
     def wheelEvent(self, ev):
-        if ev.delta()>0:
-            self.zoom_in.emit()
+        if ev.modifiers() ==  Qt.ControlModifier:
+            if ev.delta()>0:
+                #~ self.fast_zoom_in.emit()
+                self.zoom.emit(10.)
+            else:
+                #~ self.fast_zoom_out.emit()
+                self.zoom.emit(1/10.)
         else:
-            self.zoom_out.emit()
+            if ev.delta()>0:
+                #~ self.zoom_in.emit()
+                self.zoom.emit(1.3)
+            else:
+                #~ self.zoom_out.emit()
+                self.zoom.emit(1./1.3)
         ev.accept()
 
 
@@ -127,9 +140,11 @@ class SignalViewer(ViewerBase):
         self.analogsignals = analogsignals
         
         # pre compute std and max
-        self.all_std = np.array([ np.std(anasig.magnitude) for anasig in self.analogsignals ])
-        self.all_max = np.array([ np.max(anasig.magnitude) for anasig in self.analogsignals ])
-        self.all_min = np.array([ np.min(anasig.magnitude) for anasig in self.analogsignals ])
+        
+        maxpoint = 100000
+        self.all_std = np.array([ np.std(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        self.all_max = np.array([ np.max(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        self.all_min = np.array([ np.min(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
         
         ylims = [np.min(self.all_min), np.max(self.all_max) ]
         self.paramGlobal.param('ylims').setValue(ylims)
@@ -146,8 +161,11 @@ class SignalViewer(ViewerBase):
         self.allParams = pg.parametertree.Parameter.create(name = 'all param', type = 'group', children = [self.paramGlobal,self.paramSignals  ])
         
         self.paramControler = SignalViewerControler(viewer = self)
-        self.viewBox.zoom_in.connect(lambda : self.paramControler.gain_zoom(.8))
-        self.viewBox.zoom_out.connect(lambda : self.paramControler.gain_zoom(1.2))
+        #~ self.viewBox.zoom_in.connect(lambda : self.paramControler.gain_zoom(1.3))
+        #~ self.viewBox.zoom_out.connect(lambda : self.paramControler.gain_zoom(1/1.3))
+        #~ self.viewBox.fast_zoom_in.connect(lambda : self.paramControler.gain_zoom(10.))
+        #~ self.viewBox.fast_zoom_out.connect(lambda : self.paramControler.gain_zoom(1/10.))
+        self.viewBox.zoom.connect(self.paramControler.gain_zoom)
         
         if magic_color:
             self.paramControler.automatic_color(cmap_name = 'jet')
@@ -299,12 +317,20 @@ class SignalViewerControler(QWidget):
         v.addWidget(QLabel(self.tr('<b>Gain zoom (mouse wheel on graph):<\b>'),self))
         h = QHBoxLayout()
         v.addLayout(h)
-        but = QPushButton('-')
-        but.clicked.connect(lambda : self.gain_zoom(0.8))
-        h.addWidget(but)
-        but = QPushButton('+')
-        but.clicked.connect(lambda : self.gain_zoom(1.2))
-        h.addWidget(but)
+        #~ self.all_buttons = [ ]
+        for label, factor in [ ('--', 1./10.), ('-', 1./1.3), ('+', 1.3), ('++', 10.),]:
+            but = QPushButton(label)
+            but.factor = factor
+            but.clicked.connect(self.gain_zoom)
+            h.addWidget(but)
+            #~ self.all_buttons.append(f)
+        
+        #~ but = QPushButton('-')
+        #~ but.clicked.connect(lambda : self.gain_zoom(0.8))
+        #~ h.addWidget(but)
+        #~ but = QPushButton('+')
+        #~ but.clicked.connect(lambda : self.gain_zoom(1.2))
+        #~ h.addWidget(but)
         
 
     def center_all(self):
@@ -361,6 +387,8 @@ class SignalViewerControler(QWidget):
             p.param('color').setValue(color)
     
     def gain_zoom(self, factor):
+        if type(factor) is bool:# button
+            factor = self.sender().factor
         for i, p in enumerate(self.viewer.paramSignals.children()):
             p.param('gain').setValue(p.param('gain').value()*factor)
-            
+        

@@ -279,6 +279,8 @@ class MyModel(QAbstractItemModel):
                         if hasattr(inst, fieldname):
                             value = getattr(inst, fieldname)
                             item.columns_display[col] =  u'{} : {}'.format( fieldname, value)
+                        else:
+                            item.columns_display[col] =  u''
                     
                 ret = item.columns_display[col]
                 
