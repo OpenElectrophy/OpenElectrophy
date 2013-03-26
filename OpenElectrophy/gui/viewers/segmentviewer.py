@@ -29,11 +29,17 @@ class SegmentViewer(MultiViewer):
         
         if len(self.seg.analogsignals) > 0:
             self.add_analogsignals( analogsignals = self.seg.analogsignals )
-            #~ self.add_timefreqs( analogsignals = self.seg.analogsignals)
+            self.add_timefreqs( analogsignals = self.seg.analogsignals)
+            self.subviewers[-1].dock.setVisible(False)
         if len(self.seg.spiketrains) > 0:
             self.add_spiketrains(spiketrains = self.seg.spiketrains)
         if len(self.seg.epocharrays) > 0:
             self.add_epochs(epocharrays = self.seg.epocharrays)
+        if len(self.seg.eventarrays) > 0:
+            self.add_events(eventarrays = self.seg.eventarrays)
+        ev_ep = self.seg.epocharrays+self.seg.eventarrays
+        if len(ev_ep)>0:
+            self.add_eventlist(eventarrays = ev_ep)
         
         self.change_xsize(xsize)
         

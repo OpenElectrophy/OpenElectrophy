@@ -8,6 +8,8 @@ from tools import *
 from .signalviewer import *
 from .timefreqviewer import *
 from .epochviewer import *
+from .eventviewer import *
+from .eventlist import *
 from .spiketrainviewer import *
 
 class SubViewer(object):
@@ -52,6 +54,8 @@ class MultiViewer(QMainWindow):
     """
     def __init__(self, parent  = None):
         super(MultiViewer, self).__init__(parent = parent)
+        
+        self.setDockNestingEnabled(True) 
         
         self.timeseeker = TimeSeeker()
         dock = QDockWidget('Time',self)
@@ -98,6 +102,29 @@ class MultiViewer(QMainWindow):
                                                     )
         self.addDockWidget(Qt.BottomDockWidgetArea, subviewer.dock, Qt.Vertical)
         self.subviewers.append(subviewer)
+
+    def add_events(self, eventarrays = [ ], name = 'Event Arrays',
+                                t_start_correction = 0., sampling_rate_factor = 1., **kargs):
+        subviewer = SubViewer(viewer = EventViewer(eventarrays = eventarrays, **kargs),
+                                                    name = name,
+                                                    t_start_correction = t_start_correction,
+                                                    sampling_rate_factor = sampling_rate_factor,
+                                                    )
+        self.addDockWidget(Qt.BottomDockWidgetArea, subviewer.dock, Qt.Vertical)
+        self.subviewers.append(subviewer)
+        
+    def add_eventlist(self, eventarrays = [ ], name = 'Event or Epoch list',
+                                t_start_correction = 0., sampling_rate_factor = 1., **kargs):
+        subviewer = SubViewer(viewer = EventList(eventarrays = eventarrays, **kargs),
+                                                    name = name,
+                                                    t_start_correction = t_start_correction,
+                                                    sampling_rate_factor = sampling_rate_factor,
+                                                    )
+        self.addDockWidget(Qt.BottomDockWidgetArea, subviewer.dock, Qt.Horizontal)
+        self.subviewers.append(subviewer)
+        subviewer.viewer.time_changed.connect(self.timeseeker.seek)
+        
+
     
     def add_spiketrains(self, spiketrains = [ ], name = 'Epoch Arrays',
                                 t_start_correction = 0., sampling_rate_factor = 1., **kargs):

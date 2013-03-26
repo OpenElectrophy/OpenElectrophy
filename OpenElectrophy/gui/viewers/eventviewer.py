@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Epoch viewers
+Event viewers
 """
 
 
@@ -53,12 +53,12 @@ param_by_channel = [
 
 
 
-class EpochViewer(ViewerBase):
+class EventViewer(ViewerBase):
     """
     """
     def __init__(self, parent = None,
-                            epocharrays = [ ],xsize=5.):
-        super(EpochViewer,self).__init__(parent)
+                            eventarrays = [ ],xsize=5.):
+        super(EventViewer,self).__init__(parent)
         
         self.mainlayout = QHBoxLayout()
         self.setLayout(self.mainlayout)
@@ -76,7 +76,7 @@ class EpochViewer(ViewerBase):
         
         # inialize
         self.clear_all()
-        self.set_epocharrays(epocharrays)
+        self.set_eventarrays(eventarrays)
         self.set_xsize(xsize)
         
         self.paramGlobal.sigTreeStateChanged.connect(self.refresh)
@@ -94,21 +94,21 @@ class EpochViewer(ViewerBase):
         self.plot.addItem(self.vline)
         self.epocharray_curves = [ ]
 
-    def set_epocharrays(self, epocharrays):
+    def set_eventarrays(self, eventarrays):
         self.clear_all()
-        self.epocharrays = epocharrays
-        self.epocharrays_items = [ [ ] for ea in self.epocharrays]
+        self.eventarrays = eventarrays
+        self.eventarrays_items = [ [ ] for ea in self.eventarrays]
 
         all = [ ]
-        for i, ep in enumerate(self.epocharrays):
+        for i, ep in enumerate(self.eventarrays):
             if 'channel_index' in ep.annotations:
                 name = 'EpochArray {} name={} channel_index={}'.format(i, ep.name, ep.annotations['channel_index'])
             else:
                 name = 'EpochArray {} name={}'.format(i, ep.name)
             all.append({ 'name': name, 'type' : 'group', 'children' : param_by_channel})
-        self.paramEpochs = pg.parametertree.Parameter.create(name='EpochArrays', type='group', children=all)
+        self.paramEpochs = pg.parametertree.Parameter.create(name='EventArrays', type='group', children=all)
         
-        for i, ep in enumerate(self.epocharrays):
+        for i, ep in enumerate(self.eventarrays):
             color = ep.annotations.get('color', None)
             if color is not None:
                 self.paramEpochs.children()[i].param('color').setValue(color)
@@ -131,26 +131,25 @@ class EpochViewer(ViewerBase):
         
         t_start, t_stop = self.t-self.xsize/3. , self.t+self.xsize*2/3.
         
-        n = len(self.epocharrays)
-        for e, epocharray in enumerate(self.epocharrays):
-            for item in self.epocharrays_items[e]:
+        n = len(self.eventarrays)
+        for e, epocharray in enumerate(self.eventarrays):
+            for item in self.eventarrays_items[e]:
                 self.plot.removeItem(item)
-            self.epocharrays_items[e] = [ ]
+            self.eventarrays_items[e] = [ ]
             t = epocharray.times
-            d = epocharray.durations
-            ind = ( (t>=t_start) & (t<t_stop) ) | ( (t+d>=t_start) & (t+d<t_stop) ) | ( (t<=t_start) & (t+d>t_stop))
+            ind = ( (t>=t_start) & (t<t_stop) )
             for i in np.where(ind)[0]:
                 color = self.paramEpochs.children()[e].param('color').value()
                 color2 = QColor(color)
                 color2.setAlpha(130)
-                item = RectItem([t[i], n-e-1, d[i], .9],  border = color, fill = color2)
+                item = RectItem([t[i], n-e-1, 0., .9],  border = color, fill = color2)
                 item.setPos(t[i], n-e-1)
                 self.plot.addItem(item)
-                self.epocharrays_items[e].append(item)
+                self.eventarrays_items[e].append(item)
         
         self.vline.setPos(self.t)
         self.plot.setXRange( t_start, t_stop)
-        self.plot.setYRange( 0, len(self.epocharrays))
+        self.plot.setYRange( 0, len(self.eventarrays))
         self.is_refreshing = False
 
 
@@ -167,7 +166,7 @@ class EpochViewerControler(QWidget):
         self.mainlayout = QVBoxLayout()
         self.setLayout(self.mainlayout)
         
-        t = u'Options for EpochArrays'
+        t = u'Options for EventArrays'
         self.setWindowTitle(t)
         self.mainlayout.addWidget(QLabel('<b>'+t+'<\b>'))
         
@@ -196,7 +195,7 @@ class EpochViewerControler(QWidget):
 
     
     def automatic_color(self):
-        n = len(self.viewer.epocharrays)
+        n = len(self.viewer.eventarrays)
         cmap = get_cmap('jet' , n)
         for i, pEpoch in enumerate(self.viewer.paramEpochs.children()):
             color = [ int(c*255) for c in ColorConverter().to_rgb(cmap(i)) ] 

@@ -5,6 +5,7 @@ import neo
 
 nb_sig = 3
 nb_epocharrays = 4
+nb_eventarrays = 4
 nb_spiketrains = 25
 #~ sig_size = 3.6e8
 #~ sig_size = 1e7
@@ -16,6 +17,7 @@ fs = 500
 t = np.arange(sig_size)/fs
 t_start = -5.
 epoch_size = 100
+event_size = 2000
 dur = sig_size/fs
 
 analogsignals = [ ]
@@ -43,8 +45,8 @@ for i in range(nb_epocharrays):
     interv = np.random.rand(epoch_size)*(dur/epoch_size/2)+dur/epoch_size/4
     times = np.cumsum(durations)+np.cumsum(interv)
     color = 'r' if i<2 else 'w'
-    ea = neo.EpochArray(times = times,
-                                        durations = durations,
+    ea = neo.EpochArray(times = times*pq.s,
+                                        durations = durations*pq.s,
                                         name = 'epoch {}'.format(i),
                                         color = color)
     epocharrays.append(ea)
@@ -53,6 +55,16 @@ ea = neo.EpochArray(times = [1., 2., 3.]*pq.s,
                                         name = 'yep')
 epocharrays.append(ea)
 
+eventarrays = [ ]
+
+for i in range(nb_eventarrays):
+    times = np.random.rand(event_size)*dur
+    times = np.sort(times)
+    color = ['r', 'g', 'b', 'm'][i%4]
+    ev = neo.EventArray(times = times*pq.s,
+                                        name = 'event {}'.format(i),
+                                        color = color)
+    eventarrays.append(ev)
 
 
     
@@ -63,3 +75,5 @@ seg = neo.Segment(name = 'test')
 seg.analogsignals = analogsignals
 seg.epocharrays = epocharrays
 seg.spiketrains = spiketrains
+seg.eventarrays = eventarrays
+

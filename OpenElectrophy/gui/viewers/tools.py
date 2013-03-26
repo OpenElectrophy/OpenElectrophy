@@ -212,7 +212,7 @@ class TimeSeeker(QWidget) :
 
 class ViewerBase(QWidget):
     """
-    Base for SignalViewer, TimeFreqViewer, EpochViewer
+    Base for SignalViewer, TimeFreqViewer, EpochViewer, ...
     
     This handle seek and fast_seek with TimeSeeker time_changed and fast_time_changed signals
     """
@@ -305,7 +305,7 @@ def find_best_start_stop(segment = None,
     for anasig in analogsignals:
         t_start = min(anasig.t_start, t_start)
         t_stop = max(anasig.t_stop, t_stop)
-    eps = (t_stop-t_start).magnitude/20.
+    eps = (t_stop-t_start).magnitude/200.
     
     return t_start.magnitude-eps, t_stop.magnitude+eps
 
