@@ -188,7 +188,8 @@ class TimeFreqViewer(ViewerBase):
     def clim_changed(self, param):
         i = self.paramSignals.children().index( param.parent())
         clim = param.value()
-        self.images[i].setImage(self.maps[i], lut = self.jet_lut, levels = [0,clim])
+        if self.images[i] is not None:
+            self.images[i].setImage(self.maps[i], lut = self.jet_lut, levels = [0,clim])
         
     def open_configure_dialog(self):
         self.paramControler.setWindowFlags(Qt.Window)
