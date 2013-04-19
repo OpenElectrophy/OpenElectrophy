@@ -99,7 +99,7 @@ class ImportData(QDialog) :
             #~ anint = IntItem('an integer', 5)
             #~ name = StringItem('the name', default = 'sam')
             #~ description = TextItem('description', default ='multiline')
-            populate_recordingchannel =BoolItem('If neo.io reader do not support RecordingChannel do create them')
+            populate_recordingchannel =BoolItem('If neo.io reader do not support RecordingChannel do create them', default = True)
             
         self.generalOptions = ParamWidget(Parameters, title = None)
         self.tab.addTab(self.generalOptions, 'General options')
