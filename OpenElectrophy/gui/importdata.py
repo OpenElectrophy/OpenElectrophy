@@ -10,7 +10,7 @@ widget for importing data into a db
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-
+import distutils.version
 
 from guiutil.icons import icons
 from guiutil.myguidata import *
@@ -99,7 +99,7 @@ class ImportData(QDialog) :
             #~ anint = IntItem('an integer', 5)
             #~ name = StringItem('the name', default = 'sam')
             #~ description = TextItem('description', default ='multiline')
-            populate_recordingchannel =BoolItem('If neo.io reader do not support RecordingChannel do create them')
+            populate_recordingchannel =BoolItem('If neo.io reader do not support RecordingChannel do create them', default = True)
             
         self.generalOptions = ParamWidget(Parameters, title = None)
         self.tab.addTab(self.generalOptions, 'General options')
@@ -272,13 +272,19 @@ def read_and_import(name, ioclass,io_kargs, dbinfo, options):
     elif ioclass.mode =='fake':
         reader = ioclass()
     
-    neo_block = reader.read(** io_kargs)
-    if options['populate_recordingchannel'] and neo.RecordingChannelGroup not in reader.readable_objects:
-        print 'populate_RecordingChannel'
-        populate_RecordingChannel(neo_block, remove_from_annotation = False)
     
-    oe_block = OEBase.from_neo(neo_block, dbinfo.mapped_classes, cascade = True)
-    oe_block.file_origin = os.path.basename(name)
+    if distutils.version.LooseVersion(neo.__version__) < '0.3':
+        neo_blocks = reader.read(** io_kargs)
+    else:
+        neo_blocks = reader.read(** io_kargs)
+        
+    for neo_block in neo_blocks:
+        if options['populate_recordingchannel'] and neo.RecordingChannelGroup not in reader.readable_objects:
+            print 'populate_RecordingChannel'
+            populate_RecordingChannel(neo_block, remove_from_annotation = False)
+        
+        oe_block = OEBase.from_neo(neo_block, dbinfo.mapped_classes, cascade = True)
+        oe_block.file_origin = os.path.basename(name)
     
     session = dbinfo.Session()
     dbinfo.Session.add(oe_block)

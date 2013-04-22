@@ -29,8 +29,15 @@ class SegmentViewer(MultiViewer):
         
         if len(self.seg.analogsignals) > 0:
             self.add_analogsignals( analogsignals = self.seg.analogsignals )
-            self.add_timefreqs( analogsignals = self.seg.analogsignals)
-            self.subviewers[-1].dock.setVisible(False)
+            
+            all_sr = np.array([ s.sampling_rate for s in self.seg.analogsignals ], dtype = object)
+            for i,sr in enumerate(np.unique(all_sr)):
+                # timefreq viewer accept sig with same sr
+                ind,  = np.where(all_sr==sr)
+                anasigs = [ self.seg.analogsignals[sel] for sel in ind]
+                self.add_timefreqs( analogsignals = anasigs, name = 'Time Frequency Maps {}'.format(i),)
+                self.subviewers[-1].dock.setVisible(False)
+        
         if len(self.seg.spiketrains) > 0:
             self.add_spiketrains(spiketrains = self.seg.spiketrains)
         if len(self.seg.epocharrays) > 0:

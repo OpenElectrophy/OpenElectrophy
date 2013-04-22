@@ -28,7 +28,7 @@ class EventList(ViewerBase):
         self.list = QListWidget()
         self.mainlayout.addWidget(self.list)
         self.combo.currentIndexChanged.connect(self.refresh_list)
-        self.combo.addItems([ev.name for ev in self.eventarrays ])
+        self.combo.addItems([ev.name if ev.name is not None else '' for ev in self.eventarrays ])
         
         self.list.currentRowChanged.connect(self.select_event)
         
