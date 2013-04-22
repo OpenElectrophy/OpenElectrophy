@@ -261,7 +261,7 @@ class QImportThread(QThread):
 
 
 def read_and_import(name, ioclass,io_kargs, dbinfo, options):
-    print 'read_and_import', name
+    #~ print 'read_and_import', name
     
     if ioclass.mode =='file':
         reader = ioclass(filename = name  )
