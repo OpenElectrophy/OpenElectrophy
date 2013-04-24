@@ -9,6 +9,8 @@ from PyQt4.QtGui import *
 
 from .editdb import EditFieldsDialog, ChangeParentDialog, EditRecordingChannelGroupsDialog
 
+import numpy as np
+
 import neo
 
 #TODO : fix delete on close for QWidget.show() here.
@@ -215,7 +217,7 @@ class EditOscillation(MenuItem):
 from .spikesorting import SpikeSortingWindow
 from ..spikesorting import SpikeSorter
 
-class SpikeSorting(MenuItem):
+class SpikeSortingOnRCG(MenuItem):
     name = 'Spike sorting'
     table = 'RecordingChannelGroup'
     mode = 'unique'
@@ -235,6 +237,45 @@ class SpikeSorting(MenuItem):
         w.setWindowFlags(Qt.Window)
         w.show()
 
+class SpikeSortingOnRCs(MenuItem):
+    name = 'Create Group and do spike sorting'
+    table = 'RecordingChannel'
+    mode = 'homogeneous'
+    icon = ':/spike.png'
+    def execute(self, session,explorer,tablename,  ids, treedescription,settings,  **kargs):
+        RC = treedescription.tablename_to_class['RecordingChannel']
+        RCG = treedescription.tablename_to_class['RecordingChannelGroup']
+        Block = treedescription.tablename_to_class['Block']
+        rcs = [ session.query(RC).get(id) for id in ids ]
+        block_ids = np.unique([ rc.recordingchannelgroups[0].block_id for rc in rcs])
+        if len(block_ids) !=1:
+            # Not in the same Block
+            return
+        name = ''
+        for rc in rcs:
+            name += ' {}'.format(rc.index)
+        rcg = RCG(name = name)
+        session.add(rcg)
+        for rc in rcs:
+            rcg.recordingchannels.append(rc)
+        bl = session.query(Block).get(block_ids[0])
+        bl.recordingchannelgroups.append(rcg)
+        session.commit()
+        explorer.refresh
+        
+        # FIXME: this load every in a block because of cascade = True
+        # do a hack for loading only the rcg and related units, signals and segment not everything in the block
+        neo_rcg = rcg.to_neo(cascade = True)
+        
+        spikesorter = SpikeSorter(neo_rcg)
+        w= SpikeSortingWindow(spikesorter = spikesorter, session = session, dbinfo = treedescription.dbinfo, settings =settings)
+        w.db_changed.connect(explorer.refresh)
+        w.setParent(explorer)
+        w.setWindowFlags(Qt.Window)
+        w.show()
+
+
+
 class DetectRespiratoryCycle(MenuItem):
     name = 'Detect respiratory cycles'
     table = 'RespirationSignal'
@@ -250,6 +291,6 @@ context_menu = [ Delete, Edit, ChangeParent,MenuImportData, CreateTop,
                 DrawSegment, DrawAnalogSignal, DrawTimeFreqViewer, 
                 EditRecordingChannelGroups, SaveToFile,
                 EditOscillation, 
-                SpikeSorting,
+                SpikeSortingOnRCG, SpikeSortingOnRCs, 
                 DetectRespiratoryCycle,
                 ]

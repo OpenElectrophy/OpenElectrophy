@@ -126,7 +126,7 @@ class MultiViewer(QMainWindow):
         
 
     
-    def add_spiketrains(self, spiketrains = [ ], name = 'Epoch Arrays',
+    def add_spiketrains(self, spiketrains = [ ], name = 'SpikeTrains',
                                 t_start_correction = 0., sampling_rate_factor = 1., **kargs):
         subviewer = SubViewer(viewer = SpikeTrainViewer(spiketrains = spiketrains, **kargs),
                                                     name = name,

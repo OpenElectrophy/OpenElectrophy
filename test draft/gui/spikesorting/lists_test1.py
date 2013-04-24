@@ -14,9 +14,9 @@ from create_spike_sorter import *
 
 def test1():
     app = QApplication([ ])
-    #~ w1 = SpikeList(spikesorter = spikesorter)
-    #~ w1.refresh()
-    #~ w1.show()
+    w1 = SpikeList(spikesorter = spikesorter)
+    w1.refresh()
+    w1.show()
 
     w2 = UnitList(spikesorter = spikesorter)
     w2.refresh()

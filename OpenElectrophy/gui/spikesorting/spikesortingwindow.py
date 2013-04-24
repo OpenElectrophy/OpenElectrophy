@@ -184,6 +184,7 @@ class SpikeSortingWindow(QMainWindow):
         dock = self.sender()
         i = self.list_dock.index(dock)
         self.list_actionView[i].setChecked(dock.isVisible())
+        self.list_widget[i].refresh()
     
 
     def selectPlotChanged(self):
@@ -192,7 +193,7 @@ class SpikeSortingWindow(QMainWindow):
         if act.isChecked():
             # TODO position of dock
             self.list_dock[i].setVisible(True)
-            self.list_widget[i].refresh()
+            #~ self.list_widget[i].refresh()
         else:
             self.list_dock[i].setVisible(False)
         

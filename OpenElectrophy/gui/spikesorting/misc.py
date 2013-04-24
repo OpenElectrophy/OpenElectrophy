@@ -210,6 +210,7 @@ class PlotCrossCorrelogram(SpikeSortingWidgetBase):
                         if t1.size==0 or t2.size==0: continue
                         count, bins = correlogram(t1,t2, bin_width = bin_width, limit = limit , auto = i==j)
                         all_count.append(count[np.newaxis,:])
+                    if len(all_count)==0: continue
                     count = np.sum(np.concatenate(all_count, axis= 0 ), axis=0)
                     
                     

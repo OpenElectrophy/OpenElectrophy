@@ -153,6 +153,8 @@ class AllWaveforms(SpikeSortingWidgetBase):
     
     def refresh_selection(self):
         sps = self.spikesorter
+        if sps.spike_waveforms is None : return
+        
         if self.selected_lines is not None:
             for i, ax in enumerate(self.axs):
                 ax.lines.remove(self.selected_lines[i])

@@ -376,7 +376,7 @@ class SpikeSorter(object):
             self.seg_spike_slices[s] = slice(start, stop)
             start = stop
         #~ print 'init_seg_spike_slices',self.nb_spikes, self.seg_spike_slices
-        self.selected_spikes = np.zeros(self.nb_spikes, dtype = int)
+        self.selected_spikes = np.zeros(self.nb_spikes, dtype = bool)
 
 
     def __repr__(self):
@@ -424,6 +424,16 @@ class SpikeSorter(object):
             l = [len(pos) for pos in self.spike_index_array]
             return np.sum(l)
         return 0
+    
+    def get_seg_from_num(self, num):
+        """
+        From absolut spike num get seg num
+        """
+        for s, sl in self.seg_spike_slices.items():
+            if  num>=sl.start and num<sl.stop:
+                return s
+        
+        
     
     def get_spike_times(self, s, c, units = 's'):
         """

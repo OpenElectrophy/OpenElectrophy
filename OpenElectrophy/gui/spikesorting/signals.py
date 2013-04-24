@@ -51,8 +51,8 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         super(SignalAndSpike, self).__init__(**kargs)
         
         # TODO : add global UI option for this
-        self.auto_zoom_x = True
-        #~ self.auto_zoom_x = False
+        #~ self.auto_zoom_x = True
+        self.auto_zoom_x = False
         
         sps = self.spikesorter
         self.timerSeeker = TimeSeeker(show_play = False)
@@ -82,8 +82,6 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         
         self.scatters = [ {} for i in range(sps.trodness) ]
         
-        # fixme: fast seek or not ?
-        #~ self.timerSeeker.time_changed.connect(self.seek)
         self.timerSeeker.fast_time_changed.connect(self.seek)
         
 
@@ -166,10 +164,6 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             sl = sps.seg_spike_slices[s]
             sel = sps.selected_spikes[sl]
             pos = sps.spike_index_array[s]
-            # FIXME
-            #~ if self.auto_zoom_x and np.sum(sel)==1:
-                #~ self.xsize = 0.05
-                #~ t = (pos[sel]/sps.sig_sampling_rate+sps.seg_t_start[s]).simplified.magnitude
         
         self.time_by_seg[s] = t
         sr = sps.sig_sampling_rate.rescale('Hz').magnitude
@@ -181,10 +175,10 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         ind_stop = int(np.rint((t2-sps.seg_t_start[s].rescale('s').magnitude)*sr))
         if ind_start<0:
             ind_start=0
-            t1 = sps.seg_t_start[s].magnitude
+            t1 = float(sps.seg_t_start[s].magnitude)
         if ind_stop>self.sigs[0,s].size:
             ind_stop=self.sigs[0,s].size
-            t2 = sps.seg_t_stop[s].magnitude
+            t2 = float(sps.seg_t_stop[s].magnitude)
         t_vect = np.arange(0,ind_stop-ind_start, dtype='f')/sr+t1
         for i in range(sps.trodness):
             if t_vect.size:
@@ -198,6 +192,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             
             # Selected spikes
             ind = pos[sel & inwindow]
+            #~ print ind, ind_start, sel.dtype, sel.shape
             for i, scatter in enumerate(self.scatters):
                 color = QColor( 'magenta')
                 color.setAlpha(160)
@@ -226,6 +221,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
                         #~ scatter[c].vb = self.plots[i].vb
 
         for plot in self.plots:
+            #~ print t1, t2
             plot.setXRange( t1, t2, padding = 0.0)
             plot.setYRange( *self.ylims , padding = 0.0)
     
@@ -251,7 +247,24 @@ class SignalAndSpike(SpikeSortingWidgetBase):
                     
     def on_spike_selection_changed(self):
         # selected spikes are done like a standard spiketrains with magenta color
-        self.refresh()
+        sps = self.spikesorter
+        
+        
+        
+        if sps.spike_index_array is not None:
+            if self.auto_zoom_x and np.sum( sps.selected_spikes)==1:
+                num, = np.where(sps.selected_spikes)
+                s = sps.get_seg_from_num(num)
+                s2 =  self.combo.currentIndex()
+                if s !=s2:
+                    self.combo.setCurrentIndex(s)
+                sl = sps.seg_spike_slices[s]
+                sel = sps.selected_spikes[sl]
+                pos = sps.spike_index_array[s]
+                self.xsize = 0.05
+                t = (pos[sel]/sps.sig_sampling_rate+sps.seg_t_start[s]).simplified.magnitude
+                self.seek(t)
+                self.refresh()
     
     def prev_segment(self):
         self.change_segment(self.num_seg - 1)
@@ -315,7 +328,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             ind_clicked = int(np.rint((x-sps.seg_t_start[s].rescale('s').magnitude)*sr))            
             pos = sps.spike_index_array[s]
             
-            sps.selected_spikes[:] = 0
+            sps.selected_spikes[:] = False
             sl = sps.seg_spike_slices[s]
             sps.selected_spikes[sl] = ind_clicked == pos
             self.spike_selection_changed.emit()

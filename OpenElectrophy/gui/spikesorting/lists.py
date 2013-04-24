@@ -26,7 +26,7 @@ class ModelSpikeList(QAbstractItemModel):
         self.refresh()
         
     def columnCount(self , parentIndex):
-        return 3
+        return 4
         
     def rowCount(self, parentIndex):
         sps =self.spikesorter
@@ -39,9 +39,10 @@ class ModelSpikeList(QAbstractItemModel):
         if not parentIndex.isValid():
             if column==0:
                 childItem = row
-            elif column==1:
+            #~ elif column==1:
+                #~ pass
                 #~ childItem = self.spikesorter.spikeTimes[row]
-                childItem = 'TODO'
+                #~ childItem = 'TODO'
             #~ return self.createIndex(row, column, childItem)
             return self.createIndex(row, column, None)
         else:
@@ -56,12 +57,28 @@ class ModelSpikeList(QAbstractItemModel):
             return None
         col = index.column()
         row = index.row()
+        # get segment and pos in segment
+        s = sps.get_seg_from_num(row)
         if role ==Qt.DisplayRole :
             if col == 0:
                 return u'{}'.format(row)
             elif col == 1:
-                return u'TODO '
+                
+                return u'{}'.format(s)
             elif col == 2:
+                if sps.sig_sampling_rate is not None:
+                    sr = sps.sig_sampling_rate.rescale('Hz').magnitude
+                else:
+                    sr = sps.wf_sampling_rate.rescale('Hz').magnitude
+                t_start = sps.seg_t_start[s].magnitude
+                spike_indexes = sps.spike_index_array[s]
+                sl = sps.seg_spike_slices[s]
+                spike_time = spike_indexes[row-sl.start]/sr+t_start                
+                #~ return u'TODO '
+                return u'{}'.format(spike_time)
+
+            
+            elif col == 3:
                 if sps.spike_clusters is None :#or sps.cluster_displayed_subset is None:
                     return u''
                 else:
@@ -70,7 +87,7 @@ class ModelSpikeList(QAbstractItemModel):
             else:
                 return None
         elif role == Qt.DecorationRole :
-            if col == 0 and sps.spike_clusters is not None:
+            if col == 0 and sps.spike_clusters is not None and sps.spike_clusters[row] in self.icons:
                 return self.icons[sps.spike_clusters[row]]
             else:
                 return None
@@ -82,6 +99,10 @@ class ModelSpikeList(QAbstractItemModel):
             return Qt.NoItemFlags
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable #| Qt.ItemIsDragEnabled
 
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return  ['num', 'segment', 'time', 'Is selected'][section]
+        return 
     
     def refresh(self):
         self.icons = { }
@@ -118,6 +139,10 @@ class SpikeList(SpikeSortingWidgetBase):
         self.modelSpike = ModelSpikeList( spikesorter = self.spikesorter)
         self.treeSpike.setModel(self.modelSpike)
         self.treeSpike.selectionModel().selectionChanged.connect(self.newSelectionInSpikeTree)
+
+        for i in range(self.modelSpike.columnCount(None)):
+            self.treeSpike.resizeColumnToContents(i)
+
 
     def refresh(self):
         self.modelSpike.refresh()
