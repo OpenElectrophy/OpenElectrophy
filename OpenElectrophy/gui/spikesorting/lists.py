@@ -101,8 +101,8 @@ class ModelSpikeList(QAbstractItemModel):
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return  ['num', 'segment', 'time', 'Is selected'][section]
-        return 
+            return  ['num', 'segment', 'time', 'Is sampled'][section]
+        return
     
     def refresh(self):
         self.icons = { }

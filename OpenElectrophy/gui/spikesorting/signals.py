@@ -52,7 +52,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         
         # TODO : add global UI option for this
         #~ self.auto_zoom_x = True
-        self.auto_zoom_x = False
+        #~ self.auto_zoom_x = False
         
         sps = self.spikesorter
         self.timerSeeker = TimeSeeker(show_play = False)
@@ -89,9 +89,19 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         for s,seg in enumerate(sps.segs):
             self.time_by_seg[s]= sps.segs[s].analogsignals[0].t_start.magnitude
         
-        
-        
-        
+
+        param_global = [
+                        {'name': 'auto_zoom_on_select', 'type': 'bool', 'value': True },
+                        {'name': 'zoom_size', 'type': 'float', 'value':  0.05, 'step' : 0.001 },
+                        ]        
+        self.params = pg.parametertree.Parameter.create( name='Global options', type='group',
+                                                    children = param_global)
+        self.treeParam = pg.parametertree.ParameterTree(parent  = self)
+        self.treeParam.header().hide()
+        self.treeParam.setParameters(self.params, showTop=True)
+        self.treeParam.setWindowTitle(u'Options for signal viewer')
+        self.treeParam.setWindowFlags(Qt.Window)
+
         
         self.createToolBar()
         self.mainLayout.addWidget(self.toolbar)
@@ -149,6 +159,10 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         tb.addAction(self.act_add_one_spike)
         self.act_enable_spike_selection = QAction(u'+', self,icon =QIcon(':/color-picker.png'), checkable = True)
         tb.addAction(self.act_enable_spike_selection)
+        self.act_open_pref = QAction(u'+', self,icon =QIcon(':/preferences-system.png'), checkable = True)
+        tb.addAction(self.act_open_pref)
+        self.act_open_pref.triggered.connect(self.open_preference)
+        
     
     def xsize_changed(self):
         self.xsize = self.xsize_changer.value()
@@ -252,7 +266,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         
         
         if sps.spike_index_array is not None:
-            if self.auto_zoom_x and np.sum( sps.selected_spikes)==1:
+            if self.params.param('auto_zoom_on_select').value() and np.sum( sps.selected_spikes)==1:
                 num, = np.where(sps.selected_spikes)
                 s = sps.get_seg_from_num(num)
                 s2 =  self.combo.currentIndex()
@@ -261,7 +275,8 @@ class SignalAndSpike(SpikeSortingWidgetBase):
                 sl = sps.seg_spike_slices[s]
                 sel = sps.selected_spikes[sl]
                 pos = sps.spike_index_array[s]
-                self.xsize = 0.05
+
+                self.xsize = self.params.param('zoom_size').value()
                 t = (pos[sel]/sps.sig_sampling_rate+sps.seg_t_start[s]).simplified.magnitude
                 self.seek(t)
                 self.refresh()
@@ -333,8 +348,12 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             sps.selected_spikes[sl] = ind_clicked == pos
             self.spike_selection_changed.emit()
             self.refresh()
-        
-            
+    
+    def open_preference(self):
+        if not self.treeParam.isVisible():
+            self.treeParam.show()
+        else:
+            self.treeParam.hide()
             
 
 class FullBandSignal(SignalAndSpike):
