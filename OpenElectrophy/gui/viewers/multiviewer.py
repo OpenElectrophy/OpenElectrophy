@@ -11,6 +11,7 @@ from .epochviewer import *
 from .eventviewer import *
 from .eventlist import *
 from .spiketrainviewer import *
+from .videoviewer import *
 
 class SubViewer(object):
     def __init__(self, 
@@ -135,7 +136,18 @@ class MultiViewer(QMainWindow):
                                                     )
         self.addDockWidget(Qt.BottomDockWidgetArea, subviewer.dock, Qt.Vertical)
         self.subviewers.append(subviewer)    
-        
+    
+    def add_videos(self, videofiles = [],   name = 'Videos',
+                                t_start_correction = 0., sampling_rate_factor = 1., **kargs):
+        subviewer = SubViewer(viewer = VideoViewer(videofiles = videofiles, **kargs),
+                                                    name = name,
+                                                    t_start_correction = t_start_correction,
+                                                    sampling_rate_factor = sampling_rate_factor,
+                                                    )
+        self.addDockWidget(Qt.BottomDockWidgetArea, subviewer.dock, Qt.Vertical)
+        self.subviewers.append(subviewer)    
+    
+    
 
     
     def seek_all(self, t, fast = False):

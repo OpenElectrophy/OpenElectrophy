@@ -11,7 +11,7 @@ import os
 
 import cv2
 
-
+import skimage.io
 
 
 param_global = [
@@ -30,7 +30,8 @@ class VideoViewer(ViewerBase):
     """
     """
     def __init__(self, parent = None,
-                            videofiles = [ ]):
+                            videofiles = [ ],
+                            videotimes = None):
         super(VideoViewer,self).__init__(parent)
         
         self.mainlayout = QHBoxLayout()
@@ -43,19 +44,19 @@ class VideoViewer(ViewerBase):
                                                     children = param_global)
         
         # inialize
-        self.set_videos(videofiles)
+        self.set_videos(videofiles, videotimes = videotimes)
         
         self.paramGlobal.sigTreeStateChanged.connect(self.refresh)
+    
+    def set_videos(self, videofiles, videotimes = None):
         
-
-
-
-
-    def set_videos(self, videofiles):
         self.cv_image_widgets = [ ]
         self.grid_changing =False
         
         self.videofiles = videofiles
+        self.videotimes = videotimes
+        if self.videotimes is None:
+            self.videotimes = [None]*len(videofiles)
 
         all = [ ]
         for i, vid in enumerate(self.videofiles):
@@ -68,14 +69,26 @@ class VideoViewer(ViewerBase):
         self.paramControler = VideoViewerControler(viewer = self)
         
         
-        self.captures = [ ]
+        #~ self.captures = [ ]
+        self.videos = [ ]
         self.video_length = [ ]
         self.video_fps = [ ]
         for i, vid in enumerate(self.videofiles):
-            cap = cv2.VideoCapture(vid)
-            self.captures.append(cap)
-            self.video_length.append(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-            self.video_fps.append(cap.get(cv2.cv.CV_CAP_PROP_FPS))
+            #~ cap = cv2.VideoCapture(vid)
+            #~ self.captures.append(cap)
+            #~ self.video_length.append(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+            #~ self.video_fps.append(cap.get(cv2.cv.CV_CAP_PROP_FPS))
+            
+            #~ v  = skimage.io.Video(source = vid, backend = 'gstreamer')
+            v  = skimage.io.Video(source = vid, backend = 'opencv')
+            self.videos.append(v)
+            self.video_length.append(v.frame_count())
+            #~ self.video_fps.append(25.)
+            self.video_fps.append(float(v.duration())/v.frame_count())
+            
+            
+            
+            
         #~ print self.video_fps, self.video_length
         self.create_grid()
         
@@ -104,6 +117,7 @@ class VideoViewer(ViewerBase):
         for i, vid in enumerate(self.videofiles):
             if not self.paramVideos.children()[i].param('visible').value(): continue
             self.cv_image_widgets[i] = cw  = QtCVImageWIdget()
+            self.cv_image_widgets[i].clicked.connect(self.open_configure_dialog)
             self.grid.addWidget(cw, r,c)
             
             c+=1
@@ -115,20 +129,29 @@ class VideoViewer(ViewerBase):
         
         for i, vid in enumerate(self.videofiles):
             if not self.paramVideos.children()[i].param('visible').value(): continue
-            
-            frame = int(self.t*self.video_fps[i])
+            #~ print i
+            if self.videotimes[i] is None:
+                frame = int(self.t*self.video_fps[i])
+            else :
+                allsup,  = np.where(self.t<self.videotimes[i])
+                if allsup.size>0:
+                    frame = allsup[0]
+                
             if 0<frame<self.video_length[i] and frame !=self.frames[i]:
                 # opencv is bad for seek in a video stream so we cache the last image
                 if 0<(frame-self.frames[i])<self.video_fps[i]+2:
                     # until one seconde we read in loop
                     for f in range(frame-self.frames[i]):
-                        ret, im = self.captures[i].read()
+                        #~ ret, im = self.captures[i].read()
+                        im = self.videos[i].get()
                 else:
                     # otherwise a long seek but this flash
-                    #~ print 'long seek',i,  self.frames[i], frame
-                    self.captures[i].set(cv2.cv.CV_CAP_PROP_POS_FRAMES, frame)
-                    ret, im = self.captures[i].read()
+                    print 'long seek',i,  self.frames[i], frame
+                    #~ self.captures[i].set(cv2.cv.CV_CAP_PROP_POS_FRAMES, frame)
+                    #~ ret, im = self.captures[i].read()
+                    im = self.videos[i].get_index_frame(frame)
                 self.frames[i] = frame
+                #~ print i, im.shape
                 if im is not None:
                     self.cv_image_widgets[i].set_image(im)
         self.is_refreshing = False
@@ -139,6 +162,7 @@ class QtCVImageWIdget(QWidget):
     """
     Similar to pyqtgraph.RawImageWidget but play directly with OpenCV format.
     """
+    clicked = pyqtSignal()
     def __init__(self, parent = None, with_ratio = True):
         QWidget.__init__(self, parent)
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding))
@@ -146,6 +170,10 @@ class QtCVImageWIdget(QWidget):
         self.image = None
         self.with_ratio = with_ratio
         #~ self.setBackGroundColor(QColor('black'))
+
+    def mousePressEvent (self, ev):
+        self.clicked.emit()
+        ev.accept()
         
     def set_image(self, cv_im):
         if self.image is None:
