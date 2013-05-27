@@ -574,20 +574,23 @@ def ComputeIndexLda(proj, data, data_labels):
 # takken from page 31 of book on GGOBI
 # diane cook "integrative and dynamic graphics for data analysis
     ndim = proj.shape[0]
-
-    A = np.matrix(proj)
-    B = np.matrix(np.zeros((ndim, ndim)))
-    W = np.matrix(np.zeros((ndim, ndim)))
-    grand_mean = np.mean(data , axis = 0).astype(np.matrix)
+    
+    A = np.matrix(proj, dtype = data.dtype)
+    B = np.matrix(np.zeros((ndim, ndim)), dtype = data.dtype)
+    W = np.matrix(np.zeros((ndim, ndim)), dtype = data.dtype)
+    #~ grand_mean = np.mean(data , axis = 0).astype(np.matrix)
+    grand_mean = np.mean(data , axis = 0)
     for c in np.unique(data_labels):
         ind = data_labels ==c
-        group_mean = np.mean(data[ind, :], axis = 0).astype(np.matrix)
+        #~ group_mean = np.mean(data[ind, :], axis = 0).astype(np.matrix)
+        group_mean = np.mean(data[ind, :], axis = 0)
         d = group_mean - grand_mean
-        B += ind[ind].size*np.dot(d[:,np.newaxis], d[np.newaxis, :])
+        #~ B += ind[ind].size*np.dot(d[:,np.newaxis], d[np.newaxis, :])
+        B += np.sum(ind)*np.dot(d[:,np.newaxis], d[np.newaxis, :])
         
         # find better:
         d = data[ind, :] - group_mean
-        for j in range(data[ind, :].shape[0]):
+        for j in range(d.shape[0]):
             W+=np.dot(d[j,:, np.newaxis], d[j,np.newaxis,:])
         
     lda = 1 -  np.linalg.det(A.T*W*A) / np.linalg.det(A.T*(W+B)*A)
