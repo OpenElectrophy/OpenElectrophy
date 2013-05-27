@@ -88,6 +88,7 @@ class TimeFreqViewer(ViewerBase):
     def __init__(self, parent = None,
                             analogsignals = None,
                             with_time_seeker = False,
+                            max_visible_on_open = 16,
                             ):
                             
         super(TimeFreqViewer,self).__init__(parent)
@@ -106,7 +107,9 @@ class TimeFreqViewer(ViewerBase):
         self.grid = QGridLayout()
         mainlayout.addLayout(self.grid)
         
-        nb_column = np.rint(np.sqrt(n))
+        #~ nb_column = np.rint(np.sqrt(n))
+        nb_column = np.rint(np.sqrt(max_visible_on_open))
+        
         
         # Create parameters
         self.paramGlobal = pg.parametertree.Parameter.create( name='Global options', type='group',
@@ -124,6 +127,9 @@ class TimeFreqViewer(ViewerBase):
                 name = 'AnalogSignal {} name={}'.format(i, ana.name)
             all.append({ 'name': name, 'type' : 'group', 'children' : param_by_channel})
         self.paramSignals = pg.parametertree.Parameter.create(name='AnalogSignals', type='group', children=all)
+        for p in self.paramSignals.children()[max_visible_on_open:]:
+            p.param('visible').setValue(False)
+        
         
         self.allParams = pg.parametertree.Parameter.create(name = 'all param', type = 'group', 
                                                         children = [self.paramGlobal,self.paramSignals, self.paramTimeFreq  ])

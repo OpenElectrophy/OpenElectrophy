@@ -35,8 +35,12 @@ class SegmentViewer(MultiViewer):
                 # timefreq viewer accept sig with same sr
                 ind,  = np.where(all_sr==sr)
                 anasigs = [ self.seg.analogsignals[sel] for sel in ind]
-                self.add_timefreqs( analogsignals = anasigs, name = 'Time Frequency Maps {}'.format(i),)
-                self.subviewers[-1].dock.setVisible(False)
+                self.add_timefreqs( analogsignals = anasigs, name = 'Time Frequency Maps {}'.format(i),max_visible_on_open = 4)
+                viewer = self.subviewers[-1]
+                viewer.dock.setVisible(False)
+                
+                    
+                
         
         if len(self.seg.spiketrains) > 0:
             self.add_spiketrains(spiketrains = self.seg.spiketrains)

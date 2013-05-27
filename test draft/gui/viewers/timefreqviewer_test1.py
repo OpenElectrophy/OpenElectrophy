@@ -23,7 +23,7 @@ def test1():
     #~ print analogsignals[0].t_start, analogsignals[0].t_stop
     s.set_start_stop(t_start= analogsignals[0].t_start.magnitude-2, t_stop = analogsignals[0].t_stop.magnitude+2)
     
-    w = TimeFreqViewer(analogsignals = analogsignals)
+    w = TimeFreqViewer(analogsignals = analogsignals, )
     w.show()
     s.time_changed.connect(w.seek)
     s.fast_time_changed.connect(w.fast_seek)
@@ -38,7 +38,7 @@ def test1():
 def test2():
     app = QApplication([ ])
     
-    w = TimeFreqViewer(analogsignals = analogsignals, with_time_seeker = True)
+    w = TimeFreqViewer(analogsignals = analogsignals, with_time_seeker = True, max_visible_on_open = 1)
     w.show()
     w.xsize = 60.
     app.exec_()
