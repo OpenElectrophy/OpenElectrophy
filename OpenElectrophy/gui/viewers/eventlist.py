@@ -40,7 +40,9 @@ class EventList(ViewerBase):
         self.list.clear()
         ev = self.eventarrays[ind]
         for i in range(len(self.eventarrays[ind].times)):
-            if i>=len(ev.labels):
+            if ev.labels is None:
+                self.list.addItem('{} : {:.3f}'.format(i, float(ev.times[i].rescale('s').magnitude)) )
+            elif   i>=len(ev.labels):
                 self.list.addItem('{} : {:.3f}'.format(i, float(ev.times[i].rescale('s').magnitude)) )
             else:
                 self.list.addItem('{} : {:.3f} {}'.format(i, float(ev.times[i].rescale('s').magnitude), ev.labels[i]) )
