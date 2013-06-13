@@ -136,6 +136,8 @@ class VideoViewer(ViewerBase):
                 allsup,  = np.where(self.t<self.videotimes[i])
                 if allsup.size>0:
                     frame = allsup[0]
+                else:
+                    frame = self.videotimes[i].size-1
                 
             if 0<frame<self.video_length[i] and frame !=self.frames[i]:
                 # opencv is bad for seek in a video stream so we cache the last image
@@ -146,7 +148,7 @@ class VideoViewer(ViewerBase):
                         im = self.videos[i].get()
                 else:
                     # otherwise a long seek but this flash
-                    print 'long seek',i,  self.frames[i], frame
+                    #~ print 'long seek',i,  self.frames[i], frame
                     #~ self.captures[i].set(cv2.cv.CV_CAP_PROP_POS_FRAMES, frame)
                     #~ ret, im = self.captures[i].read()
                     im = self.videos[i].get_index_frame(frame)
