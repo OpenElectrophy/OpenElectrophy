@@ -274,12 +274,12 @@ def read_and_import(name, ioclass,io_kargs, dbinfo, options):
     
     
     if distutils.version.LooseVersion(neo.__version__) < '0.3':
-        neo_blocks = reader.read(** io_kargs)
+        neo_blocks = [ reader.read(** io_kargs) ]
     else:
         neo_blocks = reader.read(** io_kargs)
         
     for neo_block in neo_blocks:
-        if options['populate_recordingchannel'] and neo.RecordingChannelGroup not in reader.readable_objects:
+        if options['populate_recordingchannel'] and neo.RecordingChannelGroup not in reader.supported_objects:
             print 'populate_RecordingChannel'
             populate_RecordingChannel(neo_block, remove_from_annotation = False)
         
