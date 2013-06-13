@@ -261,7 +261,7 @@ class SpikeSortingOnRCs(MenuItem):
         bl = session.query(Block).get(block_ids[0])
         bl.recordingchannelgroups.append(rcg)
         session.commit()
-        explorer.refresh
+        explorer.refresh()
         
         # FIXME: this load every in a block because of cascade = True
         # do a hack for loading only the rcg and related units, signals and segment not everything in the block
@@ -281,9 +281,25 @@ class DetectRespiratoryCycle(MenuItem):
     table = 'RespirationSignal'
     mode = 'unique'
     icon = ':/repiration.png'
+
+
+
     
-    
-    
+from ..core.tools import merge_blocks
+class MergeBlock(MenuItem):
+    name = 'Merge Blocks (unify RecordingChannel and recordingChannelGroup)'
+    table = 'Block'
+    mode = 'homogeneous'
+    icon = ':/merge.png'
+    def execute(self, session,explorer,tablename,  ids, treedescription,settings,  **kargs):
+        
+        class_ = treedescription.tablename_to_class[tablename]
+        block_list = [ ]
+        for id in ids:
+            block_list.append(session.query(class_).get(id))
+        
+        new_bl = merge_blocks(block_list, session = session, dbinfo = treedescription.dbinfo)
+        explorer.refresh()
 
 
 
@@ -293,4 +309,5 @@ context_menu = [ Delete, Edit, ChangeParent,MenuImportData, CreateTop,
                 EditOscillation, 
                 SpikeSortingOnRCG, SpikeSortingOnRCs, 
                 DetectRespiratoryCycle,
+                MergeBlock,
                 ]
