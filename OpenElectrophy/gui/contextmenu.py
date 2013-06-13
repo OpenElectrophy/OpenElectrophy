@@ -297,7 +297,7 @@ class MergeBlock(MenuItem):
         block_list = [ ]
         for id in ids:
             block_list.append(session.query(class_).get(id))
-        
+        print block_list
         new_bl = merge_blocks(block_list, session = session, dbinfo = treedescription.dbinfo)
         explorer.refresh()
 
