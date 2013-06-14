@@ -133,11 +133,17 @@ class VideoViewer(ViewerBase):
             if self.videotimes[i] is None:
                 frame = int(self.t*self.video_fps[i])
             else :
-                allsup,  = np.where(self.t<self.videotimes[i])
-                if allsup.size>0:
-                    frame = allsup[0]
+                #~ allsup,  = np.where(self.t<self.videotimes[i])
+                #~ if allsup.size>0:
+                    #~ frame = allsup[0]
+                #~ else:
+                    #~ frame = self.videotimes[i].size-1
+                allinf,  = np.where(self.t>=self.videotimes[i])
+                if allinf.size>0:
+                    frame = allinf[-1]
                 else:
-                    frame = self.videotimes[i].size-1
+                    #~ frame = self.videotimes[i].size-1
+                    frame = 0
                 
             if 0<frame<self.video_length[i] and frame !=self.frames[i]:
                 # opencv is bad for seek in a video stream so we cache the last image
