@@ -9,7 +9,7 @@ from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, reg
 from pyqtgraph.parametertree import parameterTypes as types
 
 import numpy as np
-
+import quantities as pq
 
 def get_dict_from_group_param(param, cascade = False):
     assert param.type() == 'group'
@@ -106,8 +106,7 @@ registerParameterType('range', RangeParameter, override=True)
 
 
 
-
-
+## logfloat
 class SpinAndSliderWidget(QWidget):
     """this combinate a spin box and a slider in log scale"""
     sigChanged = pyqtSignal()
@@ -200,5 +199,82 @@ class LogFloatParameter(Parameter):
 
 registerParameterType('logfloat', LogFloatParameter, override=True)
 
+
+
+
+## quantities scalar
+class QuantityWidget(QWidget):
+    """This is like pq.SPinBox but render a pq.Quantity scalar object"""
+    sigChanged = pyqtSignal()
+    def __init__(self, parent = None,
+                            value = 1*pq.mV,
+                            bounds = [ ],
+                            ):
+        QWidget.__init__(self, parent)
+
+        self._val = None
+
+        self.mainlayout = QHBoxLayout()
+        self.setLayout(self.mainlayout)
+        
+        self.original_unit  = value.units
+        
+        if value.dimensionality.string[0] in pg.functions.SI_PREFIXES_ASCII :
+            self.suffix= value.dimensionality.string[1:]
+        else:
+            self.suffix= value.dimensionality.string
+        
+        val2 = pg.functions.siEval('{} {}'.format(value.magnitude, value.dimensionality.string))
+        self.spinbox = pg.SpinBox(value = val2,  suffix=self.suffix, siPrefix=True,)
+        self.mainlayout.addWidget(self.spinbox)
+        self.spinbox.valueChanged.connect(self.spinbox_changed)
+        
+        self.setValue(value)
+ 
+    def value(self):
+        return self._val
+    
+    def setValue(self, val):
+        val.rescale(self.original_unit)
+        
+        val2 = pg.functions.siEval('{} {}'.format(val.magnitude, val.dimensionality.string))
+        self.spinbox.setValue(val2)
+        self._val = val
+    
+    def spinbox_changed(self, val):
+        p, pref = pg.functions.siScale(val)
+        if pref == u'µ':
+            pref = u'u'
+        self._val = pq.Quantity(val*p, units = pref+self.suffix)
+        self.sigChanged.emit()
+    
+    def updateDisplayLabel(self, value=None):
+        if value is None:
+            value = self.param.value()
+        opts = self.param.opts
+        if value is None:
+            text = u''
+        else:
+            print self._val
+            text = '{} {}'.format(self._val.magnitude, self._val.dimensionality.string)
+        self.displayLabel.setText(text)
+
+
+class QuantityParameterItem(types.WidgetParameterItem):
+    sigChanged = pyqtSignal
+    def __init__(self, param, depth):
+        types.WidgetParameterItem.__init__(self, param, depth)
+    def makeWidget(self):
+        w = QuantityWidget()
+        return w
+
+class QuantityParameter(Parameter):
+    itemClass = QuantityParameterItem
+    sigActivated = pyqtSignal(object)
+    def activate(self):
+        self.sigActivated.emit(self)
+        self.emitStateChanged('activated', None)
+
+registerParameterType('quantity', QuantityParameter, override=True)
 
 
