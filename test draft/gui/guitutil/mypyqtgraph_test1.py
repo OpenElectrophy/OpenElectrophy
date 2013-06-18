@@ -21,7 +21,7 @@ params = [
         
         
         {'name': 'pq1', 'type': 'quantity', 'value': 10.*pq.mV},
-        {'name': 'pq2', 'type': 'quantity', 'value': 10.*pq.uV},
+        {'name': 'pq2', 'type': 'quantity', 'value': 10.*pq.us},
         
         ]
 

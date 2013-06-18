@@ -207,7 +207,7 @@ class QuantityWidget(QWidget):
     """This is like pq.SPinBox but render a pq.Quantity scalar object"""
     sigChanged = pyqtSignal()
     def __init__(self, parent = None,
-                            value = 1*pq.mV,
+                            value = None,
                             bounds = [ ],
                             ):
         QWidget.__init__(self, parent)
@@ -217,7 +217,7 @@ class QuantityWidget(QWidget):
         self.mainlayout = QHBoxLayout()
         self.setLayout(self.mainlayout)
         
-        self.original_unit  = value.units
+        self.original_unit  = None#value.units
         
         if value.dimensionality.string[0] in pg.functions.SI_PREFIXES_ASCII :
             self.suffix= value.dimensionality.string[1:]
@@ -229,12 +229,15 @@ class QuantityWidget(QWidget):
         self.mainlayout.addWidget(self.spinbox)
         self.spinbox.valueChanged.connect(self.spinbox_changed)
         
-        self.setValue(value)
+        if value is not None:
+            self.setValue(value)
  
     def value(self):
         return self._val
     
     def setValue(self, val):
+        if self.original_unit  is None:
+            self.original_unit = val.units
         val.rescale(self.original_unit)
         
         val2 = pg.functions.siEval('{} {}'.format(val.magnitude, val.dimensionality.string))
@@ -263,9 +266,10 @@ class QuantityWidget(QWidget):
 class QuantityParameterItem(types.WidgetParameterItem):
     sigChanged = pyqtSignal
     def __init__(self, param, depth):
+        self.initial_value = param.value()
         types.WidgetParameterItem.__init__(self, param, depth)
     def makeWidget(self):
-        w = QuantityWidget()
+        w = QuantityWidget(value = self.initial_value)
         return w
 
 class QuantityParameter(Parameter):
