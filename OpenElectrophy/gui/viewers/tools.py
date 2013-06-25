@@ -8,6 +8,7 @@ from ..guiutil import *
 import quantities as pq
 import numpy as np
 
+import pyqtgraph as pg
 
 
 import time
@@ -50,7 +51,8 @@ class TimeSeeker(QWidget) :
             t.addWidget(but)
             
             t.addWidget(QLabel('Speed:'))
-            self.speedSpin = QDoubleSpinBox()
+            #~ self.speedSpin = QDoubleSpinBox()
+            self.speedSpin = pg.SpinBox()
             t.addWidget(self.speedSpin)
             self.speedSpin.setMinimum(0.01)
             self.speedSpin.setMaximum(100.)
@@ -93,7 +95,9 @@ class TimeSeeker(QWidget) :
             self.slider.valueChanged.connect(self.sliderChanged)
         
         if show_spinbox:
-            self.spinbox = QDoubleSpinBox(decimals = 3., minimum = -np.inf, maximum = np.inf, 
+            #~ self.spinbox = QDoubleSpinBox(decimals = 3., minimum = -np.inf, maximum = np.inf, 
+                                                                #~ singleStep = 0.05, minimumWidth = 60)
+            self.spinbox =pg.SpinBox(decimals = 3., minimum = -np.inf, maximum = np.inf, 
                                                                 singleStep = 0.05, minimumWidth = 60)
             t.addWidget(self.spinbox)
             t.addSeparator()

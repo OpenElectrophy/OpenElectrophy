@@ -52,7 +52,8 @@ class RangeWidget(QWidget):
             mainlayout = QVBoxLayout()
         
         self.setLayout(mainlayout)
-        self.spins = [ QDoubleSpinBox(), QDoubleSpinBox()]
+        #~ self.spins = [ QDoubleSpinBox(), QDoubleSpinBox()]
+        self.spins = [ pg.SpinBox(), pg.SpinBox()]
         for s in self.spins:
             mainlayout.addWidget(s)
             s.valueChanged.connect(self.spinChanged)
@@ -126,12 +127,14 @@ class SpinAndSliderWidget(QWidget):
             self.mainlayout = QVBoxLayout()
         self.setLayout(self.mainlayout)
         
-        self.spinbox = QDoubleSpinBox(decimals = 4, singleStep = .1,
+        #~ self.spinbox = QDoubleSpinBox(decimals = 4, singleStep = .1,
+                                                        #~ minimum = self.limits[0], maximum = self.limits[1])
+        self.spinbox = pg.SpinBox(decimals = 4, singleStep = .1,
                                                         minimum = self.limits[0], maximum = self.limits[1])
         self.mainlayout.addWidget(self.spinbox)
         self.slider = QSlider(Qt.Horizontal, minimum =0, maximum = 100)
         self.mainlayout.addWidget(self.slider)
-        self.slider.setMinimumWidth(50)
+        self.slider.setMinimumWidth(20)
         
         self.spinbox.valueChanged.connect(self.spinbox_changed)
         self.slider.valueChanged.connect(self.slider_changed)

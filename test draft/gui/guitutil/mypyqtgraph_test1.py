@@ -17,6 +17,8 @@ params = [
         {'name': 'String', 'type': 'str', 'value': "hi"},
         {'name': 'bool', 'type': 'bool', 'value': True},
         {'name': 'ylims', 'type': 'range', 'value': [-5.,5.]},
+        {'name': 'colormap', 'type': 'colormap'},
+        
         {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'limits' : [0.1, 10.]},
         {'name': 'choice', 'type': 'list', 'values': {"one": 1, "two": 2, "three": 3}, 'value': 2},
         

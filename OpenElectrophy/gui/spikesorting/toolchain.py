@@ -5,6 +5,7 @@ A widget for apply spike sorting chain and related parameters.
 
 from collections import OrderedDict
 #~ from .parameters import *
+from ...spikesorting.methods import *
 from ..guiutil import *
 import pyqtgraph as pg
 from OpenElectrophy.gui.guiutil.mypyqtgraph import get_dict_from_group_param
@@ -198,16 +199,32 @@ class ToolChainWidget(QWidget):
         self.actions = [ ]
         for tc in all_toolchain:
             act = QAction(tc.name, but, checkable = True)
-            act.triggered.connect( self.on_changed)       
+            #~ act.triggered.connect( self.on_changed)       
+            act.changed.connect( self.on_changed)       
+            act.setChecked(False)
             but.addAction(act)
             act.toolchain = tc
             self.actions.append(act)
-        self.change_toolchain(all_toolchain[0])#FromFullBandSignalToClustered, 
-        self.actions[0].setChecked(True)
-        
+            
+        self.change_toolchain(FromFullBandSignalToClustered)
         
     
     def change_toolchain(self, toolchain):
+        i = all_toolchain.index(toolchain)
+        self.actions[i].setChecked(True)
+
+    def on_changed(self):
+        for a in self.actions: 
+            a.changed.disconnect( self.on_changed)
+            a.setChecked(False)
+            a.changed.connect( self.on_changed)
+        self.sender().changed.disconnect( self.on_changed)
+        self.sender().setChecked(True)
+        self.sender().changed.connect( self.on_changed)
+        tc = self.sender().toolchain
+        self._change_toolchain(tc)
+
+    def _change_toolchain(self, toolchain):
         self.toolchain = toolchain
         if self.toolbox is not None:
             self.toolbox.setVisible(False)
@@ -249,11 +266,6 @@ class ToolChainWidget(QWidget):
             self.spikesorter.run_step(method, **kargs)
         self.need_refresh.emit()
 
-    def on_changed(self):
-        for a in self.actions: a.setChecked(False)
-        self.sender().setChecked(True)
-        tc = self.sender().toolchain
-        self.change_toolchain(tc)
     
             
             
