@@ -19,6 +19,12 @@ class SklearnMiniBatchKMeans(object):
     
     
     name = 'Mini batch K-Means'
+    params = [  {'name': 'n_cluster', 'type': 'int', 'value': 8},
+                            {'name': 'init', 'type': 'list', 'value': 'k-means++', 'values':['k-means++', 'random']},
+                            {'name': 'batch_size', 'type': 'int', 'value': 100},
+                            {'name': 'max_iter', 'type': 'int', 'value': 300},
+                            ]
+    
     def run(self, spikesorter, n_cluster =8 ,  init='k-means++', batch_size=100, 
                             max_iter=300, ):
         sps = spikesorter

@@ -17,7 +17,10 @@ class ManualThresholdDetection(object):
     
     """
     name = 'Manual threshold detection'
-    
+    params = [  {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
+                            {'name': 'sweep_clean_size', 'type': 'quantity', 'value': 0.8*pq.ms, 'step' : 0.1*pq.ms },
+                            ]
+                            
     def run(self, spikesorter, sign = '-', threshold = -1.,
                                     merge_method = 'fast', sweep_clean_size = 0.8*pq.ms,):
         sps = spikesorter

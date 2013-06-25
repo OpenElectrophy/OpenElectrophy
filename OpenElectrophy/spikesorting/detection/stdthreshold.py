@@ -13,6 +13,12 @@ class StdThresholdDetection(object):
         median_thresh * median(abs(signal)/.6745) 
     """
     name = 'SD threshold detection'
+    params = [  {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
+                            {'name': 'std_thresh', 'type': 'float', 'value': 5, 'step' : 0.1},
+                            {'name': 'consistent_across_channels', 'type': 'bool', 'value': False, },
+                            {'name': 'consistent_across_segments', 'type': 'bool', 'value': True, },
+                            {'name': 'sweep_clean_size', 'type': 'quantity', 'value': 0.8*pq.ms, 'step' : 0.1*pq.ms },
+                            ]
     
     def run(self, spikesorter, sign = '-', std_thresh = 5.,
                         consistent_across_channels = False,

@@ -24,7 +24,15 @@ class MTEODetection(object):
     """
     
     name = 'MTEO detection'
-
+    params = [  {'name': 'k_max', 'type': 'int', 'value': 1 },
+                            {'name': 'k_inc', 'int': 'float', 'value':1},
+                            {'name': 'from_fullband', 'type': 'bool', 'value': True, },
+                            {'name': 'median_thresh', 'type': 'float', 'value': 5., 'step' : 0.1},
+                            {'name': 'consistent_across_channels', 'type': 'bool', 'value': False, },
+                            {'name': 'consistent_across_segments', 'type': 'bool', 'value': True, },
+                            {'name': 'sweep_clean_size', 'type': 'quantity', 'value': 0.8*pq.ms, 'step' : 0.1*pq.ms },
+                            ]
+    
     def run(self, spikesorter, 
                         k_max=1,
                         k_inc=1,

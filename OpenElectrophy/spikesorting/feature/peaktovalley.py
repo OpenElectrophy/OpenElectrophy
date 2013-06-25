@@ -14,6 +14,7 @@ class PeakToValley(object):
     """
     
     name = 'Peak to valley'
+    params = [ ]
     
     def run (self, spikesorter):
         sps = spikesorter

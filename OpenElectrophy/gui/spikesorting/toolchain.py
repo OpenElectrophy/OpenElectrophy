@@ -4,8 +4,10 @@ A widget for apply spike sorting chain and related parameters.
 """
 
 from collections import OrderedDict
-from .parameters import *
+#~ from .parameters import *
 from ..guiutil import *
+import pyqtgraph as pg
+from OpenElectrophy.gui.guiutil.mypyqtgraph import get_dict_from_group_param
 
 from PyQt4.QtWebKit import QWebView
 
@@ -116,13 +118,24 @@ class MultiMethodsParamWidget(QWidget):
         v = QVBoxLayout()
         self.widget.setLayout(v)
         self.method = self.methods[pos]
-        if self.method.dataset is not None:
-            self.param_widget  = ParamWidget( self.method.dataset, title = self.method.name,
-                                                    settings = self.settings, settingskey = 'spikesortings/methods/'+self.method.name)
+        
+        if self.method.params is not None:
+            self.params = pg.parametertree.Parameter.create( name='Params',
+                                                    type='group', children =self.method.params)
+            self.treeparams = pg.parametertree.ParameterTree()
+            self.treeparams.header().hide()
+            self.treeparams.setParameters(self.params, showTop=True)
         else:
-            self.param_widget = QWidget()
+            self.treeparams = QWidget()
             
-        v.addWidget(self.param_widget,1)
+        #~ if self.method.dataset is not None:
+            #~ self.param_widget  = ParamWidget( self.method.dataset, title = self.method.name,
+                                                    #~ settings = self.settings, settingskey = 'spikesortings/methods/'+self.method.name)
+        #~ else:
+            #~ self.param_widget = QWidget()
+            
+        #~ v.addWidget(self.param_widget,1)
+        v.addWidget(self.treeparams,1)
 
         but = QPushButton('Info on {}'.format(self.method.name))
         v.addWidget(but)
@@ -139,10 +152,14 @@ class MultiMethodsParamWidget(QWidget):
         #~ return self.method.name
     
     def get_dict(self) :
-        if self.method.dataset is not None:
-            return self.param_widget.to_dict()
+        if self.method.params is not None:
+            return get_dict_from_group_param(self.params)
         else:
             return {}
+        #~ if self.method.dataset is not None:
+            #~ return self.param_widget.to_dict()
+        #~ else:
+            #~ return {}
     
     def open_info(self):
         if not hasattr(self, 'helpview'):

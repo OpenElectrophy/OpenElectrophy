@@ -187,7 +187,10 @@ class LogFloatParameterItem(types.WidgetParameterItem):
     def __init__(self, param, depth):
         types.WidgetParameterItem.__init__(self, param, depth)
     def makeWidget(self):
-        w = SpinAndSliderWidget()
+        kargs = { }
+        if 'limits' in self.param.opts:
+            kargs['limits'] = self.param.opts['limits']
+        w = SpinAndSliderWidget(**kargs)
         return w
 
 class LogFloatParameter(Parameter):
@@ -209,6 +212,7 @@ class QuantityWidget(QWidget):
     def __init__(self, parent = None,
                             value = None,
                             bounds = [ ],
+                            step = None,
                             ):
         QWidget.__init__(self, parent)
 
@@ -225,7 +229,13 @@ class QuantityWidget(QWidget):
             self.suffix= value.dimensionality.string
         
         val2 = pg.functions.siEval('{} {}'.format(value.magnitude, value.dimensionality.string))
-        self.spinbox = pg.SpinBox(value = val2,  suffix=self.suffix, siPrefix=True,)
+        
+        if step is not None:
+            step2 = pg.functions.siEval('{} {}'.format(step.rescale(value.units).magnitude, value.dimensionality.string))
+            self.spinbox = pg.SpinBox(value = val2,  suffix=self.suffix, siPrefix=True,step = step2)
+        else:
+            self.spinbox = pg.SpinBox(value = val2,  suffix=self.suffix, siPrefix=True)
+        
         self.mainlayout.addWidget(self.spinbox)
         self.spinbox.valueChanged.connect(self.spinbox_changed)
         
@@ -258,7 +268,6 @@ class QuantityWidget(QWidget):
         if value is None:
             text = u''
         else:
-            print self._val
             text = '{} {}'.format(self._val.magnitude, self._val.dimensionality.string)
         self.displayLabel.setText(text)
 
@@ -266,10 +275,12 @@ class QuantityWidget(QWidget):
 class QuantityParameterItem(types.WidgetParameterItem):
     sigChanged = pyqtSignal
     def __init__(self, param, depth):
-        self.initial_value = param.value()
         types.WidgetParameterItem.__init__(self, param, depth)
     def makeWidget(self):
-        w = QuantityWidget(value = self.initial_value)
+        kargs = { }
+        if 'step' in self.param.opts:
+            kargs['step'] = self.param.opts['step']
+        w = QuantityWidget(value = self.param.opts['value'], **kargs)
         return w
 
 class QuantityParameter(Parameter):
@@ -280,5 +291,4 @@ class QuantityParameter(Parameter):
         self.emitStateChanged('activated', None)
 
 registerParameterType('quantity', QuantityParameter, override=True)
-
 

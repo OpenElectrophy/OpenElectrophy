@@ -19,6 +19,10 @@ class AlignWaveformOnDetection(object):
     
     """
     name = 'Align waveform on detection'
+    params = [  {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
+                            {'name': 'left_sweep', 'type': 'quantity', 'value': 1.*pq.ms, 'step' : 100*pq.us },
+                            {'name': 'right_sweep', 'type': 'quantity', 'value': 1.*pq.ms,'step' : 100*pq.us },
+                            ]
 
 
     def run(self, spikesorter, sign = '-', left_sweep = 1*pq.ms, right_sweep = 1*pq.ms):
