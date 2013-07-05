@@ -26,6 +26,7 @@ conversion = {str : StringItem,
                             float : FloatItem,
                             int : IntItem,
                             datetime : DateTimeItem,
+                            bool : BoolItem,
                             }
 
 class EditFieldsDialog(QDialog):
@@ -61,7 +62,7 @@ class EditFieldsDialog(QDialog):
         self.params = DataSetEditGroupBox(title,Parameters, show_button = False)
         self.mainLayout.addWidget( self.params )
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        self.buttonBox = buttonBox = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         self.mainLayout.addWidget(buttonBox)
         buttonBox.accepted.connect(self.saveAndClose)
         buttonBox.rejected.connect(self.close)
