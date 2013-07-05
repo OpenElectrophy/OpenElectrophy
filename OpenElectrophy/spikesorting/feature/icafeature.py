@@ -12,6 +12,8 @@ class IcaFeature(object):
     """
     
     name = 'Ica Feature'
+    params = [ {'name': 'n_components', 'type': 'int', 'value': 3},
+                            ]
     
     def run (self, spikesorter, n_components = 3):
         sps = spikesorter

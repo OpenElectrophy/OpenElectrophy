@@ -18,6 +18,9 @@ class SklearnGaussianMixtureEm(object):
     
     
     name = 'GMM EM'
+    params = [  {'name': 'n_cluster', 'type': 'int', 'value': 4},
+                            {'name': 'n_iter', 'type': 'int', 'value': 20},
+                            ]
     
     
     def run(self, spikesorter, n_cluster = 4, n_iter = 20):

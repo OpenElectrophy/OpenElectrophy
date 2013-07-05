@@ -15,9 +15,15 @@ params = [
         {'name': 'Integer', 'type': 'int', 'value': 10},
         {'name': 'Float', 'type': 'float', 'value': 10.5, 'step': 0.1},
         {'name': 'String', 'type': 'str', 'value': "hi"},
+        {'name': 'bool', 'type': 'bool', 'value': True},
         {'name': 'ylims', 'type': 'range', 'value': [-5.,5.]},
-        {'name': 'xsize', 'type': 'logfloat', 'value': 10.},
+        {'name': 'colormap', 'type': 'colormap'},
+        
+        {'name': 'xsize', 'type': 'logfloat', 'value': 10., 'limits' : [0.1, 10.]},
         {'name': 'choice', 'type': 'list', 'values': {"one": 1, "two": 2, "three": 3}, 'value': 2},
+        
+        {'name': 'pq1', 'type': 'quantity', 'value': 10.*pq.mV},
+        {'name': 'pq2', 'type': 'quantity', 'value': 10.*pq.us, 'step' : 1*pq.us},
         
         ]
 
@@ -49,7 +55,8 @@ def test2():
 
 def test3():
     import copy
-    params.append( {'name': 'subparam', 'type': 'group', 'children': copy.deepcopy(params)} )
+    # pq cannot be copied
+    params.append( {'name': 'subparam', 'type': 'group', 'children': copy.deepcopy(params[:-2])} )
     
     app = QApplication([ ])
     p = Parameter.create(name='params', type='group', children=params)
@@ -68,10 +75,20 @@ def test3():
     #~ print p.to_dict(cascade = True)
 
 
+def test4():
+    app = QApplication([ ])
+    
+    w = QuantityWidget(value = 10*pq.uV)
+    w.show()
+    
+    app.exec_()
+    
+
 
 if __name__ == '__main__':
     #~ test1()
     #~ test2()
     test3()
+    #~ test4()
 
     

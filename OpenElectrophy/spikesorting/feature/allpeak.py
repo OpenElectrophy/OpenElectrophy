@@ -17,6 +17,8 @@ class AllPeak(object):
     """
     
     name = 'Peaks amplitude'
+    params = [  {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },    
+                        ]
     
     def run (self, spikesorter, sign = '-'):
         sps = spikesorter

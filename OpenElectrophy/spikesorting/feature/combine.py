@@ -17,6 +17,16 @@ class CombineFeature(object):
     
     """
     name  = 'Combined feature methods'
+    params = [ {'name': 'use_peak', 'type': 'bool', 'value': True},
+                            {'name': 'use_peak_to_valley', 'type': 'bool', 'value': True},
+                            {'name': 'n_pca', 'type': 'int', 'value': 3},
+                            {'name': 'n_ica', 'type': 'int', 'value': 3},
+                            {'name': 'n_haar', 'type': 'int', 'value': 3},
+                            {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
+                            ]
+                            
+
+
     
     def run (self, spikesorter, 
                     use_peak = True, use_peak_to_valley = True,

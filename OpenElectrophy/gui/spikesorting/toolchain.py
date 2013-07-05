@@ -4,8 +4,11 @@ A widget for apply spike sorting chain and related parameters.
 """
 
 from collections import OrderedDict
-from .parameters import *
+#~ from .parameters import *
+from ...spikesorting.methods import *
 from ..guiutil import *
+import pyqtgraph as pg
+from OpenElectrophy.gui.guiutil.mypyqtgraph import get_dict_from_group_param
 
 from PyQt4.QtWebKit import QWebView
 
@@ -116,13 +119,24 @@ class MultiMethodsParamWidget(QWidget):
         v = QVBoxLayout()
         self.widget.setLayout(v)
         self.method = self.methods[pos]
-        if self.method.dataset is not None:
-            self.param_widget  = ParamWidget( self.method.dataset, title = self.method.name,
-                                                    settings = self.settings, settingskey = 'spikesortings/methods/'+self.method.name)
+        
+        if self.method.params is not None:
+            self.params = pg.parametertree.Parameter.create( name='Params',
+                                                    type='group', children =self.method.params)
+            self.treeparams = pg.parametertree.ParameterTree()
+            self.treeparams.header().hide()
+            self.treeparams.setParameters(self.params, showTop=True)
         else:
-            self.param_widget = QWidget()
+            self.treeparams = QWidget()
             
-        v.addWidget(self.param_widget,1)
+        #~ if self.method.dataset is not None:
+            #~ self.param_widget  = ParamWidget( self.method.dataset, title = self.method.name,
+                                                    #~ settings = self.settings, settingskey = 'spikesortings/methods/'+self.method.name)
+        #~ else:
+            #~ self.param_widget = QWidget()
+            
+        #~ v.addWidget(self.param_widget,1)
+        v.addWidget(self.treeparams,1)
 
         but = QPushButton('Info on {}'.format(self.method.name))
         v.addWidget(but)
@@ -139,10 +153,14 @@ class MultiMethodsParamWidget(QWidget):
         #~ return self.method.name
     
     def get_dict(self) :
-        if self.method.dataset is not None:
-            return self.param_widget.to_dict()
+        if self.method.params is not None:
+            return get_dict_from_group_param(self.params)
         else:
             return {}
+        #~ if self.method.dataset is not None:
+            #~ return self.param_widget.to_dict()
+        #~ else:
+            #~ return {}
     
     def open_info(self):
         if not hasattr(self, 'helpview'):
@@ -181,16 +199,32 @@ class ToolChainWidget(QWidget):
         self.actions = [ ]
         for tc in all_toolchain:
             act = QAction(tc.name, but, checkable = True)
-            act.triggered.connect( self.on_changed)       
+            #~ act.triggered.connect( self.on_changed)       
+            act.changed.connect( self.on_changed)       
+            act.setChecked(False)
             but.addAction(act)
             act.toolchain = tc
             self.actions.append(act)
-        self.change_toolchain(all_toolchain[0])#FromFullBandSignalToClustered, 
-        self.actions[0].setChecked(True)
-        
+            
+        self.change_toolchain(FromFullBandSignalToClustered)
         
     
     def change_toolchain(self, toolchain):
+        i = all_toolchain.index(toolchain)
+        self.actions[i].setChecked(True)
+
+    def on_changed(self):
+        for a in self.actions: 
+            a.changed.disconnect( self.on_changed)
+            a.setChecked(False)
+            a.changed.connect( self.on_changed)
+        self.sender().changed.disconnect( self.on_changed)
+        self.sender().setChecked(True)
+        self.sender().changed.connect( self.on_changed)
+        tc = self.sender().toolchain
+        self._change_toolchain(tc)
+
+    def _change_toolchain(self, toolchain):
         self.toolchain = toolchain
         if self.toolbox is not None:
             self.toolbox.setVisible(False)
@@ -232,11 +266,6 @@ class ToolChainWidget(QWidget):
             self.spikesorter.run_step(method, **kargs)
         self.need_refresh.emit()
 
-    def on_changed(self):
-        for a in self.actions: a.setChecked(False)
-        self.sender().setChecked(True)
-        tc = self.sender().toolchain
-        self.change_toolchain(tc)
     
             
             

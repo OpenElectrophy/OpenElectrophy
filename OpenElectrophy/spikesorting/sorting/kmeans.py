@@ -22,6 +22,13 @@ class SklearnKMeans(object):
     
     
     name = 'K-Means'
+    params = [  {'name': 'n_cluster', 'type': 'int', 'value': 8},
+                            {'name': 'init', 'type': 'list', 'value': 'k-means++', 'values':['k-means++', 'random']},
+                            {'name': 'n_init', 'type': 'int', 'value': 10},
+                            {'name': 'max_iter', 'type': 'int', 'value': 300},
+                            
+                            ]
+
     
     def run(self, spikesorter, n_cluster =8 ,  init='k-means++', n_init=10,
                             max_iter=300, ):

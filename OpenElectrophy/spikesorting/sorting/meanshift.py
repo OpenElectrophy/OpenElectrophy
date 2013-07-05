@@ -26,6 +26,12 @@ class SklearnMeanShift(object):
     
     
     name = 'Mean Shift'
+    params = [  {'name': 'quantile', 'type': 'float', 'value': 0.2},
+                            {'name': 'n_samples', 'type': 'int', 'value': 500},
+                            {'name': 'bin_seeding', 'type': 'bool', 'value': True},
+                            {'name': 'cluster_all', 'type': 'bool', 'value': False},
+                            ]
+                            
     def run(self, spikesorter, quantile=0.2, n_samples=500,
                             bin_seeding=True, cluster_all=False):
         

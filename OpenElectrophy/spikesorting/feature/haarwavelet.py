@@ -20,6 +20,11 @@ class HaarWaveletFeature(object):
     """
     
     name = 'Haar wavelet Feature'
+    params = [ {'name': 'n_components', 'type': 'int', 'value': 3},
+                                {'name': 'level', 'type': 'int', 'value': 4},
+                                {'name': 'std_restrict', 'type': 'float', 'value': 3.},
+                            ]
+
     
     def run (self, spikesorter, n_components = 3, level = 4, std_restrict = 3.,):
 

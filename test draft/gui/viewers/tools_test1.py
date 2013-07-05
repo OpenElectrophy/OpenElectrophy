@@ -5,20 +5,20 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from OpenElectrophy.gui.viewers import *
-from OpenElectrophy.gui.viewers.tools import ViewerBase, XSizeChanger, YLimsChanger, ViewerWithXSizeAndYlim
+from OpenElectrophy.gui.viewers.tools import ViewerBase, TimeSeeker
 
 
 
 
 
 
-def test1():
-    app = QApplication([ ])
-    w1 = XSizeChanger()
-    w1.show()
-    w2 = YLimsChanger()
-    w2.show()
-    app.exec_()
+#~ def test1():
+    #~ app = QApplication([ ])
+    #~ w1 = XSizeChanger()
+    #~ w1.show()
+    #~ w2 = YLimsChanger()
+    #~ w2.show()
+    #~ app.exec_()
     
 
 def test2():
@@ -57,6 +57,6 @@ def test3():
 
 
 if __name__ == '__main__' :
-    test1()
-    #~ test2()
+    #~ test1()
+    test2()
     #~ test3()
