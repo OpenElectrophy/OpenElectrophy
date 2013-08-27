@@ -95,9 +95,9 @@ class TimeFreqViewer(ViewerBase):
     
         self.analogsignals = analogsignals
 
-        self.global_sampling_rate = self.analogsignals[0].sampling_rate.magnitude
+        self.global_sampling_rate = self.analogsignals[0].sampling_rate.rescale('Hz').magnitude
         for i, anasig in enumerate(self.analogsignals):
-            assert(anasig.sampling_rate==self.global_sampling_rate)
+            assert(anasig.sampling_rate.rescale('Hz').magnitude==self.global_sampling_rate)
         n = len(analogsignals)
         
         
@@ -298,7 +298,7 @@ class TimeFreqViewer(ViewerBase):
             self.t_start, self.t_stop = self.t-self.xsize2/3. , self.t+self.xsize2*2./3.
             f_start, f_stop = p['f_start'], p['f_stop']
             image.setRect(QRectF(self.t_start, f_start,self.xsize, f_stop-f_start))
-
+        
         self.sig_chunk_size = int(np.rint(self.xsize2*self.global_sampling_rate))
         self.empty_sigs = [np.zeros(self.sig_chunk_size, dtype = ana.dtype) for ana in self.analogsignals]
         
@@ -311,6 +311,9 @@ class TimeFreqViewer(ViewerBase):
     
     def refresh(self, fast = False):
         if self.thread_initialize_tfr is not None or self.is_computing.any():
+            self.is_refreshing = False
+            return
+        if self.timer_back_initialize.isActive():
             self.is_refreshing = False
             return
         
