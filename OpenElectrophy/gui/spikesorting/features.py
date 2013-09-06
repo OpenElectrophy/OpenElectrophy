@@ -192,6 +192,7 @@ class FeaturesEvolutionInTime(SpikeSortingWidgetBase):
             if s==0:
                 ax.set_ylabel(sps.feature_names[i])
             for c in sps.cluster_names:
+                if not sps.active_cluster[c]: continue
                 select = c==sps.spike_clusters[slice]
                 feature = features_of_seg[select]
                 times = sps.spike_index_array[s][select]/sps.sig_sampling_rate
@@ -202,6 +203,7 @@ class FeaturesEvolutionInTime(SpikeSortingWidgetBase):
     def refresh(self):
         sps = self.spikesorter
         self.combo.clear()
+        self.fig.clear()
         if sps.waveform_features is None : return
         
         

@@ -10,6 +10,8 @@ from ..guiutil import *
 import pyqtgraph as pg
 from OpenElectrophy.gui.guiutil.mypyqtgraph import get_dict_from_group_param
 
+from ..guiutil.mymatplotlib import *
+
 from PyQt4.QtWebKit import QWebView
 
 class SpikeSortingToolChain(object):
@@ -73,7 +75,16 @@ class FromFeatureToClustered(SpikeSortingToolChain):
 
 
 class FromFullBandSignalToDetection(SpikeSortingToolChain):
-    name = 'from full band signal to detected spike'
+    name = 'from full band signal to detected spike'    
+            
+            
+        
+        
+        
+
+
+
+
     chain = OrderedDict([
                                             [ 'filters', filters],
                                             [ 'detections', detections],
@@ -90,11 +101,12 @@ class MultiMethodsParamWidget(QWidget):
     run_clicked = pyqtSignal()
     
     def __init__(self, parent = None, settings = None, title = None,
-                            methods = [ ]):
+                            methods = [ ], spikesorter = None):
         super(MultiMethodsParamWidget, self).__init__(parent =parent)
         
         self.settings = settings
         self.methods = methods
+        self.spikesorter = spikesorter
         
         self.mainLayout = QVBoxLayout()
         self.setLayout(self.mainLayout)
@@ -145,6 +157,14 @@ class MultiMethodsParamWidget(QWidget):
         but = QPushButton('run {}'.format(self.method.name))
         v.addWidget(but)
         but.clicked.connect(self.run_clicked.emit)
+        
+        if hasattr(self.method, 'mpl_plots'):
+            for plot_name in self.method.mpl_plots:
+                but = QPushButton('{}'.format(plot_name))
+                v.addWidget(but)
+                but.clicked.connect(self.open_figure)
+                
+            
     
     def get_method(self) :
         return self.method
@@ -169,7 +189,21 @@ class MultiMethodsParamWidget(QWidget):
         self.helpview.setHtml(rest_to_html(self.method.__doc__))
         self.helpview.setVisible(True)
         
+    def open_figure(self):
+        print 'open_figure'
+        sps = self.spikesorter
         
+        step = None
+        for step in sps.history[::-1]:
+            if self.method == type(step['methodInstance']):
+                inst = step['methodInstance']
+                break
+        if step is None: return
+        self.canvas = SimpleCanvasAndTool(parent = self)
+        self.canvas.setWindowFlags(Qt.Window)
+        getattr(inst, str(self.sender().text()))(self.canvas.fig, sps)
+        self.canvas.show()
+
 
 class ToolChainWidget(QWidget):
     need_refresh = pyqtSignal()
@@ -241,7 +275,7 @@ class ToolChainWidget(QWidget):
             w.setLayout(h)            
             self.toolbox.addItem(w,QIcon(':/'+name+'.png'), '{} - {}'.format(i,name))
             
-            mparams = MultiMethodsParamWidget(methods = methods, settings = self.settings)
+            mparams = MultiMethodsParamWidget(methods = methods, spikesorter = self.spikesorter,  settings = self.settings)
             h.addWidget(mparams)
             self.all_params[name] = mparams
             mparams.run_clicked.connect(self.run_one_method)
@@ -265,13 +299,4 @@ class ToolChainWidget(QWidget):
             method =  mparams.get_method()
             self.spikesorter.run_step(method, **kargs)
         self.need_refresh.emit()
-
-    
-            
-            
-        
-        
-        
-
-
 

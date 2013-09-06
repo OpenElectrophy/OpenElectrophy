@@ -183,6 +183,8 @@ class PlotCrossCorrelogram(SpikeSortingWidgetBase):
 
 
     def refresh(self):
+        if self.threadRefresh is not None:
+            self.threadRefresh.wait()
         self.threadRefresh = ThreadRefresh(widgetToRefresh = self)
         self.threadRefresh.start()
         
@@ -195,12 +197,15 @@ class PlotCrossCorrelogram(SpikeSortingWidgetBase):
         limit = self.plot_parameters['limit']
          
         clusters = sps.cluster_names.keys()
+        clusters = [ c  for c in clusters if sps.active_cluster[c] ]
         n = len(clusters)
         
         self.canvas.fig.clear()
+        self.counts = { }
         for i, c1 in enumerate(clusters):
                 for j, c2 in enumerate(clusters):
                     if j<i: continue
+
                     delta = .05
                     ax = self.canvas.fig.add_axes([delta/4.+i*1./n, delta/4.+j*1./n  ,(1.-delta)/n, (1.-delta)/n])
                     all_count = [ ]
@@ -229,7 +234,10 @@ class PlotCrossCorrelogram(SpikeSortingWidgetBase):
                     if i!=0: ax.set_yticks([])
                 
         self.canvas.draw()
-
+    
+    def on_spike_selection_changed(self):
+        # TODO something less lazy with a cache for counts
+        self.refresh()
 
 
 

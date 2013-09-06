@@ -51,7 +51,7 @@ class CombineFeature(object):
             
         
         if n_pca>0:
-            features, names = perform_pca(wf2,n_pca)
+            features, names, pca = perform_pca(wf2,n_pca)
             all_features.append(features)
             all_names.append(names)
 

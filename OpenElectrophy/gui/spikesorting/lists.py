@@ -220,7 +220,6 @@ class SpikeList(SpikeSortingWidgetBase):
 
 
 
-
 class UnitList(SpikeSortingWidgetBase):
     name = 'Unit list'
     refresh_on = [  'spike_clusters', 'cluster_names']
@@ -230,22 +229,27 @@ class UnitList(SpikeSortingWidgetBase):
         super(UnitList, self).__init__(**kargs)
 
 
-        self.treeNeuron = QTreeWidget()
-        self.treeNeuron.setColumnCount(4)
-        self.treeNeuron.setHeaderLabels(['Num', 'Nb sikes', 'Name', 'Sorting score' ])
-        self.treeNeuron.setMinimumWidth(100)
-        self.treeNeuron.setColumnWidth(0,60)
-        self.mainLayout.addWidget(self.treeNeuron)
-        self.treeNeuron.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.treeNeuron.customContextMenuRequested.connect(self.contextMenuNeuron)
-        self.treeNeuron.setSelectionMode( QAbstractItemView.ExtendedSelection)
-
+        self.tableNeuron = QTableWidget()
+        self.mainLayout.addWidget(self.tableNeuron)
+        self.tableNeuron.itemChanged.connect(self.item_changed)
 
     def refresh(self):
+        self.tableNeuron.itemChanged.disconnect(self.item_changed)
         sps = self.spikesorter
-        self.treeNeuron.clear()
+        self.tableNeuron.clear()
+        self.tableNeuron.setColumnCount(5)
+        self.tableNeuron.setHorizontalHeaderLabels(['Num', 'Nb sikes','Show/Hide', 'Name', 'Sorting score' ])
+        self.tableNeuron.setMinimumWidth(100)
+        self.tableNeuron.setColumnWidth(0,60)
+        self.tableNeuron.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tableNeuron.customContextMenuRequested.connect(self.contextMenuNeuron)
+        self.tableNeuron.setSelectionMode( QAbstractItemView.ExtendedSelection)
+        self.tableNeuron.setSelectionBehavior( QAbstractItemView.SelectRows)
+        
+        self.tableNeuron.setRowCount(len(sps.cluster_names))
+        
         self.cluster_list = [ ]
-        for c in sps.cluster_names:
+        for i, c in enumerate(sps.cluster_names):
             ind, = np.where(c==sps.spike_clusters)
             if c==-1:
                 icon = QIcon(':/user-trash.png')
@@ -256,15 +260,54 @@ class UnitList(SpikeSortingWidgetBase):
                 icon = QIcon(pix)
             if c in sps.cluster_names: name = sps.cluster_names[c]
             else: name = u''
+
+
+            item = QTableWidgetItem(str(c))
+            #~ item.setFlags(Qt.ItemIsUserCheckable|Qt.ItemIsEnabled|Qt.ItemIsSelectable)
+            item.setFlags(Qt.ItemIsEnabled|Qt.ItemIsSelectable)
+            #~ item.setCheckState({ False: Qt.Unchecked, True : Qt.Checked}[sel])
+            #~ item.setBackground(colors[sel])
+            self.tableNeuron.setItem(i,0, item)
+            item.setIcon(icon)
+
+            item = QTableWidgetItem( str(ind.size))
+            item.setFlags(Qt.ItemIsEnabled|Qt.ItemIsSelectable)
+            self.tableNeuron.setItem(i,1, item)
+
+
+            item = QTableWidgetItem( str(sps.active_cluster[c]))
+            item.setFlags(Qt.ItemIsEnabled|Qt.ItemIsSelectable|Qt.ItemIsUserCheckable)
+            item.setCheckState({ False: Qt.Unchecked, True : Qt.Checked}[sps.active_cluster[c]])
+            self.tableNeuron.setItem(i,2, item)
+
+            item = QTableWidgetItem( name)
+            item.setFlags(Qt.ItemIsEnabled|Qt.ItemIsSelectable)
+            self.tableNeuron.setItem(i,3, item)
+            
+            
+            
+            
             
             #~ if c in sps.sortingScores: sortingScore = sps.sortingScores[c]
             #~ else: sortingScore = ''
             
-            item = QTreeWidgetItem([str(c) , str(ind.size), name, ''  ] )
-            item.setIcon(0,icon)
-            self.treeNeuron.addTopLevelItem(item)
+            #~ item = QTreeWidgetItem([str(c) ,  str(ind.size), str(sps.active_cluster[c]), name, ''  ] )
+            #~ item.setFlags(Qt.ItemIsSelectable |
+                                        #~ Qt.ItemIsEnabled)            
+            #~ item.setIcon(0,icon)
+            #~ self.tableNeuron.addTopLevelItem(item)
+            
+            
             self.cluster_list.append(c)
+        self.tableNeuron.itemChanged.connect(self.item_changed)
 
+    def item_changed(self, item):
+        if item.column() != 2: return
+        sel = {Qt.Unchecked : False, Qt.Checked : True}[item.checkState()]
+        c = self.cluster_list[item.row()]
+        sps = self.spikesorter
+        sps.active_cluster[c] = sel
+        self.clusters_activation_changed.emit()
 
     def contextMenuNeuron(self, point):
         menu = QMenu()
@@ -281,7 +324,7 @@ class UnitList(SpikeSortingWidgetBase):
         act = menu.addAction(QIcon(':/TODO.png'), u'Hide/Show on ndviewer and waveform')
         act.triggered.connect(self.hideOrShowClusters)
         
-        if len(self.treeNeuron.selectedIndexes()) ==  self.treeNeuron.columnCount():
+        if len(self.tableNeuron.selectedIndexes()) ==  self.tableNeuron.columnCount():
             # one selected row only
             #~ act = menu.addAction(QIcon(':/Clustering.png'), u'Explode cluster (sub clustering)')
             #~ act.triggered.connect(self.subComputeCluster)
@@ -291,7 +334,7 @@ class UnitList(SpikeSortingWidgetBase):
         menu.exec_(self.cursor().pos())
     
     def deleteSelection(self):
-        for index in self.treeNeuron.selectedIndexes():
+        for index in self.tableNeuron.selectedIndexes():
             if index.column() !=0: continue
             r = index.row()
             self.spikesorter.delete_one_cluster(self.cluster_list[r])
@@ -303,7 +346,7 @@ class UnitList(SpikeSortingWidgetBase):
     
     def moveToTrash(self):
         sps = self.spikesorter
-        for index in self.treeNeuron.selectedIndexes():
+        for index in self.tableNeuron.selectedIndexes():
             if index.column() !=0: continue
             c = self.cluster_list[index.row()]
             sps.spike_clusters[sps.spike_clusters == c] = -1
@@ -315,7 +358,7 @@ class UnitList(SpikeSortingWidgetBase):
     def groupSelection(self):
         sps = self.spikesorter
         n = max(sps.cluster_names) +1
-        for index in self.treeNeuron.selectedIndexes():
+        for index in self.tableNeuron.selectedIndexes():
             if index.column() !=0: continue
             c = self.cluster_list[index.row()]
             sps.spike_clusters[ sps.spike_clusters == c ]= n
@@ -327,7 +370,7 @@ class UnitList(SpikeSortingWidgetBase):
     def selectSpikeFromCluster(self):
         sps =  self.spikesorter
         sps.selected_spikes[:] = False
-        for index in self.treeNeuron.selectedIndexes():
+        for index in self.tableNeuron.selectedIndexes():
             if index.column() !=0: continue
             #~ print sps.selected_spikes.shape
             #~ print sps.spike_clusters.shape
@@ -355,7 +398,7 @@ class UnitList(SpikeSortingWidgetBase):
         #~ if not dia.exec_(): return
         
         #~ sps = self.spikesorter
-        #~ for index in self.treeNeuron.selectedIndexes():
+        #~ for index in self.tableNeuron.selectedIndexes():
             #~ if index.column() != 0: continue
             #~ r = index.row()
             #~ sps.subComputeCluster( self.cluster_list[r], wMeth.get_method(), **wMeth.get_dict())
@@ -379,7 +422,7 @@ class UnitList(SpikeSortingWidgetBase):
     
     def hideOrShowClusters(self):
         sps = self.spikesorter
-        for index in self.treeNeuron.selectedIndexes():
+        for index in self.tableNeuron.selectedIndexes():
             if index.column() !=0: continue
             r = index.row()
             c = self.cluster_list[r]
@@ -391,7 +434,7 @@ class UnitList(SpikeSortingWidgetBase):
     
     def setUnitNameAndScore(self):
         sps = self.spikesorter
-        for index in self.treeNeuron.selectedIndexes():
+        for index in self.tableNeuron.selectedIndexes():
             if index.column() !=0: continue
             r = index.row()
             c = self.cluster_list[r]
