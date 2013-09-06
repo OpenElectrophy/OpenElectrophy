@@ -47,4 +47,3 @@ class MedianThresholdDetection(object):
                                 consistent_across_channels,consistent_across_segments,
                                 sweep_size, merge_method = merge_method,)
 
-

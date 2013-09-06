@@ -36,6 +36,8 @@ install_requires=[
                 
                 ]
 
+#~ numexpr
+
 # these are optional because hard to instal on win32:
    #~ 'MySQLdb (>=1.2.3)',
    #~ 'psycopg2',

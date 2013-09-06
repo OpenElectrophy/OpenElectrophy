@@ -226,12 +226,16 @@ class SignalAndSpike(SpikeSortingWidgetBase):
                 color = QColor( r*255,g*255,b*255  )
                 for i, scatter in enumerate(self.scatters):
                     if c in scatter:
-                        scatter[c].setData(t_vect[ind-ind_start], self.sigs[i,s][ind])
+                        if sps.active_cluster[c]:
+                            scatter[c].setData(t_vect[ind-ind_start], self.sigs[i,s][ind])
+                        else:
+                            scatter[c].setData([], [])
                     else:
-                        scatter[c] = pg.ScatterPlotItem(x=t_vect[ind-ind_start], y=self.sigs[i,s][ind], 
-                                                                        pen=None, brush=color, size=10, pxMode = True)
-                        self.plots[i].addItem(scatter[c])
-                        scatter[c].sigClicked.connect(self.item_clicked)
+                        if sps.active_cluster[c]:
+                            scatter[c] = pg.ScatterPlotItem(x=t_vect[ind-ind_start], y=self.sigs[i,s][ind], 
+                                                                            pen=None, brush=color, size=10, pxMode = True)
+                            self.plots[i].addItem(scatter[c])
+                            scatter[c].sigClicked.connect(self.item_clicked)
                         #~ scatter[c].vb = self.plots[i].vb
 
         for plot in self.plots:

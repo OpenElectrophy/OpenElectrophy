@@ -286,6 +286,7 @@ class SpikeSorter(object):
         self.displayed_subset_size = 100
         self.cluster_displayed_subset = { }
         self.selected_spikes = None
+        self.active_cluster = { }
         
         #~ self.__setattr__ = self.__setattr__after
         
@@ -727,14 +728,21 @@ class SpikeSorter(object):
              self.selected_spikes.size != self.nb_spikes:
             self.selected_spikes = np.zeros( (self.nb_spikes), dtype = bool)
         for c in self.cluster_names.keys():
+            if c not in self.active_cluster.keys():
+                self.active_cluster[c] = True
             if c not in self.cluster_displayed_subset:
                 self.random_display_subset(c)
+        
 
     def refresh_cluster_names(self):
         if self.spike_clusters is None:
             self.cluster_names = { }
             return
         clusters = np.unique(self.spike_clusters)
+        for c in np.setdiff1d(self.cluster_names.keys(), clusters):
+            self.cluster_names.pop(c)
+            
+        
         for c in clusters:
             if c not in self.cluster_names:
                 if c!=-1:
@@ -756,14 +764,24 @@ class SpikeSorter(object):
         if self.spike_clusters is None: return
         self.cluster_displayed_subset = { }
         for i , c in enumerate(self.cluster_names.keys()):
-            self.random_display_subset(c)
-            
+            if  self.active_cluster[c]:
+                self.random_display_subset(c)
+            else:
+                self.cluster_displayed_subset[c]  = np.array([ ], dtype = int)
+    
+    def on_clusters_activation_changed(self):
+        for c, activ in self.active_cluster.items():
+            if activ and self.cluster_displayed_subset[c].size ==0:
+                self.random_display_subset(c)
+            elif not activ and self.cluster_displayed_subset[c].size >0:
+                self.cluster_displayed_subset[c]  = np.array([ ], dtype = int)
+    
     def random_display_subset(self, c):
-            ind, = np.where( self.spike_clusters ==c )
-            np.random.shuffle(ind)
-            if self.displayed_subset_size < ind.size:
-                ind = ind[:self.displayed_subset_size]
-            self.cluster_displayed_subset[c]  = ind
+        ind, = np.where( self.spike_clusters ==c )
+        np.random.shuffle(ind)
+        if self.displayed_subset_size < ind.size:
+            ind = ind[:self.displayed_subset_size]
+        self.cluster_displayed_subset[c]  = ind
     
     def populate_recordingchannelgroup(self,with_waveforms = True,
                                                                         with_features = False,

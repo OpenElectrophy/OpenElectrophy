@@ -61,8 +61,8 @@ class AverageWaveforms(SpikeSortingWidgetBase):
                 slices = [ slice(None,None,None) ]
                 colors = [ 'b' ]
             else:
-                slices = [c==sps.spike_clusters for c in sps.cluster_names]
-                colors = [ sps.cluster_colors[c] for c in sps.cluster_names]
+                slices = [c==sps.spike_clusters for c in sps.cluster_names if sps.active_cluster[c]]
+                colors = [ sps.cluster_colors[c] for c in sps.cluster_names if sps.active_cluster[c]]
             
             for sl,color in zip(slices, colors):
                 m  = np.mean(sps.spike_waveforms[sl,i,:], axis = 0)

@@ -89,6 +89,7 @@ class SpikeSortingWindow(QMainWindow):
             w.spike_clusters_changed.connect(self.on_spike_clusters_changed)
             w.spike_selection_changed.connect(self.on_spike_selection_changed)
             w.spike_subset_changed.connect(self.on_spike_subset_changed)
+            w.clusters_activation_changed.connect(self.on_clusters_activation_changed)
             dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
         
         ## Tool chain
@@ -164,6 +165,20 @@ class SpikeSortingWindow(QMainWindow):
 
     def on_spike_subset_changed(self):
         self.refresh_all( shuffle = False)
+    
+    def on_clusters_activation_changed(self):
+        self.spikesorter.on_clusters_activation_changed()
+        #~ self.refresh_all( shuffle = False)
+        for dock, w in zip(self.list_dock,self.list_widget):
+            if w == self.sender():
+                continue
+            if not dock.isVisible(): continue
+            if hasattr(w, 'on_clusters_activation_changed'):
+                w.on_clusters_activation_changed()
+            else:
+                w.refresh()
+        
+        
     
     def refresh_displayed_subset(self):
         val = self.spinboxSubsetLimit.value()
