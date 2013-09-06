@@ -16,13 +16,15 @@ Requirements
     * sqlalchemy-migrate >=0.7.2
     * scipy >=0.10
     * matplotlib>=1.1.0
-    * pyqtgraph >=223
+    * pyqtgraph
     * guidata >=1.4.1
     * PyQT4 >= 4.9
     * joblib >=0.6.4
     * tables >=2.3.1
     * pywavelets (pywt)
     * python-sklearn >=0.11
+    * pandas
+    * cython
 
 Optional but important:
     * psycopg2 (for postgreesql)
@@ -44,7 +46,7 @@ Linux
     
     **Step 1, dependencies**::
     
-            sudo apt-get install python python-scipy python-numpy python-matplotlib python-qt4 python-mysqldb python-pip python-psycopg2 python-dev gfortran python-pywt python-sqlalchemy python-migrate python-tables python-joblib  python-guidata python-sklearn
+            sudo apt-get install python python-scipy python-numpy python-matplotlib python-qt4 python-mysqldb python-pip python-psycopg2 python-dev gfortran python-pywt python-sqlalchemy python-migrate python-tables python-joblib  python-guidata python-sklearn python-pandas python-xlwt python-joblib cython
             pip install quantities neo pyqtgraph
 
 
@@ -91,7 +93,44 @@ Steps:
 Client under OSX
 =========================
 
-..TODO
+
+I have few experience with apple devices but I succed installing OpenElectrophy once.
+
+For that I used homebrew : http://brew.sh/
+It is a ruby script that help you to install many things (include python)
+
+Open a terminal and run theses command:
+    1. ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
+    2. export PATH=/usr/local/bin:$PATH
+    3. brew install python
+    4. brew install pyqt
+    5. brew install hdf5
+    6. brew install gfortran
+    7. pip install numpy
+    8. pip install scipy
+    9. pip install matplotlib
+    10. pip install pyqtgraph
+    11. pip install quantities
+    12. pip install neo
+    13. pip install joblib
+    14. pip install cython
+    15. pip install sqlalchemy
+    16. pip install sqlalchemy-migrate
+    17. pip install numexpr
+    18. pip install tables
+    19. pip install scikit-learn
+    20. pip install pywavelets
+    21. pip install guidata
+    22. pip install docutils
+    23. pip inistall scikits-image
+    24. pip install blosc
+    25. pip install pandas
+    26. pip install xlwt
+    27. Dowload OPenElectrophy (http://pypi.python.org/pypi/OpenElectrophy) and install it.
+
+Notes some points need compilation and lot of times (pyqt, scipy, ...).
+
+
 
 
 Test your installation

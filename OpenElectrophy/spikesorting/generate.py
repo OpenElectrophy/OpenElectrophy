@@ -157,9 +157,14 @@ def test1():
     pyplot.show()
 
 
-if __name__ == '__main__':
-    test1()
+def test2():
+    bl = generate_block_for_sorting()
+    print bl.recordingchannelgroups
+    
 
+if __name__ == '__main__':
+    #~ test1()
+    test2()
 
 
 

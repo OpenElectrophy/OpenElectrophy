@@ -29,7 +29,9 @@ if oebl is None:
     #~ for s, seg in enumerate(bl.segments):
         #~ for k, sptr in enumerate(seg.spiketrains):
             #~ print 's', s, 'k', k, sptr.size
+    print bl.recordingchannelgroups
     oebl = OEBase.from_neo(bl, dbinfo.mapped_classes, cascade =True)
+    print oebl.recordingchannelgroups
     oebl.save()
 else:
     print 'exist : transform to neo'

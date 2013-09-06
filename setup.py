@@ -33,6 +33,7 @@ install_requires=[
                 'tables>=2.3.1',
                 'pywavelets>=0.2.2',
                 'scikit-learn>=0.11',
+                
                 ]
 
 # these are optional because hard to instal on win32:
