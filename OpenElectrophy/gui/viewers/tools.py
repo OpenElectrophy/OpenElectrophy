@@ -227,6 +227,9 @@ class ViewerBase(QWidget):
         self.t = 0.
         self.is_refreshing = False
         self.need_refresh.connect(self.refresh, type = Qt.QueuedConnection)
+        
+        self.delay_timer = QTimer(singleShot = True)
+        self.delay_timer.timeout.connect(self.refresh)
 
     def fast_seek(self, t):
         if self.is_refreshing: 
@@ -251,6 +254,14 @@ class ViewerBase(QWidget):
             print 'slow refresh'
         self.is_refreshing = False
     
+    def delayed_refresh(self, interval = 50):
+        if self.delay_timer.isActive():
+            return
+        else:
+            self.delay_timer.setInterval(interval)
+            self.delay_timer.start()
+        
+        
 
 
 
@@ -312,4 +323,6 @@ def find_best_start_stop(segment = None,
     eps = (t_stop-t_start).magnitude/200.
     
     return t_start.magnitude-eps, t_stop.magnitude+eps
+
+
 

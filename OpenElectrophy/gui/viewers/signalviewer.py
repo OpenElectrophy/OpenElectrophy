@@ -33,6 +33,7 @@ param_by_channel = [
 
 class MyViewBox(pg.ViewBox):
     clicked = pyqtSignal()
+    doubleclicked = pyqtSignal()
     #~ zoom_in = pyqtSignal()
     #~ zoom_out = pyqtSignal()
     #~ fast_zoom_in = pyqtSignal()
@@ -43,24 +44,19 @@ class MyViewBox(pg.ViewBox):
     def mouseClickEvent(self, ev):
         self.clicked.emit()
         ev.accept()
+    def mouseDoubleClickEvent(self, ev):
+        self.doubleclicked.emit()
+        ev.accept()
     def mouseDragEvent(self, ev):
         ev.ignore()
     def wheelEvent(self, ev):
         if ev.modifiers() ==  Qt.ControlModifier:
-            if ev.delta()>0:
-                #~ self.fast_zoom_in.emit()
-                self.zoom.emit(10.)
-            else:
-                #~ self.fast_zoom_out.emit()
-                self.zoom.emit(1/10.)
+            z = 10 if ev.delta()>0 else 1/10.
         else:
-            if ev.delta()>0:
-                #~ self.zoom_in.emit()
-                self.zoom.emit(1.3)
-            else:
-                #~ self.zoom_out.emit()
-                self.zoom.emit(1./1.3)
+            z = 1.3 if ev.delta()>0 else 1/1.3
+        self.zoom.emit(z)
         ev.accept()
+
 
 
 class SignalViewer(ViewerBase):
@@ -92,7 +88,7 @@ class SignalViewer(ViewerBase):
         self.setLayout(self.mainlayout)
         
         self.viewBox = MyViewBox()
-        self.viewBox.clicked.connect(self.open_configure_dialog)
+        self.viewBox.doubleclicked.connect(self.open_configure_dialog)
         
         self.graphicsview  = pg.GraphicsView()#useOpenGL = True)
         self.mainlayout.addWidget(self.graphicsview)
@@ -127,6 +123,36 @@ class SignalViewer(ViewerBase):
         self.paramGlobal.param('xsize').setValue(xsize)
     xsize = property(get_xsize, set_xsize)
 
+    def set_params(self, **kargs):
+        pglobal = [ p['name'] for p in param_global]
+        pchan = [ p['name']+'s' for p in param_by_channel]
+        nb_channel = len(self.analogsignals)
+        for k, v in kargs.items():
+            if k in pglobal:
+                self.paramGlobal.param(k).setValue(v)
+            elif k in pchan:
+                for channel in range(nb_channel):
+                    p  = self.paramSignals.children()[channel]
+                    p.param(k[:-1]).setValue(v[channel])
+        
+    def get_params(self):
+        nb_channel = len(self.analogsignals)
+        params = { }
+        for p in param_global:
+            v = self.paramGlobal[p['name']]
+            if 'color' in p['name']:
+                v = str(v.name())
+            params[p['name']] = v
+        for p in param_by_channel:
+            values = [ ]
+            for channel in range(nb_channel):
+                v= self.paramSignals.children()[channel][p['name']]
+                if 'color' in p['name']:
+                    v = str(v.name())
+                values.append(v)
+            params[p['name']+'s'] = values
+        return params    
+
     
     def clear_all(self):
         self.plot.clear()
@@ -140,11 +166,7 @@ class SignalViewer(ViewerBase):
         self.analogsignals = analogsignals
         
         # pre compute std and max
-        
-        maxpoint = 100000
-        self.all_std = np.array([ np.std(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
-        self.all_max = np.array([ np.max(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
-        self.all_min = np.array([ np.min(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        self.autoestimate_scales()
         
         ylims = [np.min(self.all_min), np.max(self.all_max) ]
         self.paramGlobal.param('ylims').setValue(ylims)
@@ -160,17 +182,16 @@ class SignalViewer(ViewerBase):
         self.paramSignals = pg.parametertree.Parameter.create(name='AnalogSignals', type='group', children=all)
         self.allParams = pg.parametertree.Parameter.create(name = 'all param', type = 'group', children = [self.paramGlobal,self.paramSignals  ])
         
-        self.paramControler = SignalViewerControler(viewer = self)
-        #~ self.viewBox.zoom_in.connect(lambda : self.paramControler.gain_zoom(1.3))
-        #~ self.viewBox.zoom_out.connect(lambda : self.paramControler.gain_zoom(1/1.3))
-        #~ self.viewBox.fast_zoom_in.connect(lambda : self.paramControler.gain_zoom(10.))
-        #~ self.viewBox.fast_zoom_out.connect(lambda : self.paramControler.gain_zoom(1/10.))
-        self.viewBox.zoom.connect(self.paramControler.gain_zoom)
+        #~ self.paramControler = SignalViewerControler(viewer = self)
+        self.paramControler = SignalViewerControler(parent = self)
+        self.paramControler.setWindowFlags(Qt.Window)
+        self.viewBox.zoom.connect(self.gain_zoom)
         
         if magic_color:
-            self.paramControler.automatic_color(cmap_name = 'jet')
+            self.automatic_color(cmap_name = 'jet')
         if magic_scale:
-            self.paramControler.automatic_gain_offset(gain_adaptated = False, apply_for_selection = False)
+            self.auto_gain_and_offset(mode = 2)
+            #~ self.automatic_gain_offset(gain_adaptated = False, apply_for_selection = False)
         
         # Create curve items
         self.analogsignal_curves = [ ]
@@ -191,31 +212,30 @@ class SignalViewer(ViewerBase):
             self.analogsignal_curves.append(curve)
         
         #~ self.paramSignals.sigTreeStateChanged.connect(self.refreshColors)
-        self.all_param_color = []
-        for i, p in enumerate(self.paramSignals.children()):
-            self.all_param_color.append(p.param('color'))
-            p.param('color').sigValueChanged.connect(self.refreshColors)
+        #~ self.all_param_color = []
+        #~ for i, p in enumerate(self.paramSignals.children()):
+            #~ self.all_param_color.append(p.param('color'))
+            #~ p.param('color').sigValueChanged.connect(self.refreshColors)
         
-        self.proxy = pg.SignalProxy(self.allParams.sigTreeStateChanged, rateLimit=5, delay=0.1, slot=lambda : self.refresh(fast = False))
+        #~ self.proxy = pg.SignalProxy(self.allParams.sigTreeStateChanged, rateLimit=5, delay=0.1, slot=lambda : self.refresh(fast = False))
+        self.allParams.sigTreeStateChanged.connect(self.on_param_change)
 
     
     def open_configure_dialog(self):
-        self.paramControler.setWindowFlags(Qt.Window)
         self.paramControler.show()
-    
-    def refreshColors(self):
-        i = None
-        if self.sender() in self.all_param_color:
-            i = self.all_param_color.index(self.sender())
-            p = self.paramSignals.children()[i]
-            pen = pg.mkPen(color = p.param('color').value())
-            self.analogsignal_curves[i].setPen(pen)
-        else:
-            for i,anasig in enumerate(self.analogsignals):
-                p = self.paramSignals.children()[i]
-                #pen = pg.mkPen(color = p.param('color').value(),  width = p.param('width').value())
-                pen = pg.mkPen(color = p.param('color').value())
+        self.paramControler.activateWindow()
+
+    def on_param_change(self, params, changes):
+        for param, change, data in changes:
+            if change != 'value': continue
+            
+            if param.name() =='color':
+                i = self.paramSignals.children().index(param.parent())
+                pen = pg.mkPen(color = param.value())
                 self.analogsignal_curves[i].setPen(pen)
+            else:
+                pass
+        self.delayed_refresh()
     
     def refresh(self, fast = False):
         """
@@ -259,14 +279,82 @@ class SignalViewer(ViewerBase):
         
         self.is_refreshing = False
 
+    #
+    def autoestimate_scales(self):
+        maxpoint = 10000
+        #~ self.all_mean = np.array([ np.mean(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        self.all_mean = np.array([ np.median(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        self.all_std = np.array([ np.std(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        self.all_max = np.array([ np.max(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        self.all_min = np.array([ np.min(anasig.magnitude[:maxpoint]) for anasig in self.analogsignals ])
+        return self.all_mean, self.all_std
+
+    
+    def auto_gain_and_offset(self, mode = 0, selected = None):
+        """
+        mode = 0, 1, 2
+        """
+        nb_channel = len(self.analogsignals)
+        if selected is None:
+            selected = np.ones(nb_channel, dtype = bool)
+        
+        n = np.sum(selected)
+        if n==0: return
+        
+        av, sd = self.autoestimate_scales()
+        if av is None: return
+        
+        if mode==0:
+            ylims = [np.min(av[selected]-3*sd[selected]), np.max(av[selected]+3*sd[selected]) ]
+            gains = np.ones(nb_channel, dtype = float)
+            offsets = np.zeros(nb_channel, dtype = float)
+        elif mode in [1, 2]:
+            ylims  = [-.5, n-.5 ]
+            gains = np.ones(nb_channel, dtype = float)
+            if mode==1 and max(sd[selected])!=0:
+                gains = np.ones(nb_channel, dtype = float) * 1./(6.*max(sd[selected]))
+            elif mode==2 :
+                gains[sd!=0] = 1./(6.*sd[sd!=0])
+            offsets = np.zeros(nb_channel, dtype = float)
+            offsets[selected] = range(n)[::-1] - av[selected]*gains[selected]
+        
+        # apply
+        self.set_params(gains = gains, offsets = offsets, visibles = selected,
+                                        ylims = ylims)
+
+    def automatic_color(self, cmap_name = None, selected = None):
+        nb_channel = len(self.analogsignals)
+        if selected is None:
+            selected = np.ones(nb_channel, dtype = bool)
+        
+        if cmap_name is None:
+            cmap_name = 'jet'
+        n = np.sum(selected)
+        if n==0: return
+        cmap = get_cmap(cmap_name , n)
+        colors = self.get_params()['colors']
+        s=0
+        for i in range(nb_channel):
+            if selected[i]:
+                colors[i] = [ int(c*255) for c in ColorConverter().to_rgb(cmap(s)) ]
+                s += 1
+        self.set_params(colors = colors)
+        
+    def gain_zoom(self, factor):
+        for i, p in enumerate(self.paramSignals.children()):
+            if self.all_mean is not None:
+                p['offset'] = p['offset'] + self.all_mean[i]*p['gain'] - self.all_mean[i]*p['gain']*factor
+            p['gain'] = p['gain']*factor
+    
+
 
 
 
 class SignalViewerControler(QWidget):
-    def __init__(self, parent = None, viewer = None):
-        super(SignalViewerControler, self).__init__(parent)
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
         
-        self.viewer = viewer
+        self.viewer = parent
 
         #layout
         self.mainlayout = QVBoxLayout()
@@ -283,7 +371,8 @@ class SignalViewerControler(QWidget):
         h.addWidget(self.treeParamSignal)
         self.treeParamSignal.setParameters(self.viewer.paramSignals, showTop=True)
         
-        if len(self.viewer.analogsignals)>1:
+        nb_channel = len(self.viewer.analogsignals)
+        if nb_channel>1:
             self.multi = MultiChannelParam( all_params = self.viewer.paramSignals, param_by_channel = param_by_channel)
             h.addWidget(self.multi)
         
@@ -296,99 +385,55 @@ class SignalViewerControler(QWidget):
         self.treeParamGlobal.setParameters(self.viewer.paramGlobal, showTop=True)
 
         # Gain and offset
-        v.addWidget(QLabel(u'<b>Automatic gain and offset:<\b>'))
-        but = QPushButton('Real scale (gain = 1, offset = 0)')
-        but.clicked.connect(self.center_all)
-        v.addWidget(but)        
-        for apply_for_selection, labels in enumerate([[ 'fake scale (all  + same gain)', 'fake scale (all)'],
-                                                            ['fake scale (selection  + same gain)', 'fake scale (selection)' ]] ):
-            for gain_adaptated, label in enumerate(labels):
-                but = QPushButton(label)
-                but.gain_adaptated  = gain_adaptated
-                but.apply_for_selection  = apply_for_selection
-                but.clicked.connect(self.automatic_gain_offset)
-                v.addWidget(but)
+        v.addWidget(QLabel(u'<b>Automatic gain and offset on selection:<\b>'))
+        for i,text in enumerate(['Real scale (gain = 1, offset = 0)',
+                            'Fake scale (same gain for all)',
+                            'Fake scale (gain per channel)',]):
+            but = QPushButton(text)
+            v.addWidget(but)
+            but.mode = i
+            but.clicked.connect(self.on_auto_gain_and_offset)
 
-        v.addWidget(QLabel(self.tr('<b>Automatic color:<\b>'),self))
+        v.addWidget(QLabel(self.tr('<b>Automatic color on selection:<\b>'),self))
+        h = QHBoxLayout()
         but = QPushButton('Progressive')
-        but.clicked.connect(lambda : self.automatic_color(cmap_name = None))
-        v.addWidget(but)
+        but.clicked.connect(self.on_automatic_color)
+        h.addWidget(but,4)
+        self.combo_cmap = QComboBox()
+        self.combo_cmap.addItems(['jet', 'prism', 'spring', 'spectral', 'hsv', 'autumn', 'spring', 'summer', 'winter', 'bone'])
+        h.addWidget(self.combo_cmap,1)
+        v.addLayout(h)
 
         v.addWidget(QLabel(self.tr('<b>Gain zoom (mouse wheel on graph):<\b>'),self))
         h = QHBoxLayout()
         v.addLayout(h)
-        #~ self.all_buttons = [ ]
         for label, factor in [ ('--', 1./10.), ('-', 1./1.3), ('+', 1.3), ('++', 10.),]:
             but = QPushButton(label)
             but.factor = factor
-            but.clicked.connect(self.gain_zoom)
+            but.clicked.connect(self.on_gain_zoom)
             h.addWidget(but)
-            #~ self.all_buttons.append(f)
-        
-        #~ but = QPushButton('-')
-        #~ but.clicked.connect(lambda : self.gain_zoom(0.8))
-        #~ h.addWidget(but)
-        #~ but = QPushButton('+')
-        #~ but.clicked.connect(lambda : self.gain_zoom(1.2))
-        #~ h.addWidget(but)
-        
+    
+    def on_auto_gain_and_offset(self):
+        mode = self.sender().mode
+        nb_channel = len(self.viewer.analogsignals)
+        if nb_channel>1:
+            selected = self.multi.selected()
+        else:
+            selected = np.ones(1, dtype = bool)
+        self.viewer.auto_gain_and_offset(mode = mode, selected = selected)
+    
+    def on_automatic_color(self, cmap_name = None):
+        cmap_name = str(self.combo_cmap.currentText())
+        nb_channel = len(self.viewer.analogsignals)
+        if nb_channel>1:
+            selected = self.multi.selected()
+        else:
+            selected = np.ones(1, dtype = bool)
+        self.viewer.automatic_color(cmap_name = cmap_name, selected = selected)
+            
+    def on_gain_zoom(self):
+        factor = self.sender().factor
+        self.viewer.gain_zoom(factor)
 
-    def center_all(self):
-        ylims = [np.min(self.viewer.all_min), np.max(self.viewer.all_max) ]
-        self.viewer.paramGlobal.param('ylims').setValue(ylims)
-        for p in self.viewer.paramSignals.children():
-            p.param('gain').setValue(1)
-            p.param('offset').setValue(0)
-            p.param('visible').setValue(True)
+
     
-    def automatic_gain_offset(self, gain_adaptated = None, apply_for_selection = None):
-        if gain_adaptated is None:
-            gain_adaptated = self.sender().gain_adaptated
-        if apply_for_selection is None:
-            apply_for_selection = self.sender().apply_for_selection
-        
-        nsig = len(self.viewer.analogsignals)
-        gains = np.zeros(nsig, dtype = float)
-        
-        if apply_for_selection :
-            selected =  np.zeros(nsig, dtype = bool)
-            selected[self.multi.selectedRows()] = True
-            if not selected.any(): return
-        else:
-            selected =  np.ones(nsig, dtype = bool)
-        n = np.sum(selected)
-        ylims  = [-.5, nsig-.5 ]
-        self.viewer.paramGlobal.param('ylims').setValue(ylims)
-        
-        dy = np.diff(ylims)[0]/(n)
-        gains = np.zeros(self.viewer.all_std.size, dtype = float)
-        if gain_adaptated:
-            gains = dy/n/self.viewer.all_std
-        else:
-            gains = np.ones(self.viewer.all_std.size, dtype = float) * dy/n/max(self.viewer.all_std[selected])
-        gains *= .3
-        #~ o = .5
-        o = n-.5
-        for i, p in enumerate(self.viewer.paramSignals.children()):
-            p.param('visible').setValue(selected[i])
-            if selected[i]:
-                p.param('gain').setValue(gains[i]*2)
-                p.param('offset').setValue(dy*o+ylims[0])
-                #~ o+=1
-                o-=1
-    
-    def automatic_color(self, cmap_name = None):
-        if cmap_name is None:
-            cmap_name = 'jet'
-        nsig = len(self.viewer.analogsignals)
-        cmap = get_cmap(cmap_name , nsig)
-        for i, p in enumerate(self.viewer.paramSignals.children()):
-            color = [ int(c*255) for c in ColorConverter().to_rgb(cmap(i)) ] 
-            p.param('color').setValue(color)
-    
-    def gain_zoom(self, factor):
-        if type(factor) is bool:# button
-            factor = self.sender().factor
-        for i, p in enumerate(self.viewer.paramSignals.children()):
-            p.param('gain').setValue(p.param('gain').value()*factor)
-        
