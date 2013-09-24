@@ -26,8 +26,9 @@ Here a wish list of what we plan to implement:
 
 
 from filter.butterworth import ButterworthFilter
-from detection.medianthreshold import MedianThresholdDetection 
-from detection.stdthreshold import StdThresholdDetection
+#~ from detection.medianthreshold import MedianThresholdDetection 
+#~ from detection.stdthreshold import StdThresholdDetection
+from detection.relativethreshold import RelativeThresholdDetection
 from detection.manualthreshold import ManualThresholdDetection
 from detection.mteo import MTEODetection
 from waveform.ondetection import AlignWaveformOnDetection
@@ -45,8 +46,9 @@ from sorting.meanshift import SklearnMeanShift
 
 
 all_methods = [ ButterworthFilter,
-                StdThresholdDetection,
-                MedianThresholdDetection,
+                #~ StdThresholdDetection,
+                #~ MedianThresholdDetection,
+                RelativeThresholdDetection,
                 ManualThresholdDetection,
                 MTEODetection,
                 AlignWaveformOnDetection,

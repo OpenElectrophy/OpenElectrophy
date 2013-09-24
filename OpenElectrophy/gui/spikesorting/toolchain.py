@@ -30,7 +30,8 @@ class SpikeSortingToolChain(object):
 
 # famillies
 filters = [ ButterworthFilter, ]
-detections = [  MedianThresholdDetection, StdThresholdDetection, ManualThresholdDetection, MTEODetection]
+#~ detections = [  MedianThresholdDetection, StdThresholdDetection, ManualThresholdDetection, MTEODetection]
+detections = [  RelativeThresholdDetection, ManualThresholdDetection, MTEODetection]
 waveforms = [ AlignWaveformOnDetection, AlignWaveformOnPeak ]
 features = [ PcaFeature, IcaFeature,CombineFeature, AllPeak, PeakToValley, HaarWaveletFeature]
 sorting = [SklearnGaussianMixtureEm, SklearnKMeans, SklearnMiniBatchKMeans, SklearnMeanShift ]

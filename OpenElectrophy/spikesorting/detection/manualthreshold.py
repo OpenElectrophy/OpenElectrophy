@@ -17,23 +17,25 @@ class ManualThresholdDetection(object):
     
     """
     name = 'Manual threshold detection'
-    params = [  {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
-                            {'name': 'sweep_clean_size', 'type': 'quantity', 'value': 0.8*pq.ms, 'step' : 0.1*pq.ms },
+    params = [  {'name': 'threshold', 'type': 'float', 'value': 1., 'step' : 0.1},
+                            {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
+
+                            {'name': 'threshold_mode', 'type': 'list', 'value': 'crossing', 'values' :  ['crossing', 'peak'] },
+                            {'name': 'peak_span', 'type': 'quantity', 'value': 0.3*pq.ms, 'step' : 0.01*pq.ms },
+                            
                             ]
                             
     def run(self, spikesorter, sign = '-', threshold = -1.,
-                                    merge_method = 'fast', sweep_clean_size = 0.8*pq.ms,):
+                                     threshold_mode = 'crossing',peak_span =  0.3*pq.ms,):
         sps = spikesorter
-        sweep_size = int((sps.sig_sampling_rate*sweep_clean_size).simplified)
         
         thresholds = np.ones(sps.filtered_sigs.shape, dtype = float) * threshold
+        
+        peak_span = int((sps.sig_sampling_rate*peak_span).simplified)
+        peak_span = (peak_span//2)*2+1
         
         # Detect
         sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
                                 sps.filtered_sigs, thresholds, sign, 
                                 False,False,
-                                sweep_size, merge_method = merge_method,)
-
-
-
-    
+                                threshold_mode, peak_span)
