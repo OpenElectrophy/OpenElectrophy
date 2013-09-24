@@ -310,6 +310,8 @@ class UnitList(SpikeSortingWidgetBase):
         self.clusters_activation_changed.emit()
 
     def contextMenuNeuron(self, point):
+        n = len(self.tableNeuron.selectedIndexes())/self.tableNeuron.columnCount ()
+        if n==0: return
         menu = QMenu()
         act = menu.addAction(QIcon(':/window-close.png'),u'Delete selection forever')
         act.triggered.connect(self.deleteSelection)
@@ -324,7 +326,7 @@ class UnitList(SpikeSortingWidgetBase):
         act = menu.addAction(QIcon(':/TODO.png'), u'Hide/Show on ndviewer and waveform')
         act.triggered.connect(self.hideOrShowClusters)
         
-        if len(self.tableNeuron.selectedIndexes()) ==  self.tableNeuron.columnCount():
+        if n==1:
             # one selected row only
             #~ act = menu.addAction(QIcon(':/Clustering.png'), u'Explode cluster (sub clustering)')
             #~ act.triggered.connect(self.subComputeCluster)

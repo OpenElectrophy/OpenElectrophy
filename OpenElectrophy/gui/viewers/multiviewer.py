@@ -11,7 +11,11 @@ from .epochviewer import *
 from .eventviewer import *
 from .eventlist import *
 from .spiketrainviewer import *
-from .videoviewer import *
+try:
+    from .videoviewer import *
+except ImportError:
+    pass
+    
 
 class SubViewer(object):
     def __init__(self, 

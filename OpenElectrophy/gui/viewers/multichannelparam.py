@@ -41,6 +41,8 @@ class MultiChannelParam(QWidget):
         self.list.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.list.itemSelectionChanged.connect(self.selectionChanged)
         
+        for i in range(len(names)):
+            self.list.item(i).setSelected(True)
         
     
     def paramChanged(self, param, changes):
@@ -62,5 +64,8 @@ class MultiChannelParam(QWidget):
     def selectedRows(self):
         return [ ind.row() for ind in self.list.selectedIndexes()]
         
-        
+    def selected(self):
+        selected =  np.zeros(len(self.all_params.children()), dtype = bool)
+        selected[self.selectedRows()] = True
+        return selected
 

@@ -216,7 +216,15 @@ class SignalAndSpike(SpikeSortingWidgetBase):
                     self.plots[i].addItem(scatter['sel'])
                 else :
                     scatter['sel'].setData(t_vect[ind-ind_start], self.sigs[i,s][ind])
-
+            
+            # remove old ones
+            for i, scatter in enumerate(self.scatters):
+                for c in scatter.keys():
+                    if c not in sps.cluster_names:
+                        self.plots[i].removeItem(scatter[c])
+                        scatter.pop(c)
+                        
+                        
             # Spikes by cluster
             vpos = pos[inwindow]
             for c in sps.cluster_names.keys():
