@@ -771,7 +771,9 @@ class SpikeSorter(object):
     
     def on_clusters_activation_changed(self):
         for c, activ in self.active_cluster.items():
-            if activ and self.cluster_displayed_subset[c].size ==0:
+            if activ and c not in self.cluster_displayed_subset:
+                self.random_display_subset(c)
+            elif activ and self.cluster_displayed_subset[c].size ==0:
                 self.random_display_subset(c)
             elif not activ and self.cluster_displayed_subset[c].size >0:
                 self.cluster_displayed_subset[c]  = np.array([ ], dtype = int)

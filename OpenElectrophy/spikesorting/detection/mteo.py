@@ -30,7 +30,6 @@ class MTEODetection(object):
                             {'name': 'median_thresh', 'type': 'float', 'value': 5., 'step' : 0.1},
                             {'name': 'consistent_across_channels', 'type': 'bool', 'value': False, },
                             {'name': 'consistent_across_segments', 'type': 'bool', 'value': True, },
-                            {'name': 'sweep_clean_size', 'type': 'quantity', 'value': 0.8*pq.ms, 'step' : 0.1*pq.ms },
                             ]
     
     def run(self, spikesorter, 
@@ -40,8 +39,6 @@ class MTEODetection(object):
                         median_thresh=5.,
                         consistent_across_channels = False,
                         consistent_across_segments = True,
-                        merge_method = 'fast',
-                        sweep_clean_size = 0.8*pq.ms,
                         ):
                         
         sps = spikesorter
@@ -85,8 +82,16 @@ class MTEODetection(object):
             thresholds[c, s] = abs(median_thresh) * np.median(abs(sig)) / .6745
         
         # Detect
-        sweep_size = int((sps.sig_sampling_rate*sweep_clean_size).simplified)
+        #~ sweep_size = int((sps.sig_sampling_rate*sweep_clean_size).simplified)
+        #~ sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
+                                #~ MTEO_sigs, thresholds, '+', 
+                                #~ consistent_across_channels,consistent_across_segments,
+                                #~ sweep_size, merge_method = merge_method,)
+
+
+
+        # Detect
         sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
                                 MTEO_sigs, thresholds, '+', 
                                 consistent_across_channels,consistent_across_segments,
-                                sweep_size, merge_method = merge_method,)
+                                'crossing', None)

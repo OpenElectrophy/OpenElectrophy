@@ -5,12 +5,17 @@ import numpy as np
 
 from tools import initialize_waveform, remove_limit_spikes
 
-from ..detection.tools import get_following_peak_multi_channel
+from .tools import get_following_peak_multi_channel
 
 class AlignWaveformOnPeak(object):
     """
     Align spike waveform on peak from the original signal.
-    This is fast but other method with interpolation give better results.
+    
+    This method is useless when the detection already give you the peak.
+    
+    In case of multi electrode you can choose between two options:
+       * the peak is the first peak closer to detection point.
+       * the peak is the biggest over all electrode following the detection point.
     
     
     """
@@ -18,10 +23,13 @@ class AlignWaveformOnPeak(object):
     params = [  {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
                             {'name': 'left_sweep', 'type': 'quantity', 'value': 1.*pq.ms, 'step' : 100*pq.us },
                             {'name': 'right_sweep', 'type': 'quantity', 'value': 1.*pq.ms,'step' : 100*pq.us },
+                            
+                            {'name': 'peak_method', 'type': 'list' , 'values' : ['biggest_amplitude', 'closer'] },
                             ]
 
 
-    def run(self, spikesorter, sign = '-', left_sweep = 1*pq.ms, right_sweep = 1*pq.ms):
+    def run(self, spikesorter, sign = '-', left_sweep = 1*pq.ms, right_sweep = 1*pq.ms,
+                peak_method = 'biggest_amplitude'):
         sps = spikesorter
 
         sr = sps.sig_sampling_rate
@@ -46,7 +54,7 @@ class AlignWaveformOnPeak(object):
         n = 0
         for s, indexes in enumerate(sps.spike_index_array):
             peak_indexes = get_following_peak_multi_channel(indexes, sps.filtered_sigs[:,s], sign,
-                                                    method = 'biggest_amplitude')
+                                                    method = peak_method)
             for ind in peak_indexes :
                 for c in range(len(sps.rcs)):
                     sig = sps.filtered_sigs[c, s]

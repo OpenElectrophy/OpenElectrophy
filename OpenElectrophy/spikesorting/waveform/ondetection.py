@@ -14,8 +14,14 @@ from tools import initialize_waveform, remove_limit_spikes
 class AlignWaveformOnDetection(object):
     """
     Align spike waveform on the original signal where detected
-    This is fast but other method with interpolation give better results.
+    This mimic what online spikesorter do : spike are alingned at detection point!!
     
+    If the detection point is the crossing threshold the alignement is quite bad
+    resulting in big jitter noise. If the detection point is the peak the method
+    is equivalent to peak alignement.
+
+    This method is fast but other method with interpolation in between samples
+    will give really better results.
     
     """
     name = 'Align waveform on detection'
