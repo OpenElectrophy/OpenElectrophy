@@ -10,6 +10,8 @@ import numpy as np
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+from matplotlib import pyplot
+
 def test1():
     bl = generate_block_for_sorting(nb_unit = 6,
                                                         duration = 10.*pq.s,
@@ -21,20 +23,28 @@ def test1():
     spikesorter = SpikeSorter(rcg)
 
     spikesorter.ButterworthFilter( f_low = 200.)
-    spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 4.,noise_estimation = 'MAD', threshold_mode = 'crossing')
-    #~ spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 4.,noise_estimation = 'MAD', threshold_mode = 'peak')
+    #~ spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 4.,noise_estimation = 'MAD', threshold_mode = 'crossing')
+    spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 4.,noise_estimation = 'MAD', threshold_mode = 'peak')
     
-    spikesorter.AlignWaveformOnDetection(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-')
+    #~ spikesorter.AlignWaveformOnDetection(left_sweep = 1.5*pq.ms , right_sweep = 2.5*pq.ms, sign = '-')
     #~ spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-', peak_method = 'biggest_amplitude')
     #~ spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-', peak_method = 'closer')
-    #~ spikesorter.AlignWaveformOnCentralWaveform(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, )
+    spikesorter.AlignWaveformOnCentralWaveform(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, 
+                                                                                             #~ shift_estimation_method = 'taylor order1', 
+                                                                                             shift_estimation_method = 'taylor order2', 
+                                                                                             #~ shift_estimation_method ='optimize',
+                                                                                             shift_method = 'spline',
+                                                                                             max_iter = 6)
     
-    #~ print spikesorter.spike_waveforms.shape
-    #~ s0 = spikesorter.spike_waveforms.shape[0]
-    #~ wf2 = spikesorter.spike_waveforms.reshape(s0, -1)
-    #~ from matplotlib import pyplot
-    #~ pyplot.plot(wf2[:-10, :].transpose())
-    #~ pyplot.show()
+    step = spikesorter.history[-1]
+    instance =  step['methodInstance']
+    
+    
+    fig = pyplot.figure()
+    instance.plot_iterative_centers(fig, spikesorter)
+    
+    
+    pyplot.show()
     
     
     

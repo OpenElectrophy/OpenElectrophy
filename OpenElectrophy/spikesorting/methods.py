@@ -33,6 +33,7 @@ from detection.manualthreshold import ManualThresholdDetection
 from detection.mteo import MTEODetection
 from waveform.ondetection import AlignWaveformOnDetection
 from waveform.onpeak import AlignWaveformOnPeak
+from waveform.oncentralwaveform import AlignWaveformOnCentralWaveform
 from feature.pcafeature import PcaFeature
 from feature.icafeature import IcaFeature
 from feature.combine import CombineFeature
@@ -53,6 +54,7 @@ all_methods = [ ButterworthFilter,
                 MTEODetection,
                 AlignWaveformOnDetection,
                 AlignWaveformOnPeak,
+                AlignWaveformOnCentralWaveform,
                 CombineFeature, 
                 AllPeak,
                 PeakToValley,
