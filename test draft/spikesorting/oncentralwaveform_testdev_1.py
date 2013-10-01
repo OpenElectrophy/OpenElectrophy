@@ -26,15 +26,21 @@ def test1():
     #~ spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 4.,noise_estimation = 'MAD', threshold_mode = 'crossing')
     spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 4.,noise_estimation = 'MAD', threshold_mode = 'peak')
     
-    #~ spikesorter.AlignWaveformOnDetection(left_sweep = 1.5*pq.ms , right_sweep = 2.5*pq.ms, sign = '-')
+    spikesorter.AlignWaveformOnDetection(left_sweep = 1.5*pq.ms , right_sweep = 2.5*pq.ms, sign = '-')
+    spikesorter.PcaFeature(n_components = 4)
+    spikesorter.SklearnKMeans(n_cluster = 3)
+    
+
+    
     #~ spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-', peak_method = 'biggest_amplitude')
     #~ spikesorter.AlignWaveformOnPeak(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, sign = '-', peak_method = 'closer')
     spikesorter.AlignWaveformOnCentralWaveform(left_sweep = 1*pq.ms , right_sweep = 2*pq.ms, 
-                                                                                             #~ shift_estimation_method = 'taylor order1', 
-                                                                                             shift_estimation_method = 'taylor order2', 
+                                                                                             shift_estimation_method = 'taylor order1', 
+                                                                                             #~ shift_estimation_method = 'taylor order2', 
                                                                                              #~ shift_estimation_method ='optimize',
-                                                                                             shift_method = 'spline',
-                                                                                             max_iter = 6)
+                                                                                             #~ shift_method = 'spline',
+                                                                                             shift_method = 'sinc',
+                                                                                             max_iter = 3)
     
     step = spikesorter.history[-1]
     instance =  step['methodInstance']
@@ -42,26 +48,25 @@ def test1():
     
     fig = pyplot.figure()
     instance.plot_iterative_centers(fig, spikesorter)
-    
-    
+
     pyplot.show()
     
     
     
     
-    print spikesorter
+    #~ print spikesorter
 
-    spikesorter.check_display_attributes()
-    from OpenElectrophy.gui.spikesorting import AverageWaveforms, AllWaveforms
+    #~ spikesorter.check_display_attributes()
+    #~ from OpenElectrophy.gui.spikesorting import AverageWaveforms, AllWaveforms
 
-    app = QApplication([ ])
-    w1 = AverageWaveforms(spikesorter = spikesorter)
-    w1.refresh()
-    w1.show()
-    w2 = AllWaveforms(spikesorter = spikesorter)
-    w2.refresh()
-    w2.show()
-    app.exec_()
+    #~ app = QApplication([ ])
+    #~ w1 = AverageWaveforms(spikesorter = spikesorter)
+    #~ w1.refresh()
+    #~ w1.show()
+    #~ w2 = AllWaveforms(spikesorter = spikesorter)
+    #~ w2.refresh()
+    #~ w2.show()
+    #~ app.exec_()
     
     
 

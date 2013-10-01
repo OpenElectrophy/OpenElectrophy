@@ -9,6 +9,7 @@ from .tools import get_following_peak_multi_channel
 
 from scipy.optimize import minimize
 from scipy.interpolate import interp1d
+from scipy.signal import convolve
 
 from matplotlib.cm import get_cmap
 
@@ -30,7 +31,7 @@ class AlignWaveformOnCentralWaveform(object):
                             {'name': 'sweep_factor_for_interpolation', 'type': 'float', 'value': 3 },
                             
                             
-                            {'name': 'shift_estimation_method', 'type': 'list' , 'value' : 'taylor order1', 'values' : ['taylor order1', 'optimize'] },
+                            {'name': 'shift_estimation_method', 'type': 'list' , 'value' : 'taylor order1', 'values' : ['taylor order1'] }, #, 'optimize'
                             
                             {'name': 'shift_method', 'type': 'list' , 'value' : 'sinc', 'values' : ['sinc', 'spline', 'lanczos'] },
                             
@@ -78,6 +79,8 @@ class AlignWaveformOnCentralWaveform(object):
         trodness = len(spikesorter.rcs)
         n_spike = wfs.shape[0]
         large_wfs = np.empty((n_spike, trodness, wisze2), dtype = float) # non aligned larger waveform
+        
+        
         n = 0
         for s, indexes in enumerate(sps.spike_index_array):
             for ind in indexes :
@@ -87,86 +90,105 @@ class AlignWaveformOnCentralWaveform(object):
                     large_wfs[n,c, :] = sig[ind-swl2:ind+swr2+1]
                 n += 1
         
+        clusters = self.clusters = sps.cluster_names.keys()
         self.deltas = deltas = np.zeros(n_spike)
-        self.centers = [ ]
-        self.centers_mad = [ ]
+        
+        self.all_centers =  [ ]
+        self.all_centers_mad = [ ]
+        self.all_deltas = [ ]
+        
         
         for iter in range(max_iter):
+            print iter
             # TODO : sctop criterium
-            
             flat_wfs = wfs.reshape(n_spike, -1)
-            center = np.median(flat_wfs, axis=0)
+           
+            centers = { }
+            mads = { }
+            for c in clusters:
+                ind = sps.spike_clusters==c
+                centers[c] = np.median(flat_wfs[ind,:], axis=0)
+                mads[c] = np.median(np.abs(flat_wfs[ind,:]-centers[c]), axis=0) / .6745
+            
             
             # for plotting
-            self.centers.append(center)
-            self.centers_mad.append(np.median(np.abs(flat_wfs-np.median(flat_wfs,axis=0)), axis=0) / .6745)
+            self.all_centers.append(centers)
+            self.all_centers_mad.append(mads)
             
-            
-            # shift estimation
-            if shift_estimation_method == 'taylor order1':
-                center_D = np.r_[0,(center[2:] - center[:-2])/2, 0]
-                new_deltas = np.sum((flat_wfs-center)*center_D , axis = 1)/np.sum(center_D**2)
-                
-            elif shift_estimation_method == 'taylor order2':
-                center_D = np.r_[0,(center[2:] - center[:-2])/2, 0]  #first derivative
-                center_DD = np.r_[0,(center_D[2:] - center_D[:-2])/2, 0]#second derivative
-                new_deltas = np.zeros(n_spike)
-                for i in range(n_spike):
-                    def error(delta):
-                        return np.sum((flat_wfs[i,:]-center-delta*center_D-delta**2*center_DD/2)**2)
-                    res = minimize(error,[0.], method = 'BFGS')
-                    new_deltas[i] = res.x
-            
-            elif shift_estimation_method == 'optimize':
-                pass#discuter avec CP optimize sur les WF concatenate
-                #~ base = np.arange(large_wfs.shape[2])
-                #~ new_base = np.arange(swl2+1-swl,swl2+2+swr)
-                
-                #~ deltas = np.zeros(nb_spikes)
-                #~ for i in range(wfs.shape[0]):
-                    #~ def error(delta):
-                        #~ new_wf = 
-                        #~ return np.sum(
-                        #~ wfs[i]
-                    #~ scipy.optimize.minimize(error, 
-                    #~ deltas[i] = 
+            # shift estimation by clusters
+            new_deltas = np.zeros(n_spike)
+            for c in clusters:
+                ind = sps.spike_clusters==c
+                if shift_estimation_method == 'taylor order1':
+                    center_D = np.r_[0,(centers[c][2:] - centers[c][:-2])/2, 0]#first derivative
+                    new_deltas[ind] = np.sum((flat_wfs[ind]-centers[c])*center_D , axis = 1)/np.sum(center_D**2)
+                    
+                elif shift_estimation_method == 'taylor order2':
+                    center_D = np.r_[0,(centers[c][2:] - centers[c][:-2])/2, 0] #first derivative
+                    center_DD = np.r_[0,(center_D[2:] - center_D[:-2])/2, 0]#second derivative
+                    #~ for i in range(n_spike):
+                    for i in np.where(ind):
+                        def error(delta):
+                            return np.sum((flat_wfs[i,:]-centers[c]-delta*center_D-delta**2*center_DD/2)**2)
+                        res = minimize(error,[0.], method = 'BFGS')
+                        new_deltas[i] = res.x
 
-            print iter
-            print np.mean(new_deltas)
-            deltas += new_deltas
-            print np.mean(deltas)
             
-            # apply shift on waveform by interpolation
+            deltas += new_deltas
+            self.all_deltas.append(deltas.copy())
+
+
             base = np.arange(large_wfs.shape[2])
             new_base = np.arange(swl2+1-swl,swl2+2+swr)
-            for i in range(n_spike):
-                for c in range(large_wfs.shape[1]):
-                    if shift_method == 'sinc':
-                        pass
-                    elif shift_method == 'spline':
+            # apply shift on waveform by interpolation
+            if shift_method == 'sinc':
+                for i in range(n_spike):
+                    for c in range(large_wfs.shape[1]):
+                        half = base.size//2
+                        kernel = np.sinc(np.arange(-half, half)-deltas[i]+1)
+                        wfs[i,c,:] = convolve(large_wfs[i,c,:], kernel, mode = 'same')[swl2+1-swl:swl2+2+swr]
+                
+            elif shift_method == 'spline':
+                for i in range(n_spike):
+                    for c in range(large_wfs.shape[1]):
                         interpolator = interp1d(base, large_wfs[i,c,:], kind = 1)
                         wfs[i,c,:] = interpolator(new_base-deltas[i])
-                    elif shift_method == 'lanczos':
-                        pass
-
+            
+            elif shift_method == 'lanczos':
+                #TODO!!!
+                pass
+            
 
     def plot_iterative_centers(self, fig, sps):
-        n = len(self.centers)
-        cmap = get_cmap('jet' , n)
+        N = 10.
+        n = len(self.all_centers)
+        cmap = get_cmap('jet' , int(N+1))
+        step = max(int(n/N),1)
         
-        ax1 = fig.add_subplot(1,2,1)
-        ax2 = fig.add_subplot(1,2,2, sharey = ax1)
-        for i,center in enumerate(self.centers):
-            ax1.plot(center, label = str(i), color = cmap(i))
+        ax1 = fig.add_subplot(2,2,1)
+        ax2 = fig.add_subplot(2,2,2, sharey = ax1)
+        ax3 = fig.add_subplot(2,1,2)
+        for c in self.clusters:
+            for i in range(0,n,step):
+                label = 'Iter {}'.format(i*step) if c== self.clusters[0] else None
+                ax1.plot(self.all_centers[i][c], label = label, color = cmap(i))
+                ax2.plot(self.all_centers_mad[i][c], label = label, color = cmap(i))
         ax1.legend()
-        for i,mad in enumerate(self.centers_mad):
-            ax2.plot(mad, label = str(i), color = cmap(i))
         ax2.legend()
+        for i,deltas in enumerate(self.all_deltas[::step]):
+            y,x = np.histogram(deltas, bins = 100)
+            ax3.plot(x[:-1], y, color = cmap(i))
         ax1.set_title('Centers')
-        ax1.set_title('MAD of Centers')
+        ax2.set_title('MAD of Centers')
+        ax3.set_title('Deltas distrib')
+            
 
 
 
+def interpolate_sinc(x,y,x2):
+    
+    def func(u):
+        np.sum(y*np.sinc(x-u))
 
 
 

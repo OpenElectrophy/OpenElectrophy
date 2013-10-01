@@ -339,6 +339,8 @@ class SpikeSorter(object):
         name = self.aliases.get(name, name)
         return object.__getattribute__(self, name)
 
+    def set_attr_no_check(self , name, val):
+        object.__setattr__(self, name, val)
 
     def check_change_on_attributes(self, name):
         """

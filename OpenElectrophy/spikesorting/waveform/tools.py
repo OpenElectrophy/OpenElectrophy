@@ -24,13 +24,20 @@ def remove_limit_spikes(spikesorter, swl, swr):
     Remove spikes wich waveform cannot be extracted from sig because of limits.
     swl, swr : sweep size in point
     """
+    big_mask = [ ]
     for s, seg in enumerate(spikesorter.segs):
         sig_size = spikesorter.filtered_sigs[0,s].size
         ind = spikesorter.spike_index_array[s]
         mask = (ind>swl+1) & (ind<sig_size-swr-3)
         spikesorter.spike_index_array[s] = ind[mask]
+        big_mask.append(mask)
+    big_mask = np.concatenate(big_mask)
     
-    spikesorter.check_change_on_attributes('spike_index_array')
+    if spikesorter.spike_waveforms is not None:
+        spikesorter.set_attr_no_check('spike_waveforms', spikesorter.spike_waveforms[big_mask,:])
+    if spikesorter.waveform_features is not None:
+        spikesorter.set_attr_no_check('waveform_features', spikesorter.waveform_features[big_mask,:])
+    #~ spikesorter.check_change_on_attributes('spike_index_array')
 
 
 
