@@ -53,27 +53,33 @@ class RelativeThresholdDetection(object):
         sps = spikesorter
         
         # Threshold estimation
+        centers = np.zeros(sps.filtered_sigs.shape, dtype = float)
         noises = np.zeros(sps.filtered_sigs.shape, dtype = float)
         
         for c, s in np.ndindex(sps.filtered_sigs.shape):
             sig = sps.filtered_sigs[c, s]
             if noise_estimation=='MAD':
+                centers[c, s] = np.median(sig)
                 noises[c, s] = np.median(np.abs(sig-np.median(sig))) / .6745
             elif noise_estimation=='STD':
+                centers[c, s] = np.mean(sig)
                 noises[c, s] = np.std(sig)
-        thresholds = noises*abs(relative_thresh) 
+                
+        if sign == '+':
+            thresholds = centers + noises*abs(relative_thresh) 
         if sign == '-':
-            thresholds = -thresholds
+            thresholds = centers - noises*abs(relative_thresh) 
+        
         
         
         peak_span = int((sps.sig_sampling_rate*peak_span).simplified)
         peak_span = (peak_span//2)*2+1
-        
         # Detect
         sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
                                 sps.filtered_sigs, thresholds, sign, 
                                 consistent_across_channels,consistent_across_segments,
                                 threshold_mode, peak_span)
+        sps.detection_thresholds = thresholds
 
 
 

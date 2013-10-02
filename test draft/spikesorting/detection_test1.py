@@ -14,7 +14,7 @@ from PyQt4.QtGui import *
 def test1():
     bl = generate_block_for_sorting(nb_unit = 6,
                                                         duration = 10.*pq.s,
-                                                        noise_ratio = 0.2,
+                                                        noise_ratio = 0.7,
                                                         nb_segment = 2,
                                                         )
     rcg = bl.recordingchannelgroups[0]
@@ -22,14 +22,18 @@ def test1():
     spikesorter = SpikeSorter(rcg)
 
     spikesorter.ButterworthFilter( f_low = 200.)
-    spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 2.5,noise_estimation = 'MAD', threshold_mode = 'crossing')
+    #~ spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 3.5,noise_estimation = 'MAD', threshold_mode = 'crossing',
+                        #~ consistent_across_channels = False,
+                        #~ consistent_across_segments = True,                                                                                
+                                                                                #~ )
+    #~ print spikesorter
+    spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 3.5,noise_estimation = 'MAD', threshold_mode = 'peak', peak_span = 0.53*pq.ms)
+    print spikesorter.detection_thresholds
     print spikesorter
-    spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 2.5,noise_estimation = 'MAD', threshold_mode = 'peak', peak_span = 0.53*pq.ms)
-    print spikesorter
-    spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 2.5,noise_estimation = 'STD', threshold_mode = 'crossing', )
-    print spikesorter
-    spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 2.5,noise_estimation = 'STD', threshold_mode = 'peak', peak_span = 0.3*pq.ms )
-    print spikesorter
+    #~ spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 3.5,noise_estimation = 'STD', threshold_mode = 'crossing', )
+    #~ print spikesorter
+    #~ spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 3.5,noise_estimation = 'STD', threshold_mode = 'peak', peak_span = 0.3*pq.ms )
+    #~ print spikesorter
     
     
 

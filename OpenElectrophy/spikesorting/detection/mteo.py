@@ -89,9 +89,10 @@ class MTEODetection(object):
                                 #~ sweep_size, merge_method = merge_method,)
 
 
-
+        
         # Detect
         sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
                                 MTEO_sigs, thresholds, '+', 
                                 consistent_across_channels,consistent_across_segments,
                                 'crossing', None)
+        sps.detection_thresholds = None

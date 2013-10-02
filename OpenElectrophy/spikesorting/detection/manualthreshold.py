@@ -20,7 +20,7 @@ class ManualThresholdDetection(object):
     params = [  {'name': 'threshold', 'type': 'float', 'value': 1., 'step' : 0.1},
                             {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
 
-                            {'name': 'threshold_mode', 'type': 'list', 'value': 'crossing', 'values' :  ['crossing', 'peak'] },
+                            {'name': 'threshold_mode', 'type': 'list', 'value': 'peak', 'values' :  ['crossing', 'peak'] },
                             {'name': 'peak_span', 'type': 'quantity', 'value': 0.3*pq.ms, 'step' : 0.01*pq.ms },
                             
                             ]
@@ -34,8 +34,10 @@ class ManualThresholdDetection(object):
         peak_span = int((sps.sig_sampling_rate*peak_span).simplified)
         peak_span = (peak_span//2)*2+1
         
+        
         # Detect
         sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
                                 sps.filtered_sigs, thresholds, sign, 
                                 False,False,
                                 threshold_mode, peak_span)
+        sps.detection_thresholds = thresholds

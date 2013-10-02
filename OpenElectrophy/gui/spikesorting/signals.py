@@ -65,6 +65,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         
         self.plots = [ ]
         self.curves = [ ]
+        self.threshold_curves =[ ]
         for i in range(sps.trodness):
             l.nextRow()
             viewBox = MyViewBox()
@@ -79,6 +80,12 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             viewBox.yzoom_in.connect(lambda : self.yzoom(.8))
             viewBox.yzoom_out.connect(lambda : self.yzoom(1.2))
             viewBox.clicked_at_x.connect(self.clicked_at_x)
+            
+            tc = pg.InfiniteLine(angle = 0, movable = False, pen = 'g')
+            tc.setPos(0.)
+            self.threshold_curves.append(tc)
+            plot.addItem(tc)
+            tc.hide()
         
         self.scatters = [ {} for i in range(sps.trodness) ]
         
@@ -93,6 +100,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         param_global = [
                         {'name': 'auto_zoom_on_select', 'type': 'bool', 'value': True },
                         {'name': 'zoom_size', 'type': 'float', 'value':  0.05, 'step' : 0.001 },
+                        {'name': 'plot_threshold', 'type': 'bool', 'value':  True },
                         ]        
         self.params = pg.parametertree.Parameter.create( name='Global options', type='group',
                                                     children = param_global)
@@ -172,6 +180,8 @@ class SignalAndSpike(SpikeSortingWidgetBase):
     
 
     def seek(self, t):
+        #~ self.act_enable_spike_selection.setChecked(False)
+        
         sps = self.spikesorter
         s =  self.combo.currentIndex()
         if sps.spike_index_array is not None:
@@ -189,11 +199,13 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         ind_stop = int(np.rint((t2-sps.seg_t_start[s].rescale('s').magnitude)*sr))
         if ind_start<0:
             ind_start=0
-            t1 = float(sps.seg_t_start[s].magnitude)
+            _t1 = float(sps.seg_t_start[s].magnitude)
+        else:
+            _t1 = t1
         if ind_stop>self.sigs[0,s].size:
             ind_stop=self.sigs[0,s].size
-            t2 = float(sps.seg_t_stop[s].magnitude)
-        t_vect = np.arange(0,ind_stop-ind_start, dtype='f')/sr+t1
+            #~ t2 = float(sps.seg_t_stop[s].magnitude)
+        t_vect = np.arange(0,ind_stop-ind_start, dtype='f')/sr+_t1
         for i in range(sps.trodness):
             if t_vect.size:
                 self.curves[i].setData(t_vect, self.sigs[i,s][ind_start:ind_stop])
@@ -220,11 +232,11 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             # remove old ones
             for i, scatter in enumerate(self.scatters):
                 for c in scatter.keys():
+                    if c=='sel' : continue
                     if c not in sps.cluster_names:
                         self.plots[i].removeItem(scatter[c])
                         scatter.pop(c)
-                        
-                        
+            
             # Spikes by cluster
             vpos = pos[inwindow]
             for c in sps.cluster_names.keys():
@@ -245,7 +257,19 @@ class SignalAndSpike(SpikeSortingWidgetBase):
                             self.plots[i].addItem(scatter[c])
                             scatter[c].sigClicked.connect(self.item_clicked)
                         #~ scatter[c].vb = self.plots[i].vb
-
+        
+        for i in range(sps.trodness):
+            tc = self.threshold_curves[i]
+            if isinstance(self, FilteredBandSignal) and hasattr(sps, 'detection_thresholds') and\
+                                sps.detection_thresholds is not None and\
+                                self.params['plot_threshold']:
+                tc.setPos(sps.detection_thresholds[i,s])
+                tc.show()
+            else:
+                tc.setPos(0.)
+                tc.hide()
+                
+        
         for plot in self.plots:
             #~ print t1, t2
             plot.setXRange( t1, t2, padding = 0.0)

@@ -94,6 +94,7 @@ class SignalViewer(ViewerBase):
         self.mainlayout.addWidget(self.graphicsview)
         
         self.plot = pg.PlotItem(viewBox = self.viewBox)
+        self.plot.hideButtons()
         self.graphicsview.setCentralItem(self.plot)
         
         

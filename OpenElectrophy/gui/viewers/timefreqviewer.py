@@ -224,6 +224,7 @@ class TimeFreqViewer(ViewerBase):
             graphicsview  = pg.GraphicsView()#useOpenGL = True)
             graphicsview.setBackground(color)
             plot = pg.PlotItem(viewBox = viewBox)
+            plot.hideButtons()
             graphicsview.setCentralItem(plot)
             self.graphicsviews[i] = graphicsview
             

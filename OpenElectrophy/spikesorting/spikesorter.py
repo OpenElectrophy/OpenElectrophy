@@ -685,20 +685,24 @@ class SpikeSorter(object):
         self.spike_index_array[s] = np.concatenate( (self.spike_index_array[s], [index]))
         
         # tricky insertion at the good place
-        all_wf = [ ]
-        all_sc = [ ]
-        for i in range(s):
-            all_wf.append(self.spike_waveforms[self.seg_spike_slices[i]])
-            all_sc.append(self.spike_clusters[self.seg_spike_slices[i]])
-        all_wf.append(self.spike_waveforms[self.seg_spike_slices[s]])
-        all_wf.append(wf)
-        all_sc.append(self.spike_clusters[self.seg_spike_slices[s]])
-        all_sc.append([c])
-        for i in range(s+1, len(self.segs)):
-            all_wf.append(self.spike_waveforms[self.seg_spike_slices[i]])
-            all_sc.append(self.spike_clusters[self.seg_spike_slices[i]])
-        self.spike_waveforms = np.concatenate(all_wf)
-        self.spike_clusters = np.concatenate(all_sc)
+        if self.spike_waveforms is not None:
+            all_wf = [ ]
+            for i in range(s):
+                all_wf.append(self.spike_waveforms[self.seg_spike_slices[i]])
+            all_wf.append(self.spike_waveforms[self.seg_spike_slices[s]])
+            all_wf.append(wf)
+            self.spike_waveforms = np.concatenate(all_wf)
+        
+        if self.spike_clusters is not None:
+            all_sc = [ ]
+            for i in range(s):
+                all_sc.append(self.spike_clusters[self.seg_spike_slices[i]])
+            all_sc.append(self.spike_clusters[self.seg_spike_slices[s]])
+            all_sc.append([c])
+            for i in range(s+1, len(self.segs)):
+                all_sc.append(self.spike_clusters[self.seg_spike_slices[i]])
+            self.spike_clusters = np.concatenate(all_sc)
+            
         self.init_seg_spike_slices()
     
 
