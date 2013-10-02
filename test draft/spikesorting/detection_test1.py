@@ -34,7 +34,7 @@ def test1():
     #~ print spikesorter
     #~ spikesorter.RelativeThresholdDetection(sign= '-', relative_thresh = 3.5,noise_estimation = 'STD', threshold_mode = 'peak', peak_span = 0.3*pq.ms )
     #~ print spikesorter
-    
+    spikesorter.populate_recordingchannelgroup(with_waveforms = False)
     
 
     

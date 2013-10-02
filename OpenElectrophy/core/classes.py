@@ -41,6 +41,8 @@ not_in_OE = [ 'Spike', 'Epoch', 'Event', 'IrregularlySampledSignal' ]
 for e in not_in_OE:
     class_names.remove(e)
 
+with_color = ['AnalogSignal', 'SpikeTrain', 'EventArray', 'EpochArray', 'Unit']
+
 oeclasses = [ ]
 for name in class_names:
     if name in neod.one_to_many_relationship:
@@ -69,6 +71,9 @@ for name in class_names:
     for attribute in attributes:
         attrname, attrtype = attribute[0], attribute[1]
         usable_attributes[attrname] = attrtype
+    
+    if name in with_color and 'color' not in usable_attributes:
+        usable_attributes['color'] = str
     
     classattr = dict(tablename = name,
                             neoclass = neod.class_by_name[name],

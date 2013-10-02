@@ -290,6 +290,9 @@ class ToolChainWidget(QWidget):
         self.spikesorter.run_step(method, **kargs)
         print self.spikesorter
         print self.spikesorter.history[-1]
+        
+        if  method in sorting:
+             self.spikesorter.cluster_clors = { }
         self.need_refresh.emit()
     
     def run_all_chain(self):

@@ -36,6 +36,7 @@ class SpikeSortingWidgetBase(QWidget):
     spike_selection_changed = pyqtSignal()
     spike_subset_changed = pyqtSignal()
     clusters_activation_changed = pyqtSignal()
+    clusters_color_changed = pyqtSignal()
     
     
     def __init__(self, parent = None, spikesorter = None, settings = None):

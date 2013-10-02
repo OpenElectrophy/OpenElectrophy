@@ -12,6 +12,7 @@ from .base import *
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
 
+from ...spikesorting import color_utils
 
 
 class ModelSpikeList(QAbstractItemModel):
@@ -330,8 +331,8 @@ class UnitList(SpikeSortingWidgetBase):
             # one selected row only
             #~ act = menu.addAction(QIcon(':/Clustering.png'), u'Explode cluster (sub clustering)')
             #~ act.triggered.connect(self.subComputeCluster)
-            act = menu.addAction(QIcon(':/TODO.png'), u'Set name of this unit')
-            act.triggered.connect(self.setUnitNameAndScore)
+            act = menu.addAction(QIcon(':/TODO.png'), u'Set name/color/score of this unit')
+            act.triggered.connect(self.setUnitNameColorScore)
         
         menu.exec_(self.cursor().pos())
     
@@ -434,7 +435,7 @@ class UnitList(SpikeSortingWidgetBase):
                 sps.cluster_displayed_subset[c]  = np.array([ ], 'i')
         self.spike_subset_changed.emit()
     
-    def setUnitNameAndScore(self):
+    def setUnitNameColorScore(self):
         sps = self.spikesorter
         for index in self.tableNeuron.selectedIndexes():
             if index.column() !=0: continue
@@ -449,10 +450,16 @@ class UnitList(SpikeSortingWidgetBase):
         class Parameters(DataSet):
             name = StringItem('Name of unit {}'.format(c), default ='')
             #~ sorting_score = FloatItem('Score of unit {}'.format(c), default =sorting_score)
+            color = ColorItem('Color of unit {}'.format(c), default= color_utils.mpl_to_html( sps.cluster_colors[c] ))
         d =  ParamDialog(Parameters, title = 'Name')
         d.update(dict(name = name))
         if d.exec_():
             sps.cluster_names[c] = d.to_dict()['name']
             #~ sps.sortingScores[c] = d.get_dict()['sortingScore']
-        self.refresh()
+            color = d.to_dict()['color']
+            sps.cluster_colors[c] = color_utils.html_to_mplRGB(color)
+            self.refresh()
+            self.clusters_color_changed.emit()
+            
+        
 

@@ -93,7 +93,11 @@ from methods import all_methods
 all_method_names = dict([ (method.__name__, method) for method in all_methods ])
 
 from matplotlib.cm import get_cmap
-from matplotlib.colors import ColorConverter
+#~ from matplotlib.colors import ColorConverter
+#~ import string
+from . import color_utils
+
+#~ import string
 
 from ..core import OEBase, open_db
 import neo
@@ -567,7 +571,17 @@ class SpikeSorter(object):
                            self.wf_units =  sptr.waveforms.units
                     if 'waveform_features' in sptr.annotations:
                         features.append(sptr.annotations['waveform_features'])
-                
+                    
+                    if 'color' in unit.annotations is not None and unit.annotations['color'] is not None and\
+                            unit.annotations['color'] !='':
+                        #~ hexcolor = unit.annotations['color'].replace('#', '')
+                        #~ color = [ ]
+                        #~ for i in range(3):
+                            #~ color.append(float(string.atoi('0x'+hexcolor[i*2:i*2+2], 16))/255.)
+                        #~ self.cluster_colors[u] = color
+                        self.cluster_colors[u] = color_utils.html_to_mplRGB(unit.annotations['color'])
+                        
+                    
                 self.seg_spike_slices[s] = slice(pos, pos+nb_spike_in_segs)
                 pos += nb_spike_in_segs
                 #~ self.spike_index_array[s] = np.concatenate(spike_index)
@@ -720,13 +734,13 @@ class SpikeSorter(object):
         for c in to_pop:
             self.cluster_names.pop(c)
         self.cluster_names[n] = u'regrouped small cluster'
-        self.refresh_colors()
+        self.refresh_colors(reset = False)
     
     ####
     ## Plot utilities
     def check_display_attributes(self):
-        self.refresh_cluster_names()
-        self.refresh_colors()
+        self.refresh_cluster_names(reset = False)
+        self.refresh_colors(reset = False)
         #self.refresh_displayed_subset(self.displayed_subset_size)
         if self.selected_spikes is None and self.nb_spikes is not None:
             self.selected_spikes = np.zeros( (self.nb_spikes), dtype = bool)
@@ -740,14 +754,16 @@ class SpikeSorter(object):
                 self.random_display_subset(c)
         
 
-    def refresh_cluster_names(self):
+    def refresh_cluster_names(self,  reset = False):
         if self.spike_clusters is None:
             self.cluster_names = { }
             return
         clusters = np.unique(self.spike_clusters)
         for c in np.setdiff1d(self.cluster_names.keys(), clusters):
             self.cluster_names.pop(c)
-            
+        
+        if reset:
+            self.cluster_names = { }
         
         for c in clusters:
             if c not in self.cluster_names:
@@ -756,14 +772,27 @@ class SpikeSorter(object):
                 else:
                     self.cluster_names[-1] = 'trash'
 
-    def refresh_colors(self):
-        self.refresh_cluster_names()
-        self.cluster_colors = { }
-        if self.spike_clusters is not None:
-            cmap = get_cmap('jet' , len(self.cluster_names)+3)
-            for i , c in enumerate(self.cluster_names.keys()):
-                self.cluster_colors[c] = ColorConverter().to_rgb( cmap(i+2) )
-        self.cluster_colors[-1] = ColorConverter().to_rgb( 'k' ) #trash
+    def refresh_colors(self, reset = True):
+        self.refresh_cluster_names(reset = reset)# TODO : why this
+        if self.spike_clusters is  None:
+            self.cluster_colors = { }
+            return
+        
+        clusters = self.cluster_names.keys()
+        for c in np.setdiff1d(self.cluster_colors.keys(), clusters):
+            self.cluster_colors.pop(c)
+        
+        if reset:
+            self.cluster_colors = { }
+
+        cmap = get_cmap('jet' , len(self.cluster_names)+3)
+        for i , c in enumerate(self.cluster_names.keys()):
+            if c in self.cluster_colors: continue
+            #~ self.cluster_colors[c] = ColorConverter().to_rgb( cmap(i+2) )
+            self.cluster_colors[c] = color_utils.mpl_to_mplRGB( cmap(i+2) )
+        #~ self.cluster_colors[-1] = ColorConverter().to_rgb( 'k' ) #trash
+        self.cluster_colors[-1] = color_utils.mpl_to_mplRGB( 'k' ) #trash
+        
     
     def refresh_displayed_subset(self, displayed_subset_size = 100):
         self.displayed_subset_size = displayed_subset_size
@@ -814,12 +843,22 @@ class SpikeSorter(object):
         rcg.units = [ ]
         
         self.refresh_cluster_names()
+        self.refresh_colors()
         for c, name in self.cluster_names.items():
-            unit = neo.Unit(name = name)
+            #~ color = '#'
+            #~ for e in self.cluster_colors[c]:
+                #~ colorhex = str(hex(int(e*255))).replace('0x','')
+                #~ if len(colorhex) == 1:
+                    #~ colorhex = '0'+colorhex
+                #~ color += colorhex
+            color = color_utils.mpl_to_html(self.cluster_colors[c])
+
+            unit = neo.Unit(name = name, color = color)
             rcg.units.append(unit)
             for s, seg in enumerate(bl.segments):
                 sptr = neo.SpikeTrain(self.get_spike_times(s, c, units = 's'),
-                                    t_start = self.seg_t_start[s], t_stop = self.seg_t_stop[s])
+                                    t_start = self.seg_t_start[s], t_stop = self.seg_t_stop[s],
+                                    color = color)
                 if with_waveforms:
                     sptr.waveforms = self.get_spike_waveforms(s, c) * self.wf_units
                     sptr.sampling_rate = self.wf_sampling_rate
