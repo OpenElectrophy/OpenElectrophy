@@ -14,7 +14,7 @@ OpenElectrophy is build on top of `Neo`_ :
     * It includes the powerful Neo IO that can read a quantity of data formats (Plexon, NeuroExplorer, Spike2, TDT, Axon, BlackRock, ...) 
     * neo object ready for analyses (AnalogSIgnal, SpikeTrain, RecordingChannel, Segment, Block ...)
 
-For new user a main interest in OpenElectrophy is the spikes roting tool chain. See :ref:`spike_introduction_section`.
+For new user a main interest in OpenElectrophy is the spike sorting tool chain. See :ref:`spike_introduction_section`.
 
 .. image:: /images/spikesorting/mainwindow_1.png
     :width: 400
@@ -27,6 +27,14 @@ But OpenElectrophy also provide:
     * A database for storage.
 
 
+.. image:: /images/viewers/signal_and_timefreq.png
+    :height: 200
+.. image:: /images/treeview_1.png
+    :height: 200
+.. image:: /images/viewers/signal_params.png
+    :height: 200
+
+
 Contents:
 
 .. toctree::
@@ -36,6 +44,7 @@ Contents:
    screenshots
    gettingstarted
    spikesorting
+   viewers
    script_examples
    licence
    authors
