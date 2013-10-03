@@ -14,12 +14,18 @@ OpenElectrophy is build on top of `Neo`_ :
     * It includes the powerful Neo IO that can read a quantity of data formats (Plexon, NeuroExplorer, Spike2, TDT, Axon, BlackRock, ...) 
     * neo object ready for analyses (AnalogSIgnal, SpikeTrain, RecordingChannel, Segment, Block ...)
 
+For new user a main interest in OpenElectrophy is the spikes roting tool chain. See :ref:`spike_introduction_section`.
+
+.. image:: /images/spikesorting/mainwindow_1.png
+    :width: 400
+
 But OpenElectrophy also provide:
     * A GUI for exploring dataset
     * A complete offline spikesorting tool chain = GUI and/or command line.
     * A timefrequency toolbox = fast wavelet scalogram plotting +  transient oscillation in LFP detection.
     * Viewers for neo objects.
     * A database for storage.
+
 
 Contents:
 
@@ -29,6 +35,7 @@ Contents:
    installation
    screenshots
    gettingstarted
+   spikesorting
    script_examples
    licence
    authors
