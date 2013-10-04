@@ -32,7 +32,6 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         #~ self.refresh()
 
     def refresh(self):
-        print 'refresh AverageWaveforms'
         sps = self.spikesorter
         self.fig.clear()
         if sps.spike_waveforms is None : 

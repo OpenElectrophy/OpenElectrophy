@@ -93,7 +93,7 @@ class SpikeSortingWindow(QMainWindow):
         self.list_widget = [ ]
         self.list_dock = [ ]
         for i, W in enumerate(spikesorting_widget_list):
-            print i, W
+            #~ print i, W
             # Menu
             #~ act = QAction(W.name,but, checkable = True)
             act = QAction(W.name,but, checkable = True)
@@ -147,14 +147,18 @@ class SpikeSortingWindow(QMainWindow):
         self.toolbar.addWidget(self.spinboxSubsetLimit)
         
         self.toolbar.addSeparator()
+        but =  QToolButton(toolButtonStyle = Qt.ToolButtonTextBesideIcon,
+                                            icon = QIcon(':/color-picker.png' ),
+                                            text = u'Clear selection')
+        but.clicked.connect(self.clear_selection)
+        self.toolbar.addWidget(but)
         
+        self.toolbar.addSeparator()
         but =  QToolButton(toolButtonStyle = Qt.ToolButtonTextBesideIcon,
                                             icon = QIcon(':/document-save.png' ),
                                             text = u'Save')
         but.clicked.connect(self.save_to_database)
         self.toolbar.addWidget(but)
-        
-        
         
         
         for dock in self.list_dock:
@@ -166,7 +170,8 @@ class SpikeSortingWindow(QMainWindow):
             w.clusters_activation_changed.connect(self.on_clusters_activation_changed)
             w.clusters_color_changed.connect(self.on_clusters_color_changed)            
         self.changeTemplate(view_templates.keys()[0])
-        
+    
+    ## Event and refresh
     def refresh_all(self, shuffle = True):
         self.spikesorter.check_display_attributes()
         if shuffle:
@@ -205,46 +210,70 @@ class SpikeSortingWindow(QMainWindow):
     
     def on_clusters_color_changed(self):
         self.refresh_all( shuffle = False)
-        
     
-    def refresh_displayed_subset(self):
-        val = self.spinboxSubsetLimit.value()
-        if val == 0: val = np.inf
-        self.spikesorter.refresh_displayed_subset(displayed_subset_size = val)
-
+    
     def on_spike_selection_changed(self):
         for dock, w in zip(self.list_dock,self.list_widget):
             if w == self.sender():
                 continue
             if dock.isVisible() and hasattr(w, 'on_spike_selection_changed'):
                 w.on_spike_selection_changed()
-    
 
-        
+
+    def refresh_displayed_subset(self):
+        val = self.spinboxSubsetLimit.value()
+        if val == 0: val = np.inf
+        self.spikesorter.refresh_displayed_subset(displayed_subset_size = val)
+    
+    
+    def clear_selection(self):
+        self.spikesorter.selected_spikes[:] = False
+        self.on_spike_selection_changed()
+    
+    
     ## DOCK AND TEMPLATE
+    def oneDockChangeToVisible(self, i):
+        # is tabified ??
+        dock = self.list_dock[i]
+        dock.visibilityChanged.disconnect(self.oneDockVisibilityChanged)
+        dock.setVisible(True)
+        for j, w2 in enumerate(self.list_widget):
+            if self.list_dock[j].isVisible() and self.list_widget[j].__class__ in self.list_widget[i].tabified_with:
+                self.tabifyDockWidget( self.list_dock[j], self.list_dock[i])
+
+        t1 = time.time()
+        self.list_widget[i].refresh()
+        t2 = time.time()
+        print'refresh oneDockChangeToVisible',  self.list_dock[i].widget().name, t2-t1
+        
+        dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
+
+    
     def oneDockVisibilityChanged(self):
         dock = self.sender()
         i = self.list_dock.index(dock)
-        self.list_actionView[i].setChecked(dock.isVisible())
-        print i, dock.widget().name,  dock.isVisible(), dock.widget().isVisible(),  self.list_actionView[i].isChecked()
-        if dock.isVisible():
-            t1 = time.time()
-            self.list_widget[i].refresh()
-            t2 = time.time()
-            print'refresh ',  dock.widget().name, t2-t1
-
+        act = self.list_actionView[i]
+        w = self.list_widget[i]
+        
+        if act.isChecked() and dock.isVisible():
+            pass # alredy visible before that call
+        elif act.isChecked() and not dock.isVisible():
+            act.setChecked(False)
+        elif not act.isChecked() and not dock.isVisible():
+            pass # should not be possible
+        elif not act.isChecked() and  dock.isVisible():
+            # become visible
+            act.setChecked(True)
+            self.oneDockChangeToVisible(i)
+            
     def selectPlotChanged(self):
         act = self.sender()
         i = self.list_actionView.index(act)
         if act.isChecked():
-            # TODO position of dock
-            self.list_dock[i].setVisible(True)
-            #~ self.list_widget[i].refresh()
+            self.oneDockChangeToVisible(i)
         else:
             self.list_dock[i].setVisible(False)
-        
-        
-        
+        #~ self.list_dock[i].setVisible(act.isChecked())
         
     def templateChanged(self):
         act = self.sender()
@@ -254,116 +283,13 @@ class SpikeSortingWindow(QMainWindow):
         self.changeTemplate(view_templates.keys()[i])
 
     def changeTemplate(self, name = None):
-        
-        
         for i, w in enumerate(self.list_widget):
             dock = self.list_dock[i]
             if w.__class__.__name__ in view_templates[name]:
                 dock.setVisible(True)
             else:
                 dock.setVisible(False)
-        return
-        
-        
-        
-        for dock in self.list_dock:
-            dock.setVisible(False)
-        
-        dWidget = dict( [ (w.name, w) for w in self.list_widget] )
-        dDock = dict( [ (self.list_widget[i].name, self.list_dock[i]) for i in range(len(self.list_widget)) ]  ) 
-        dAct = dict( [ (self.list_widget[i].name, self.list_actionView[i]) for i in range(len(self.list_widget)) ]  ) 
-        
-        if name == 'Good ensemble':
-            #~ self.addDockWidget(Qt.TopDockWidgetArea, dDock['Full band signal'] , )
-            #~ dDock['Full band signal'].setVisible(True)
-            #~ dDock['All waveforms'].setVisible(True)
-            #~ self.splitDockWidget(dDock['Full band signal'], dDock['All waveforms'], Qt.Horizontal)
-            #~ dDock['Cross-correlogram'].setVisible(True)
-            #~ self.splitDockWidget(dDock['All waveforms'], dDock['Cross-correlogram'], Qt.Horizontal)
-            #~ self.tabifyDockWidget ( dDock['Full band signal'], dDock['Filtered band signal'])
-            #~ dDock['Filtered band signal'].setVisible(True)
 
-            dDock['Unit list'].setVisible(True)
-            #~ self.addDockWidget(Qt.RightDockWidgetArea, dDock['Unit list'] , )
-            self.splitDockWidget(self.dockToolChain, dDock['Unit list'], Qt.Vertical)
-            dDock['Spike list'].setVisible(True)
-            self.splitDockWidget(dDock['Unit list'], dDock['Spike list'], Qt.Vertical)
-
-            
-            #~ dDock['Features ND Viewer'].setVisible(True)
-            #~ self.splitDockWidget(dDock['Unit list'], dDock['Features ND Viewer'], Qt.Horizontal)
-            #~ dDock['Spike list'].setVisible(True)
-            #~ self.splitDockWidget(dDock['Unit list'], dDock['Spike list'], Qt.Vertical)
-
-        elif name == 'Nothing':
-            pass
-        
-        elif name == 'One cell':
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Full band signal'] , )
-            dDock['Full band signal'].setVisible(True)
-            self.splitDockWidget(dDock['Full band signal'], dDock['Filtered band signal'], Qt.Vertical)
-            dDock['Filtered band signal'].setVisible(True)
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Spike list'] , )
-            dDock['Spike list'].setVisible(True)
-            self.splitDockWidget(dDock['Spike list'], dDock['All waveforms'], Qt.Horizontal)
-            dDock['All waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['All waveforms'], dDock['Average waveforms'], Qt.Horizontal)
-            dDock['Average waveforms'].setVisible(True)
-                        
-            
-        elif name == 'Manual clustering':
-            
-            self.addDockWidget(Qt.TopDockWidgetArea, dDock['All waveforms'] , )
-            dDock['All waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['All waveforms'], dDock['Average waveforms'], Qt.Horizontal)
-            dDock['Average waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Average waveforms'], dDock['Features Parallel Plot'], Qt.Horizontal)
-            dDock['Features Parallel Plot'].setVisible(True)
-            self.splitDockWidget(dDock['Features Parallel Plot'], dDock['Features 3D'], Qt.Horizontal)
-            dDock['Features 3D'].setVisible(True)
-            self.splitDockWidget(dDock['Features 3D'], dDock['Features Wilson Plot'], Qt.Horizontal)
-            dDock['Features Wilson Plot'].setVisible(True)
-            
-            dDock['Unit list'].setVisible(True)
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Unit list'] , )
-            dDock['Features ND Viewer'].setVisible(True)
-            self.splitDockWidget(dDock['Unit list'], dDock['Features ND Viewer'], Qt.Horizontal)
-            dDock['Spike list'].setVisible(True)
-            self.splitDockWidget(dDock['Unit list'], dDock['Spike list'], Qt.Vertical)
-            
-        elif name == 'Detection':
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Filtered band signal'] , )
-            dDock['Filtered band signal'].setVisible(True)
-            self.splitDockWidget(dDock['Filtered band signal'], dDock['Average waveforms'], Qt.Vertical)
-            dDock['Average waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Average waveforms'], dDock['All waveforms'], Qt.Horizontal)
-            dDock['All waveforms'].setVisible(True)
-            self.tabifyDockWidget ( dDock['Filtered band signal'], dDock['Full band signal'])
-            dDock['Full band signal'].setVisible(True)
-            self.splitDockWidget(dDock['All waveforms'], dDock['Signal statistics'], Qt.Horizontal)
-            dDock['Signal statistics'].setVisible(True)
-
-
-            
-        elif name == 'Before to save':
-            dDock['Unit list'].setVisible(True)
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Unit list'] , )
-            dDock['Summary'].setVisible(True)
-            self.splitDockWidget(dDock['Unit list'], dDock['Summary'], Qt.Horizontal)
-            dDock['Spike list'].setVisible(True)
-            self.splitDockWidget(dDock['Unit list'], dDock['Spike list'], Qt.Vertical)
-            dDock['All waveforms'].setVisible(True)
-            self.splitDockWidget(dDock['Summary'], dDock['All waveforms'], Qt.Vertical)
-
-        elif name == 'Controls':
-            self.addDockWidget(Qt.TopDockWidgetArea, dDock['Cross-correlogram'] , )
-            dDock['Cross-correlogram'].setVisible(True)
-            self.addDockWidget(Qt.RightDockWidgetArea, dDock['Inter-Spike Interval'] , )
-            dDock['Inter-Spike Interval'].setVisible(True)            
-        
-        
-        self.refresh_all()
-    
     ## Save 
     def save_to_database(self):
         if self.session is None:

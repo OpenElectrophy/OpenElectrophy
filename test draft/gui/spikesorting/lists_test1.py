@@ -21,6 +21,7 @@ def test1():
     w2 = UnitList(spikesorter = spikesorter)
     w2.refresh()
     w2.show()
+    w2.spike_selection_changed.connect(w1.on_spike_selection_changed)
 
 
     app.exec_()

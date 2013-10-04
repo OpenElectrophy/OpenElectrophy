@@ -165,19 +165,26 @@ class SpikeList(SpikeSortingWidgetBase):
         flags = QItemSelectionModel.Select #| QItemSelectionModel.Rows
         itemsSelection = QItemSelection()
         ind, = np.where(self.spikesorter.selected_spikes)
-        if ind.size>10000:
-            # only the first one because QT4 is able to handle with big selections
-            if ind.size>0:
-                for j in range(2):
-                    index = self.treeSpike.model().index(ind[0],j,QModelIndex())
-                    ir = QItemSelectionRange( index )
-                    itemsSelection.append( ir )
-        else:
-            for i in ind:
-                for j in range(2):
-                    index = self.treeSpike.model().index(i,j,QModelIndex())
-                    ir = QItemSelectionRange( index )
-                    itemsSelection.append( ir )
+        #~ if ind.size>1000:
+            #~ # only the first one because QT4 is able to handle with big selections
+            #~ if ind.size>0:
+                #~ for j in range(2):
+                    #~ index = self.treeSpike.model().index(ind[0],j,QModelIndex())
+                    #~ ir = QItemSelectionRange( index )
+                    #~ itemsSelection.append( ir )
+        #~ else:
+            #~ for i in ind:
+                #~ for j in range(2):
+                    #~ index = self.treeSpike.model().index(i,j,QModelIndex())
+                    #~ ir = QItemSelectionRange( index )
+                    #~ itemsSelection.append( ir )
+        if ind.size>100:
+            ind = ind[:10]
+        for i in ind:
+            for j in range(2):
+                index = self.treeSpike.model().index(i,j,QModelIndex())
+                ir = QItemSelectionRange( index )
+                itemsSelection.append( ir )
         self.treeSpike.selectionModel().select( itemsSelection , flags)
 
         # set selection visible
@@ -324,8 +331,8 @@ class UnitList(SpikeSortingWidgetBase):
         act.triggered.connect(self.selectSpikeFromCluster)
         act = menu.addAction(QIcon(':/go-jump.png'), u'Regroup small units')
         act.triggered.connect(self.regroupSmallUnits)
-        act = menu.addAction(QIcon(':/TODO.png'), u'Hide/Show on ndviewer and waveform')
-        act.triggered.connect(self.hideOrShowClusters)
+        #~ act = menu.addAction(QIcon(':/TODO.png'), u'Hide/Show on ndviewer and waveform')
+        #~ act.triggered.connect(self.hideOrShowClusters)
         
         if n==1:
             # one selected row only
@@ -334,7 +341,9 @@ class UnitList(SpikeSortingWidgetBase):
             act = menu.addAction(QIcon(':/TODO.png'), u'Set name/color/score of this unit')
             act.triggered.connect(self.setUnitNameColorScore)
         
-        menu.exec_(self.cursor().pos())
+        if menu.exec_(self.cursor().pos()):
+            pass
+        
     
     def deleteSelection(self):
         for index in self.tableNeuron.selectedIndexes():
@@ -379,6 +388,7 @@ class UnitList(SpikeSortingWidgetBase):
             #~ print sps.spike_clusters.shape
             sps.selected_spikes[sps.spike_clusters == self.cluster_list[index.row()]] = True
         self.spike_selection_changed.emit()
+        #~ print 'yep'
 
     #TODO
     #~ def subComputeCluster(self):
@@ -423,17 +433,17 @@ class UnitList(SpikeSortingWidgetBase):
         self.refresh()
         self.spike_clusters_changed.emit()
     
-    def hideOrShowClusters(self):
-        sps = self.spikesorter
-        for index in self.tableNeuron.selectedIndexes():
-            if index.column() !=0: continue
-            r = index.row()
-            c = self.cluster_list[r]
-            if c in sps.cluster_displayed_subset and sps.cluster_displayed_subset[c].size == 0:
-                sps.random_display_subset(c)
-            else:
-                sps.cluster_displayed_subset[c]  = np.array([ ], 'i')
-        self.spike_subset_changed.emit()
+    #~ def hideOrShowClusters(self):
+        #~ sps = self.spikesorter
+        #~ for index in self.tableNeuron.selectedIndexes():
+            #~ if index.column() !=0: continue
+            #~ r = index.row()
+            #~ c = self.cluster_list[r]
+            #~ if c in sps.cluster_displayed_subset and sps.cluster_displayed_subset[c].size == 0:
+                #~ sps.random_display_subset(c)
+            #~ else:
+                #~ sps.cluster_displayed_subset[c]  = np.array([ ], 'i')
+        #~ self.spike_subset_changed.emit()
     
     def setUnitNameColorScore(self):
         sps = self.spikesorter
