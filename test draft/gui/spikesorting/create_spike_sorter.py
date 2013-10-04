@@ -53,5 +53,5 @@ if True:
     
 spikesorter.check_display_attributes()
 print spikesorter
-print spikesorter.cluster_names
-print spikesorter.cluster_colors
+#~ print spikesorter.cluster_names
+#~ print spikesorter.cluster_colors

@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 
-
+from .tools import apply_descending_sort_with_waveform
 
 class SklearnKMeans(object):
     """
@@ -26,12 +26,12 @@ class SklearnKMeans(object):
                             {'name': 'init', 'type': 'list', 'value': 'k-means++', 'values':['k-means++', 'random']},
                             {'name': 'n_init', 'type': 'int', 'value': 10},
                             {'name': 'max_iter', 'type': 'int', 'value': 300},
-                            
+                            {'name': 'descending_sort_with_waveform', 'type': 'bool', 'value': True},
                             ]
 
     
     def run(self, spikesorter, n_cluster =8 ,  init='k-means++', n_init=10,
-                            max_iter=300, ):
+                            max_iter=300, descending_sort_with_waveform = True):
         sps = spikesorter
         
         classifier = KMeans( k = n_cluster , init = init, 
@@ -43,6 +43,8 @@ class SklearnKMeans(object):
         sps.cluster_names = dict( [ (i, 'cluster #{}'.format(i))
                                     for i in np.unique(sps.spike_clusters) ] )
 
+        if descending_sort_with_waveform:
+            apply_descending_sort_with_waveform(sps)
 
 
 

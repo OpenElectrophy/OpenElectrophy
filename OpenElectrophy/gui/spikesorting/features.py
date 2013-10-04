@@ -29,7 +29,7 @@ class FeaturesParallelPlot(SpikeSortingWidgetBase):
         self.mainLayout.addWidget(self.canvas)
         self.fig = self.canvas.fig
         self.ax = self.canvas.fig.add_subplot(1,1,1)
-        self.refresh()
+        #~ self.refresh()
 
     def refresh(self):
         sps = self.spikesorter
@@ -63,7 +63,7 @@ class FeaturesWilsonPlot(SpikeSortingWidgetBase):
         self.canvas = SimpleCanvas( )
         self.mainLayout.addWidget(self.canvas)
         self.fig = self.canvas.fig
-        self.refresh()
+        #~ self.refresh()
 
     def refresh(self):
         sps = self.spikesorter
@@ -118,7 +118,7 @@ class Features3D(SpikeSortingWidgetBase):
         self.ax = Axes3D(self.canvas.fig)
         self.mainLayout.addWidget( self.canvas )
         
-        self.refresh()
+        #~ self.refresh()
 
 
     def change_dim(self, index = None):
@@ -176,7 +176,7 @@ class FeaturesEvolutionInTime(SpikeSortingWidgetBase):
         self.fig = self.canvas.fig
         self.mainLayout.addWidget(self.canvas)
         
-        self.refresh()
+        #~ self.refresh()
     
     def comboChanged(self, i):
         if i<0:return

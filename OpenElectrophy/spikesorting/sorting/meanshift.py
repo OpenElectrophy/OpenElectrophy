@@ -6,6 +6,7 @@ import numpy as np
 
 from sklearn.cluster import MeanShift, estimate_bandwidth
 
+from .tools import apply_descending_sort_with_waveform
 
 
 class SklearnMeanShift(object):
@@ -30,10 +31,12 @@ class SklearnMeanShift(object):
                             {'name': 'n_samples', 'type': 'int', 'value': 500},
                             {'name': 'bin_seeding', 'type': 'bool', 'value': True},
                             {'name': 'cluster_all', 'type': 'bool', 'value': False},
+                            {'name': 'descending_sort_with_waveform', 'type': 'bool', 'value': True},
                             ]
                             
     def run(self, spikesorter, quantile=0.2, n_samples=500,
-                            bin_seeding=True, cluster_all=False):
+                            bin_seeding=True, cluster_all=False,
+                            descending_sort_with_waveform = True):
         
         sps = spikesorter
         
@@ -48,6 +51,9 @@ class SklearnMeanShift(object):
         
         sps.cluster_names = dict( [ (i, 'cluster #{}'.format(i))
                                     for i in np.unique(sps.spike_clusters) ] )
+
+        if descending_sort_with_waveform:
+            apply_descending_sort_with_waveform(sps)
 
 
 

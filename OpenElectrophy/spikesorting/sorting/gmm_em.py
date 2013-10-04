@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 import numpy as np
 
 import sklearn
@@ -6,6 +6,7 @@ from sklearn.mixture import GMM
 
 from distutils import version
 
+from .tools import apply_descending_sort_with_waveform
 
 
 class SklearnGaussianMixtureEm(object):
@@ -20,10 +21,12 @@ class SklearnGaussianMixtureEm(object):
     name = 'GMM EM'
     params = [  {'name': 'n_cluster', 'type': 'int', 'value': 4},
                             {'name': 'n_iter', 'type': 'int', 'value': 20},
+                            {'name': 'descending_sort_with_waveform', 'type': 'bool', 'value': True},
                             ]
     
     
-    def run(self, spikesorter, n_cluster = 4, n_iter = 20):
+    def run(self, spikesorter, n_cluster = 4, n_iter = 20,
+                        descending_sort_with_waveform = True):
         sps = spikesorter
         # FIXME whiten
         
@@ -38,6 +41,14 @@ class SklearnGaussianMixtureEm(object):
         
         sps.cluster_names = dict( [ (i, 'cluster #{}'.format(i))
                                     for i in np.unique(sps.spike_clusters) ] )
+        
+        if descending_sort_with_waveform:
+            apply_descending_sort_with_waveform(sps)
+        
+        
+        
+
+
 
 
 

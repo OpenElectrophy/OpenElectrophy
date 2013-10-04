@@ -14,10 +14,18 @@ from .toolchain import all_toolchain, ToolChainWidget
 
 from pyqtgraph.dockarea import DockArea, Dock
 
-import numpy as np
+from collections import OrderedDict
 
-# TODO: dock template
-# TODO: change toolchain
+import numpy as np
+import time
+
+
+vt = view_templates = OrderedDict()
+vt['Good ensemble'] =  ['UnitList', 'SpikeList', 'FilteredBandSignal', 'FeaturesNDViewer']
+vt['Nothing'] = [ ]
+vt['One cell detection'] = [ 'UnitList', 'SpikeList', 'FullBandSignal', 'FilteredBandSignal', 'AllWaveforms', 'AverageWaveforms', ]
+
+
 
 class SpikeSortingWindow(QMainWindow):
     db_changed = pyqtSignal()
@@ -47,17 +55,15 @@ class SpikeSortingWindow(QMainWindow):
                                             icon = QIcon(':/view-choose.png' ),
                                             text = u'Views template')
         self.toolbar.addWidget(but)
-        self.templateNames =[ 'Nothing', 'Good ensemble', 'One cell', 
-                            'Manual clustering', 'Detection', 'Before to save', 'Controls']
+        
         self.list_actTemplate = [ ]
-        for name in self.templateNames:
+        for name in view_templates.keys():
             act = QAction(name,but, checkable = True)
-            #~ act.setCheckable(True)
             self.list_actTemplate.append(act)
             but.addAction(act)
             act.triggered.connect( self.templateChanged)
-
-
+        
+        
         # Menu for selecting view
         #but =  QToolButton( 	popupMode = QToolButton.InstantPopup, toolButtonStyle = Qt.ToolButtonTextBesideIcon)
         but =  QToolButton( popupMode = QToolButton.InstantPopup,
@@ -67,13 +73,27 @@ class SpikeSortingWindow(QMainWindow):
         self.toolbar.addWidget(but)
         
         
+        ## Tool chain
+        self.toolchain = ToolChainWidget(spikesorter = self.spikesorter ,settings = self.settings )
+        
+        
+        self.toolchain.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.dockToolChain = dock = QDockWidget('Tool Chain',self)
+        dock.setObjectName(  'Tool chain' )
+        dock.setWidget(self.toolchain)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.toolchain.need_refresh.connect(self.refresh_all)
+        self.toolchain.resize(200,200)
+        
+        ##
         
 
         
         self.list_actionView = [ ]
         self.list_widget = [ ]
         self.list_dock = [ ]
-        for W in spikesorting_widget_list:
+        for i, W in enumerate(spikesorting_widget_list):
+            print i, W
             # Menu
             #~ act = QAction(W.name,but, checkable = True)
             act = QAction(W.name,but, checkable = True)
@@ -90,33 +110,23 @@ class SpikeSortingWindow(QMainWindow):
             dock.setObjectName(  W.name )
             dock.setWidget(w)
             
-            self.addDockWidget(Qt.RightDockWidgetArea, dock)
+            
+            friend = None
+            for j in range(i):
+                if spikesorting_widget_list[j] in W.tabified_with:
+                    friend = self.list_dock[j]
+                    break
+            if friend is not None:
+                self.tabifyDockWidget ( friend, dock)
+            else:
+                if W.prefered_position == 'AboveToolChain':
+                    self.splitDockWidget(self.dockToolChain, dock, Qt.Vertical)
+                elif W.prefered_position == 'UpperRight':
+                    self.addDockWidget(Qt.RightDockWidgetArea, dock)
+            
+            dock.setVisible(False)
             self.list_dock.append(dock)
             self.list_widget.append(w)
-            w.spike_clusters_changed.connect(self.on_spike_clusters_changed)
-            w.spike_selection_changed.connect(self.on_spike_selection_changed)
-            w.spike_subset_changed.connect(self.on_spike_subset_changed)
-            w.clusters_activation_changed.connect(self.on_clusters_activation_changed)
-            w.clusters_color_changed.connect(self.on_clusters_color_changed)
-            dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
-        
-        ## Tool chain
-        self.toolchain = ToolChainWidget(spikesorter = self.spikesorter ,settings = self.settings )
-        
-        
-        self.toolchain.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.dockToolChain = dock = QDockWidget('Tool Chain',self)
-        dock.setObjectName(  'Tool chain' )
-        dock.setWidget(self.toolchain)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
-        self.toolchain.need_refresh.connect(self.refresh_all)
-        ##
-        
-        #~ but =  QToolButton( popupMode = QToolButton.InstantPopup,
-                                            #~ toolButtonStyle = Qt.ToolButtonTextBesideIcon,
-                                            #~ icon = QIcon(':/spikesorting-mode.png' ),
-                                            #~ text = u'Mode')
-        #~ self.toolbar.addWidget(but)
         
         self.toolbar.addSeparator()
         
@@ -144,17 +154,24 @@ class SpikeSortingWindow(QMainWindow):
         but.clicked.connect(self.save_to_database)
         self.toolbar.addWidget(but)
         
-        self.changeTemplate(self.templateNames[0])
-        self.refresh_all( )
-    
-
+        
+        
+        
+        for dock in self.list_dock:
+            dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
+        for w in self.list_widget:
+            w.spike_clusters_changed.connect(self.on_spike_clusters_changed)
+            w.spike_selection_changed.connect(self.on_spike_selection_changed)
+            w.spike_subset_changed.connect(self.on_spike_subset_changed)
+            w.clusters_activation_changed.connect(self.on_clusters_activation_changed)
+            w.clusters_color_changed.connect(self.on_clusters_color_changed)            
+        self.changeTemplate(view_templates.keys()[0])
+        
     def refresh_all(self, shuffle = True):
         self.spikesorter.check_display_attributes()
-        #~ self.spikesorter.refresh_cluster_names()
-        #~ self.spikesorter.refresh_colors()
         if shuffle:
             self.refresh_displayed_subset()
-        import time
+        
         for w,dock in zip(self.list_widget, self.list_dock):
             if dock.isVisible():
                 t1 = time.time()
@@ -209,8 +226,12 @@ class SpikeSortingWindow(QMainWindow):
         dock = self.sender()
         i = self.list_dock.index(dock)
         self.list_actionView[i].setChecked(dock.isVisible())
-        self.list_widget[i].refresh()
-    
+        print i, dock.widget().name,  dock.isVisible(), dock.widget().isVisible(),  self.list_actionView[i].isChecked()
+        if dock.isVisible():
+            t1 = time.time()
+            self.list_widget[i].refresh()
+            t2 = time.time()
+            print'refresh ',  dock.widget().name, t2-t1
 
     def selectPlotChanged(self):
         act = self.sender()
@@ -230,11 +251,21 @@ class SpikeSortingWindow(QMainWindow):
         i = self.list_actTemplate.index(act)
         for a in self.list_actTemplate: a.setChecked(False)
         act.setChecked(True)
-        self.changeTemplate(self.templateNames[i])
+        self.changeTemplate(view_templates.keys()[i])
 
     def changeTemplate(self, name = None):
         
-        # hide all
+        
+        for i, w in enumerate(self.list_widget):
+            dock = self.list_dock[i]
+            if w.__class__.__name__ in view_templates[name]:
+                dock.setVisible(True)
+            else:
+                dock.setVisible(False)
+        return
+        
+        
+        
         for dock in self.list_dock:
             dock.setVisible(False)
         

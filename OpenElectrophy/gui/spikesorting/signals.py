@@ -99,7 +99,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
 
         param_global = [
                         {'name': 'auto_zoom_on_select', 'type': 'bool', 'value': True },
-                        {'name': 'zoom_size', 'type': 'float', 'value':  0.05, 'step' : 0.001 },
+                        {'name': 'zoom_size', 'type': 'float', 'value':  0.2, 'step' : 0.001 },
                         {'name': 'plot_threshold', 'type': 'bool', 'value':  True },
                         ]        
         self.params = pg.parametertree.Parameter.create( name='Global options', type='group',

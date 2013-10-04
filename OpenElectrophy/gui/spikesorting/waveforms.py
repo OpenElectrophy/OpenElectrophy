@@ -17,16 +17,22 @@ class AverageWaveforms(SpikeSortingWidgetBase):
     refresh_on = [  'spike_waveforms', 'spike_clusters', 'cluster_names']
     icon_name = 'plot-waveform.png'
     
+    plot_dataset = type('Parameters', (DataSet,), { 'estimation' : ChoiceItem('max_waveform_by_cluster',  ['Median + MAD', 'Mean + STD']),
+                                                                                                'deviation_coeff' : FloatItem('deviation coeff',  default = 2.5),
+                                                                                                })
     
     def __init__(self,**kargs):
         super(AverageWaveforms, self).__init__(**kargs)
         self.canvas = SimpleCanvasAndTool( )
+        self.canvas.toolbar.hide()
+        self.canvas.toolbar.pan()
         #~ self.canvas = SimpleCanvas( )
         self.mainLayout.addWidget(self.canvas)
         self.fig = self.canvas.fig
-        self.refresh()
+        #~ self.refresh()
 
     def refresh(self):
+        print 'refresh AverageWaveforms'
         sps = self.spikesorter
         self.fig.clear()
         if sps.spike_waveforms is None : 
@@ -39,12 +45,12 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         self.ax2s = [ ]
         ax = None
         ax2 = None
-        grid = GridSpec(4,sps.trodness)
+        grid = GridSpec(3,sps.trodness, wspace=0, hspace=0)
         for i in range(sps.trodness):
-            ax = self.fig.add_subplot( grid[0:3,i] ,  sharex = ax, sharey = ax)
+            ax = self.fig.add_subplot( grid[0:2,i] ,  sharex = ax, sharey = ax)
             self.axs.append( ax )
             ax.axvline(0, color = 'r', ls = '--', alpha = .7)
-            ax2 = self.fig.add_subplot( grid[3,i] ,  sharex = ax, sharey = ax2)
+            ax2 = self.fig.add_subplot( grid[2,i] ,  sharex = ax, sharey = ax2)
             self.ax2s.append(ax2)
             ax2.axvline(0, color = 'r', ls = '--', alpha = .7)
             ax.get_xaxis().set_visible(False)
@@ -52,9 +58,13 @@ class AverageWaveforms(SpikeSortingWidgetBase):
                 ax.get_yaxis().set_visible(False)
                 ax2.get_yaxis().set_visible(False)
             else:
-                ax.set_ylabel('mean +- sd')
-                ax2.set_ylabel('sd')
+                ax.set_ylabel(self.plot_parameters['estimation'])
+                ax2.set_ylabel(self.plot_parameters['estimation'].split('+')[-1])
+            ax2.set_xticks(np.arange(-10,10))
+            ax2.set_xticklabels(['']*20)
+                
         times = (np.arange(-sps.left_sweep, sps.right_sweep+1)/sps.wf_sampling_rate).rescale('ms').magnitude
+        
         
         # plots
         for i in range(sps.trodness):
@@ -67,11 +77,18 @@ class AverageWaveforms(SpikeSortingWidgetBase):
                 colors = [ sps.cluster_colors[c] for c in sps.cluster_names if sps.active_cluster[c]]
             
             for sl,color in zip(slices, colors):
-                m  = np.mean(sps.spike_waveforms[sl,i,:], axis = 0)
-                sd = np.std(sps.spike_waveforms[sl,i,:], axis = 0)
+                if self.plot_parameters['estimation'] == 'Median + MAD':
+                    m  = np.median(sps.spike_waveforms[sl,i,:], axis = 0)
+                    sd = np.median(np.abs(sps.spike_waveforms[sl,i,:]-m), axis = 0)/  .6745
+                elif self.plot_parameters['estimation']== 'Mean + STD':
+                    m  = np.mean(sps.spike_waveforms[sl,i,:], axis = 0)
+                    sd = np.std(sps.spike_waveforms[sl,i,:], axis = 0)
+                coeff = self.plot_parameters['deviation_coeff']
                 ax.plot(times, m, linewidth=2,color = color,)
-                ax.fill_between(times, m-sd, m+sd ,
+                
+                ax.fill_between(times, m-sd*coeff, m+sd*coeff ,
                                     color = color, alpha = .3)
+
                 self.axs[0].set_xlim(times[0], times[-1])
                 self.ax2s[i].plot(times, sd, linewidth=2,color = color,)
 
@@ -101,7 +118,7 @@ class AllWaveforms(SpikeSortingWidgetBase):
         self.selected_lines = None
         self.already_in_pick = False # to avoid multiple pick
         
-        self.refresh()
+        #~ self.refresh()
     
     def refresh(self):
         
@@ -116,7 +133,7 @@ class AllWaveforms(SpikeSortingWidgetBase):
             
         # recreate axes
         ax = None
-        grid = GridSpec(1,sps.trodness)
+        grid = GridSpec(1,sps.trodness, wspace=0, hspace=0)
         for i in range(sps.trodness):
             ax = self.fig.add_subplot( grid[i] , sharex = ax, sharey = ax)
             self.axs.append( ax )
@@ -132,6 +149,8 @@ class AllWaveforms(SpikeSortingWidgetBase):
             ax.clear()
             ax.axvline(0, color = 'r', ls = '--', alpha = .7)
             self.lines.append([ ])
+            ax.set_xticks(np.arange(-10,10))
+            ax.set_xticklabels(['']*20)
         
         self.ploted_indices =[ ]
         for c in sps.cluster_names.keys():
