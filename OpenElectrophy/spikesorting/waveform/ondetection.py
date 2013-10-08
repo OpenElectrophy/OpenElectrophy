@@ -44,7 +44,7 @@ class AlignWaveformOnDetection(object):
         remove_limit_spikes(spikesorter, swl, swr)
         
         # Initialize
-        initialize_waveform(spikesorter, wsize)
+        spike_waveforms= initialize_waveform(spikesorter, wsize)
         sps.wf_sampling_rate = sps.sig_sampling_rate
         sps.left_sweep =swl
         sps.right_sweep = swr
@@ -55,7 +55,11 @@ class AlignWaveformOnDetection(object):
             for ind in indexes :
                 for c in range(len(sps.rcs)):
                     sig = sps.filtered_sigs[c, s]
-                    sps.spike_waveforms[n,c, :] = sig[ind-swl:ind+swr+1]
+                    spike_waveforms[n,c, :] = sig[ind-swl:ind+swr+1]
                 n += 1
+        
+        sps.spike_waveforms = spike_waveforms
+        
+        
 
 

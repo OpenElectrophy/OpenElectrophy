@@ -4,7 +4,7 @@ sys.path.append('../../..')
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from OpenElectrophy.gui.spikesorting import FullBandSignal, FilteredBandSignal, SignalStatistics
+from OpenElectrophy.gui.spikesorting import FullBandSignal, FilteredBandSignal, SignalStatistics, BetweenSpikeNoiseEstimation
 
 
 
@@ -18,15 +18,19 @@ def test1():
     #~ w1.refresh()
     #~ w1.show()
     
-    w2 = FilteredBandSignal(spikesorter = spikesorter)
-    w2.refresh()
-    w2.show()
-    w2.spike_clusters_changed.connect(w2.refresh)
+    #~ w2 = FilteredBandSignal(spikesorter = spikesorter)
+    #~ w2.refresh()
+    #~ w2.show()
+    #~ w2.spike_clusters_changed.connect(w2.refresh)
 
 
     #~ w3 = SignalStatistics(spikesorter = spikesorter)
     #~ w3.refresh()
     #~ w3.show()
+
+    w4 = BetweenSpikeNoiseEstimation(spikesorter = spikesorter)
+    w4.refresh()
+    w4.show()
 
     
 

@@ -30,16 +30,10 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         self.mainLayout.addWidget(self.canvas)
         self.fig = self.canvas.fig
         #~ self.refresh()
-
-    def refresh(self):
+        
         sps = self.spikesorter
-        self.fig.clear()
-        if sps.spike_waveforms is None : 
-            self.canvas.draw()
-            return
         
-        # recreate axes
-        
+        # create axes
         self.axs = [ ]
         self.ax2s = [ ]
         ax = None
@@ -48,48 +42,91 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         for i in range(sps.trodness):
             ax = self.fig.add_subplot( grid[0:2,i] ,  sharex = ax, sharey = ax)
             self.axs.append( ax )
-            ax.axvline(0, color = 'r', ls = '--', alpha = .7)
+            #~ ax.axvline(0, color = 'r', ls = '--', alpha = .7)
             ax2 = self.fig.add_subplot( grid[2,i] ,  sharex = ax, sharey = ax2)
             self.ax2s.append(ax2)
-            ax2.axvline(0, color = 'r', ls = '--', alpha = .7)
+            #~ ax2.axvline(0, color = 'r', ls = '--', alpha = .7)
             ax.get_xaxis().set_visible(False)
             if i !=0:
                 ax.get_yaxis().set_visible(False)
                 ax2.get_yaxis().set_visible(False)
-            else:
-                ax.set_ylabel(self.plot_parameters['estimation'])
-                ax2.set_ylabel(self.plot_parameters['estimation'].split('+')[-1])
             ax2.set_xticks(np.arange(-10,10))
             ax2.set_xticklabels(['']*20)
+        
+
+    def refresh(self):
+        sps = self.spikesorter
+        for i in range(sps.trodness):
+            self.axs[i].clear()
+            self.ax2s[i].clear()
+
+        if sps.spike_waveforms is None : 
+            self.canvas.draw()
+            return
+        
+        # recreate axes
+        
                 
         times = (np.arange(-sps.left_sweep, sps.right_sweep+1)/sps.wf_sampling_rate).rescale('ms').magnitude
         
+        for i in range(sps.trodness):
+            #~ self.axs[i].clear()
+            #~ self.ax2s[i].clear()
+            if i==0:
+                self.axs[i].set_ylabel(self.plot_parameters['estimation'])
+                self.ax2s[i].set_ylabel(self.plot_parameters['estimation'].split('+')[-1])
         
         # plots
-        for i in range(sps.trodness):
-            ax = self.axs[i]
-            if len(sps.cluster_names) == 0:
-                slices = [ slice(None,None,None) ]
-                colors = [ 'b' ]
-            else:
-                slices = [c==sps.spike_clusters for c in sps.cluster_names if sps.active_cluster[c]]
-                colors = [ sps.cluster_colors[c] for c in sps.cluster_names if sps.active_cluster[c]]
-            
-            for sl,color in zip(slices, colors):
+        coeff = self.plot_parameters['deviation_coeff']
+        #~ print sps.cluster_names.keys()
+        #~ print sps.median_centers.keys()
+        for c in sps.cluster_names:
+            #~ print c
+            if not sps.active_cluster[c]: continue
+            for i in range(sps.trodness):
                 if self.plot_parameters['estimation'] == 'Median + MAD':
-                    m  = np.median(sps.spike_waveforms[sl,i,:], axis = 0)
-                    sd = np.median(np.abs(sps.spike_waveforms[sl,i,:]-m), axis = 0)/  .6745
+                    m = sps.median_centers[c][i,:]
+                    sd = sps.mad_deviation[c][i,:]
                 elif self.plot_parameters['estimation']== 'Mean + STD':
-                    m  = np.mean(sps.spike_waveforms[sl,i,:], axis = 0)
-                    sd = np.std(sps.spike_waveforms[sl,i,:], axis = 0)
-                coeff = self.plot_parameters['deviation_coeff']
-                ax.plot(times, m, linewidth=2,color = color,)
+                    m = sps.mean_centers[c][i,:]
+                    sd = sps.std_deviation[c][i,:]
                 
-                ax.fill_between(times, m-sd*coeff, m+sd*coeff ,
+                color = sps.cluster_colors[c]
+                self.axs[i].plot(times, m, linewidth=2,color = color,)
+                self.axs[i].fill_between(times, m-sd*coeff, m+sd*coeff ,
                                     color = color, alpha = .3)
-
-                self.axs[0].set_xlim(times[0], times[-1])
                 self.ax2s[i].plot(times, sd, linewidth=2,color = color,)
+                
+                self.axs[i].axvline(0, color = 'r', ls = '--', alpha = .7)
+                self.ax2s[i].axvline(0, color = 'r', ls = '--', alpha = .7)
+                
+        self.axs[0].set_xlim(times[0], times[-1])
+        
+
+
+        
+        #~ for i in range(sps.trodness):
+            #~ ax = self.axs[i]
+            #~ if len(sps.cluster_names) == 0:
+                #~ slices = [ slice(None,None,None) ]
+                #~ colors = [ 'b' ]
+            #~ else:
+                #~ slices = [c==sps.spike_clusters for c in sps.cluster_names if sps.active_cluster[c]]
+                #~ colors = [ sps.cluster_colors[c] for c in sps.cluster_names if sps.active_cluster[c]]
+            #~ for sl,color in zip(slices, colors):
+                #~ if self.plot_parameters['estimation'] == 'Median + MAD':
+                    #~ m  = np.median(sps.spike_waveforms[sl,i,:], axis = 0)
+                    #~ sd = np.median(np.abs(sps.spike_waveforms[sl,i,:]-m), axis = 0)/  .6745
+                #~ elif self.plot_parameters['estimation']== 'Mean + STD':
+                    #~ m  = np.mean(sps.spike_waveforms[sl,i,:], axis = 0)
+                    #~ sd = np.std(sps.spike_waveforms[sl,i,:], axis = 0)
+
+                #~ coeff = self.plot_parameters['deviation_coeff']
+                #~ ax.plot(times, m, linewidth=2,color = color,)
+                #~ ax.fill_between(times, m-sd*coeff, m+sd*coeff ,
+                                    #~ color = color, alpha = .3)
+                #~ self.axs[0].set_xlim(times[0], times[-1])
+                #~ self.ax2s[i].plot(times, sd, linewidth=2,color = color,)
 
         self.canvas.draw()
 

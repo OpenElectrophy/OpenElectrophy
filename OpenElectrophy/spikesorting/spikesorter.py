@@ -268,7 +268,8 @@ class SpikeSorter(object):
         self.full_band_sigs=None
         self.sig_sampling_rate = None
         self.filtered_sigs=None
-        self.spike_index_array = None
+        #~ self.spike_index_array = None
+        self.set_attr_no_check( 'spike_index_array', None)
         
         self.seg_spike_slices = { }
         self.spike_waveforms = None
@@ -357,19 +358,21 @@ class SpikeSorter(object):
             return 
         
         if name == 'spike_index_array':
+            object.__setattr__(self, 'spike_waveforms', None)
+            object.__setattr__(self, 'waveform_features', None)
             if self.spike_index_array is None:
                 nb_spikes = 0
             else:
                 nb_spikes = np.sum([len(pos) for pos in self.spike_index_array])
             self.spike_clusters = np.zeros(nb_spikes, dtype = int)
             self.init_seg_spike_slices()
-            object.__setattr__(self, 'spike_waveforms', None)
-            object.__setattr__(self, 'waveform_features', None)
         elif name == 'spike_waveforms':
             object.__setattr__(self, 'waveform_features', None)
+            self.recompute_cluster_center()
         elif name == 'spike_clusters':
             self.cluster_names = { }
             self.refresh_cluster_names()
+            self.recompute_cluster_center()
         #~ self.selected_spikes is None
 
     def init_seg_spike_slices(self):
@@ -636,6 +639,9 @@ class SpikeSorter(object):
             print step
             other.run_step(step['methodInstance'].__class__, **step['arguments'])
     
+    
+    
+    
     ## Manul clustering utilities
     def delete_one_cluster(self, c):
         # spike_index_array first
@@ -735,6 +741,23 @@ class SpikeSorter(object):
             self.cluster_names.pop(c)
         self.cluster_names[n] = u'regrouped small cluster'
         self.refresh_colors(reset = False)
+    
+    
+    def recompute_cluster_center(self):
+        self.median_centers = { }
+        self.mean_centers = { }
+        self.mad_deviation = { }
+        self.std_deviation = { }
+        
+        if self.spike_waveforms is None: return
+        print 'recompute_cluster_center'
+        for c in self.cluster_names:
+            ind = c==self.spike_clusters
+            self.median_centers[c]= np.median(self.spike_waveforms[ind,:,:], axis=0)
+            self.mean_centers[c]= np.mean(self.spike_waveforms[ind,:,:], axis=0)
+            self.mad_deviation[c]= np.median(np.abs(self.spike_waveforms[ind,:,:]-self.median_centers[c]), axis = 0)/  .6745
+            self.std_deviation[c]= np.std(self.spike_waveforms[ind,:,:], axis=0)
+
     
     ####
     ## Plot utilities

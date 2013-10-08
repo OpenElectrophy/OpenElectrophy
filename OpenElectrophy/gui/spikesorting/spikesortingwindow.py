@@ -186,6 +186,7 @@ class SpikeSortingWindow(QMainWindow):
 
     def on_spike_clusters_changed(self):
         self.spikesorter.refresh_colors(reset = False)
+        self.spikesorter.recompute_cluster_center()
         self.spikesorter.selected_spikes[:] = False
         self.refresh_displayed_subset()
         for dock, w in zip(self.list_dock,self.list_widget):

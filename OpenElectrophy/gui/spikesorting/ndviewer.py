@@ -553,8 +553,21 @@ class NDViewer(QWidget):
         if self.selectionLine is not None:
             if self.selectionLine in self.ax.lines:
                 self.ax.lines.remove(self.selectionLine)
-        proj = np.dot( self.data, self.projection )
-        self.selectionLine, = self.ax.plot(proj[self.actualSelection,0] , proj[self.actualSelection,1],
+        
+        
+        if np.sum(self.actualSelection)>1:
+            # for big selection only subset are shown
+            sel = np.zeros(self.data.shape[0], dtype = bool)
+            for c in self.all_labels:
+                ind = self.subset[c]
+                sel[ind] = True
+            sel = sel & self.actualSelection
+            proj = np.dot( self.data[sel, :], self.projection )
+        else:
+            # for small selection also hideen spike are shown
+            proj = np.dot( self.data[self.actualSelection, :], self.projection )
+        
+        self.selectionLine, = self.ax.plot(proj[:,0] , proj[:,1],
                                                                 linestyle = 'None',
                                                                 markersize = 10,
                                                                 marker = 'o' ,
@@ -562,6 +575,7 @@ class NDViewer(QWidget):
                                                                 markeredgecolor='k',
                                                                 alpha = .6,
                                                                 )
+        
         self.redraw()
 
 

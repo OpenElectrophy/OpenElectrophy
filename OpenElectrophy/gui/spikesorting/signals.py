@@ -6,12 +6,14 @@ Theses widget display individual spike on signals.
 
 
 
-
+from matplotlib.gridspec import GridSpec
 
 from .base import *
 
 from ..viewers import TimeSeeker
 from ..guiutil import *
+
+
 
 import pyqtgraph as pg
 
@@ -406,6 +408,51 @@ class FilteredBandSignal(SignalAndSpike):
 
 
 
+class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
+    name = 'Between spike snoise estimation'
+    refresh_on = [ 'spike_index_array', ]
+    icon_name = 'plot-waveform.png'
+
+    def __init__(self,**kargs):
+        super(BetweenSpikeNoiseEstimation, self).__init__(**kargs)
+        self.canvas = SimpleCanvasAndTool( )
+        self.canvas.toolbar.hide()
+        self.canvas.toolbar.pan()
+        #~ self.canvas = SimpleCanvas( )
+        self.mainLayout.addWidget(self.canvas)
+        self.fig = self.canvas.fig
+
+        sps = self.spikesorter
+
+        # create axes
+        self.axs = [ ]
+        self.ax2s = [ ]
+        ax = None
+        ax2 = None
+        grid = GridSpec(3,sps.trodness, wspace=0, hspace=0)
+        for i in range(sps.trodness):
+            ax = self.fig.add_subplot( grid[0:2,i] ,  sharex = ax, sharey = ax)
+            self.axs.append( ax )
+            #~ ax.axvline(0, color = 'r', ls = '--', alpha = .7)
+            ax2 = self.fig.add_subplot( grid[2,i] ,  sharex = ax, sharey = ax2)
+            self.ax2s.append(ax2)
+            #~ ax2.axvline(0, color = 'r', ls = '--', alpha = .7)
+            ax.get_xaxis().set_visible(False)
+            if i !=0:
+                ax.get_yaxis().set_visible(False)
+                ax2.get_yaxis().set_visible(False)
+            ax2.set_xticks(np.arange(-10,10))
+            ax2.set_xticklabels(['']*20)
+
+    def refresh(self):
+        sps = self.spikesorter
+        for i in range(sps.trodness):
+            self.axs[i].clear()
+            self.ax2s[i].clear()
+        
+        if sps.spike_index_array is None : 
+            self.canvas.draw()
+            return
 
 
 

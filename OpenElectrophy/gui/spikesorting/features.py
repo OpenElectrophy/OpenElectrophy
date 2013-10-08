@@ -239,7 +239,13 @@ class FeaturesNDViewer(SpikeSortingWidgetBase):
                                                         )
     
     def newSelectionInViewer(self):
-        self.spikesorter.selected_spikes = self.ndviewer.actualSelection
+        sps = self.spikesorter
+        
+        sps.selected_spikes = self.ndviewer.actualSelection
+        for c, active  in sps.active_cluster.items():
+            if not active:
+                ind = sps.spike_clusters ==c
+                sps.selected_spikes[ind] = False
         self.spike_selection_changed.emit()
     
     def on_spike_selection_changed(self):

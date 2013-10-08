@@ -7,11 +7,18 @@ from tools import initialize_waveform, remove_limit_spikes
 
 from .tools import get_following_peak_multi_channel
 
-from scipy.optimize import minimize
+
+# FIXME!!!!!
+try:
+    from scipy.optimize import minimize
+except:
+    print 'no scipy.optimize.minimize'
+
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 
 from matplotlib.cm import get_cmap
+
 
 class AlignWaveformOnCentralWaveform(object):
     """
@@ -68,14 +75,13 @@ class AlignWaveformOnCentralWaveform(object):
         
         
         # Initialize
-        initialize_waveform(spikesorter, wsize)
+        wfs = initialize_waveform(spikesorter, wsize)
         sps.wf_sampling_rate = sps.sig_sampling_rate
         sps.left_sweep =swl
         sps.right_sweep = swr
         
         
         # take waveform in signal
-        wfs = spikesorter.spike_waveforms
         trodness = len(spikesorter.rcs)
         n_spike = wfs.shape[0]
         large_wfs = np.empty((n_spike, trodness, wisze2), dtype = float) # non aligned larger waveform
@@ -157,7 +163,8 @@ class AlignWaveformOnCentralWaveform(object):
             elif shift_method == 'lanczos':
                 #TODO!!!
                 pass
-            
+        
+        spikesorter.spike_waveforms = wfs
 
     def plot_iterative_centers(self, fig, sps):
         N = 10.
