@@ -293,6 +293,8 @@ class SpikeSorter(object):
         self.selected_spikes = None
         self.active_cluster = { }
         
+        self.interspike_noise_median = None
+        
         #~ self.__setattr__ = self.__setattr__after
         
         self.initialize_from_rcg(rcg)
@@ -366,6 +368,7 @@ class SpikeSorter(object):
                 nb_spikes = np.sum([len(pos) for pos in self.spike_index_array])
             self.spike_clusters = np.zeros(nb_spikes, dtype = int)
             self.init_seg_spike_slices()
+            object.__setattr__(self, 'interspike_noise_median', None)
         elif name == 'spike_waveforms':
             object.__setattr__(self, 'waveform_features', None)
             self.recompute_cluster_center()
@@ -660,33 +663,7 @@ class SpikeSorter(object):
         self.init_seg_spike_slices()
 
 
-        #~ self.full_band_sigs=None
-        #~ self.sig_sampling_rate = None
-        #~ self.filtered_sigs=None
-        #~ self.spike_index_array = None
-        
-        #~ self.seg_spike_slices = { }
-        #~ self.spike_waveforms = None
-        #~ self.wf_sampling_rate = None
-        #~ self.left_sweep = None
-        #~ self.right_sweep = None
-        #~ self.waveform_features = None
-        #~ self.feature_names = None
-        
-        #~ self.spike_clusters = None
-        #~ self.cluster_names = { }
-        #~ self.spike_clusters_probabilistic = None
-        
-        #~ self.seg_t_start = None
-        #~ self.seg_t_stop = None
-        #~ self.wf_units = None
-        
-        #~ self.cluster_colors = { }
-        #~ self.displayed_subset_size = 100
-        #~ self.cluster_displayed_subset = { }
-        #~ self.selected_spikes = None
-
-    
+   
     def add_one_spike(self, s, time, c = 0):
         if self.filtered_sigs is None:
             raise Exception('No signals')
@@ -742,6 +719,53 @@ class SpikeSorter(object):
         self.cluster_names[n] = u'regrouped small cluster'
         self.refresh_colors(reset = False)
     
+    
+    #####
+    ##  Stat utiliities
+    def recompute_interspike_noise(self, n  = None, maxiter = 5):
+        """
+        this take small chunk of signal btween spike same size as waveform to estimate the noise.
+        """
+        if n is None:
+            n = self.nb_spikes
+        
+        self.interspike_noise= np.empty( (len(self.rcs), len(self.segs)), dtype = object)
+        
+        sr = self.sig_sampling_rate
+        swl = self.left_sweep
+        swr = self.right_sweep
+        wsize = swl + swr + 1
+        trodness = len(self.rcs)
+        
+        def isnear(a,b, dist):
+            return np.array([ np.any(abs(b-e)<dist) for e in a ], dtype = bool)
+        
+        noise_chunk  = np.empty((n, trodness, wsize), dtype = float)
+        ind = 0
+        for s, seg in enumerate(self.segs):
+            n_by_seg = max(n//len(self.segs),2)
+            
+            rand_size = self.full_band_sigs[0,s].size-wsize-1
+            #take random pos
+            pos = np.random.randint(rand_size, size = n_by_seg)+swl
+            for iter in range(maxiter):
+                # check is is not overlapping with spikes
+                #~ print iter
+                near = isnear(pos, self.spike_index_array[s], wsize*2)
+                if np.sum(near)==0: break
+                pos[near] = np.random.randint(rand_size, size =  np.sum(near))+swl
+            pos = pos[~near]
+            
+            for p in pos:
+                for i in range(len(self.rcs)):
+                    noise_chunk[ind, i, :] = self.full_band_sigs[i,s][p-swl: p+swr+1]
+                ind += 1
+        
+        noise_chunk = noise_chunk[:ind]
+        
+        self.interspike_noise_median = np.median(noise_chunk, axis = 0)
+        self.interspike_noise_mad = np.median(np.abs(noise_chunk-self.interspike_noise_median), axis = 0)/  .6745
+        
     
     def recompute_cluster_center(self):
         self.median_centers = { }

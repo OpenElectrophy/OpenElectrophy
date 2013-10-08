@@ -38,6 +38,7 @@ class SpikeSortingWidgetBase(QWidget):
     clusters_activation_changed = pyqtSignal()
     clusters_color_changed = pyqtSignal()
     
+    plot_options_changed = pyqtSignal()
     
     def __init__(self, parent = None, spikesorter = None, settings = None):
         super(SpikeSortingWidgetBase, self).__init__(parent =parent)
@@ -61,6 +62,7 @@ class SpikeSortingWidgetBase(QWidget):
         dia.update(self.plot_parameters)
         if dia.exec_():
             self.plot_parameters = dia.to_dict()
+            self.plot_options_changed.emit()
         self.refresh()
         
 

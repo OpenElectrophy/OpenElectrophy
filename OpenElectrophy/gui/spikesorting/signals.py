@@ -412,6 +412,12 @@ class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
     name = 'Between spike snoise estimation'
     refresh_on = [ 'spike_index_array', ]
     icon_name = 'plot-waveform.png'
+    
+    plot_dataset = type('Parameters', (DataSet,), { 'deviation_coeff' : FloatItem('deviation coeff',  default = 2.5), 
+                                                                                                    'maxiter' : IntItem('maxiter for random chunk',  default = 5), 
+                                                                                                    'nb_chunk' : IntItem('nb_chunk',  default = 1000), 
+                                                                                                })
+
 
     def __init__(self,**kargs):
         super(BetweenSpikeNoiseEstimation, self).__init__(**kargs)
@@ -443,7 +449,14 @@ class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
                 ax2.get_yaxis().set_visible(False)
             ax2.set_xticks(np.arange(-10,10))
             ax2.set_xticklabels(['']*20)
-
+            
+            self.plot_options_changed.connect(self.on_plot_options_changed)
+    
+    def on_plot_options_changed(self):
+        sps = self.spikesorter
+        sps.interspike_noise_median = None
+        self.refresh()
+    
     def refresh(self):
         sps = self.spikesorter
         for i in range(sps.trodness):
@@ -453,7 +466,33 @@ class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
         if sps.spike_index_array is None : 
             self.canvas.draw()
             return
+        
+        if sps.interspike_noise_median is None:
+            maxiter = self.plot_parameters['maxiter']
+            nb_chunk = self.plot_parameters['nb_chunk']
+            
+            sps.recompute_interspike_noise(n = nb_chunk, maxiter = maxiter)
+        
+        times = (np.arange(-sps.left_sweep, sps.right_sweep+1)/sps.wf_sampling_rate).rescale('ms').magnitude
+        coeff = self.plot_parameters['deviation_coeff']
+        
+        for i in range(sps.trodness):
+            m =  sps.interspike_noise_median[i,:]
+            sd = sps.interspike_noise_mad[i,:]
+            
+            self.axs[i].plot(times, m, linewidth=2,color = 'k',)
+            self.ax2s[i].plot(times, sd, linewidth=2,color = 'k',)
+            self.axs[i].fill_between(times, m-sd*coeff, m+sd*coeff ,
+                                    color = 'k', alpha = .3)
+            
+            self.axs[i].axvline(0, color = 'r', ls = '--', alpha = .7)
+            self.ax2s[i].axvline(0, color = 'r', ls = '--', alpha = .7)
+                
+        self.axs[0].set_xlim(times[0], times[-1])
 
+        self.canvas.draw()
+        
+        
 
 
 
