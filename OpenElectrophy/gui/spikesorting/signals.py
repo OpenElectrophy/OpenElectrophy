@@ -462,8 +462,9 @@ class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
         for i in range(sps.trodness):
             self.axs[i].clear()
             self.ax2s[i].clear()
-            self.axs[i].set_xticks(np.arange(-10,10))
-            self.axs[i].set_xticklabels(['']*20)
+            #~ self.axs[i].set_xticks(np.arange(-10,10))
+            #~ self.axs[i].set_xticklabels(['']*20)
+            self.axs[i].set_xticks([])
             if i==0:
                 self.axs[i].set_ylabel('Median')
                 self.ax2s[i].set_ylabel('MAD')
@@ -480,13 +481,14 @@ class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
             
             sps.recompute_interspike_noise(n = nb_chunk, maxiter = maxiter)
         
-        times = (np.arange(-sps.left_sweep, sps.right_sweep+1)/sps.wf_sampling_rate).rescale('ms').magnitude
+        #~ times = (np.arange(-sps.left_sweep, sps.right_sweep+1)/sps.wf_sampling_rate).rescale('ms').magnitude
+        
         coeff = self.plot_parameters['deviation_coeff']
         
         for i in range(sps.trodness):
             m =  sps.interspike_noise_median[i,:]
             sd = sps.interspike_noise_mad[i,:]
-            
+            times = np.arange(m.size)
             self.axs[i].plot(times, m, linewidth=2,color = 'k',)
             self.ax2s[i].plot(times, sd, linewidth=2,color = 'k',)
             self.axs[i].fill_between(times, m-sd*coeff, m+sd*coeff ,

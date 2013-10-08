@@ -40,7 +40,7 @@ class AlignWaveformOnPeak(object):
         trodness = sps.filtered_sigs.shape[0]
         
         # clean
-        remove_limit_spikes(spikesorter, swl, swr)
+        remove_limit_spikes(spikesorter, swl, swr*3)
         
         
         # Initialize
