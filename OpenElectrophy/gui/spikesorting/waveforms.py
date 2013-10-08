@@ -102,6 +102,9 @@ class AverageWaveforms(SpikeSortingWidgetBase):
                 
         self.axs[0].set_xlim(times[0], times[-1])
         
+        for i in range(sps.trodness):
+            self.ax2s[i].set_xticks(np.arange(-10,10))
+            self.ax2s[i].set_xticklabels(['']*20)
 
 
         

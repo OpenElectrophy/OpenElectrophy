@@ -371,6 +371,7 @@ class SpikeSorter(object):
             object.__setattr__(self, 'interspike_noise_median', None)
         elif name == 'spike_waveforms':
             object.__setattr__(self, 'waveform_features', None)
+            object.__setattr__(self, 'interspike_noise_median', None)
             self.recompute_cluster_center()
         elif name == 'spike_clusters':
             self.cluster_names = { }
@@ -722,12 +723,10 @@ class SpikeSorter(object):
     
     #####
     ##  Stat utiliities
-    def recompute_interspike_noise(self, n  = None, maxiter = 5):
+    def recompute_interspike_noise(self, n  = 1000, maxiter = 5):
         """
         this take small chunk of signal btween spike same size as waveform to estimate the noise.
         """
-        if n is None:
-            n = self.nb_spikes
         
         self.interspike_noise= np.empty( (len(self.rcs), len(self.segs)), dtype = object)
         
@@ -758,7 +757,7 @@ class SpikeSorter(object):
             
             for p in pos:
                 for i in range(len(self.rcs)):
-                    noise_chunk[ind, i, :] = self.full_band_sigs[i,s][p-swl: p+swr+1]
+                    noise_chunk[ind, i, :] = self.filtered_sigs[i,s][p-swl: p+swr+1]
                 ind += 1
         
         noise_chunk = noise_chunk[:ind]

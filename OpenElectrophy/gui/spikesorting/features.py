@@ -279,8 +279,8 @@ class FeaturesNDViewer(SpikeSortingWidgetBase):
         self.spikesorter.spike_clusters[ ind ]= max(self.spikesorter.cluster_names.keys())+1
         
         self.spikesorter.check_display_attributes()
-        self.refresh()
         self.spike_clusters_changed.emit()
+        self.refresh()
 
 
 

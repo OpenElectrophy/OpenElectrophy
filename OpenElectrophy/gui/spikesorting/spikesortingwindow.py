@@ -77,13 +77,15 @@ class SpikeSortingWindow(QMainWindow):
         self.toolchain = ToolChainWidget(spikesorter = self.spikesorter ,settings = self.settings )
         
         
-        self.toolchain.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.toolchain.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.dockToolChain = dock = QDockWidget('Tool Chain',self)
         dock.setObjectName(  'Tool chain' )
         dock.setWidget(self.toolchain)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
         self.toolchain.need_refresh.connect(self.refresh_all)
-        self.toolchain.resize(200,200)
+        #~ self.toolchain.resize(200,200)
+        #~ self.toolchain.setFixedWidth(200)
+        #~ self.toolchain.setMaximumWidth(300)
         
         ##
         

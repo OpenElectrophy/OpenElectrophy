@@ -13,7 +13,7 @@ class PcaFeature(object):
     """
     
     name = 'Pca Feature'
-    params = [ {'name': 'n_components', 'type': 'int', 'value': 3},
+    params = [ {'name': 'n_components', 'type': 'int', 'value': 4},
                             ]
     
     mpl_plots = [ 'plot_components', 'plot_explain_variance_ratio']

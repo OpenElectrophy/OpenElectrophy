@@ -22,11 +22,17 @@ def apply_descending_sort_with_waveform(spikesorter):
         power = np.sum(center.flatten()**2)
         powers.append(power)
     #~ print powers
-    sorted = clusters[np.argsort(powers)]
+    #~ print clusters
+    sorted = clusters[np.argsort(powers)[::-1]]
+    #~ print sorted
     
     N = int(max(clusters)*100)
     sps.spike_clusters[:] += N
     for old, new in zip(clusters+N,sorted):
         sps.spike_clusters[sps.spike_clusters==old] = new
+    
+    sps.check_change_on_attributes('spike_clusters')
+    sps.recompute_cluster_center()
+
     
     

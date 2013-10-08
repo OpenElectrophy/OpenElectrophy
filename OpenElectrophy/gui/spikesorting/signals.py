@@ -462,6 +462,13 @@ class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
         for i in range(sps.trodness):
             self.axs[i].clear()
             self.ax2s[i].clear()
+            self.axs[i].set_xticks(np.arange(-10,10))
+            self.axs[i].set_xticklabels(['']*20)
+            if i==0:
+                self.axs[i].set_ylabel('Median')
+                self.ax2s[i].set_ylabel('MAD')
+            
+            
         
         if sps.spike_index_array is None : 
             self.canvas.draw()

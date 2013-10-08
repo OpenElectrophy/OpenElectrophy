@@ -13,6 +13,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
 
 from ...spikesorting import color_utils
+from ...spikesorting.sorting.tools import apply_descending_sort_with_waveform
 
 
 class ModelSpikeList(QAbstractItemModel):
@@ -319,18 +320,29 @@ class UnitList(SpikeSortingWidgetBase):
 
     def contextMenuNeuron(self, point):
         n = len(self.tableNeuron.selectedIndexes())/self.tableNeuron.columnCount ()
-        if n==0: return
-        menu = QMenu()
-        act = menu.addAction(QIcon(':/window-close.png'),u'Delete selection forever')
-        act.triggered.connect(self.deleteSelection)
-        act = menu.addAction(QIcon(':/user-trash.png'), u'Move selection to trash')
-        act.triggered.connect(self.moveToTrash)
-        act = menu.addAction(QIcon(':/merge.png'), u'Group selection in one unit')
-        act.triggered.connect(self.groupSelection)
-        act = menu.addAction(QIcon(':/color-picker.png'), u'Select these spikes')
-        act.triggered.connect(self.selectSpikeFromCluster)
-        act = menu.addAction(QIcon(':/go-jump.png'), u'Regroup small units')
-        act.triggered.connect(self.regroupSmallUnits)
+        self.menu = menu = QMenu()
+        if n>=0: 
+            act = menu.addAction(QIcon(':/applications-graphics.png'), u'Recolorize all cluster')
+            act.triggered.connect(self.recolorizeCluster)
+            act = menu.addAction(QIcon(':/view-filter.png'), u'Sort by ascending waveform power')
+            act.triggered.connect(self.sortCluster)
+            act = menu.addAction(QIcon(':/TODO.png'), u'Show all')
+            act.triggered.connect(self.showAll)
+            act = menu.addAction(QIcon(':/TODO.png'), u'Hide all')
+            act.triggered.connect(self.hideAll)
+            
+        if n>1:
+            act = menu.addAction(QIcon(':/window-close.png'),u'Delete selection forever')
+            act.triggered.connect(self.deleteSelection)
+            act = menu.addAction(QIcon(':/user-trash.png'), u'Move selection to trash')
+            act.triggered.connect(self.moveToTrash)
+            act = menu.addAction(QIcon(':/merge.png'), u'Group selection in one unit')
+            act.triggered.connect(self.groupSelection)
+            act = menu.addAction(QIcon(':/color-picker.png'), u'Select these spikes')
+            act.triggered.connect(self.selectSpikeFromCluster)
+            act = menu.addAction(QIcon(':/go-jump.png'), u'Regroup small units')
+            act.triggered.connect(self.regroupSmallUnits)
+        
         #~ act = menu.addAction(QIcon(':/TODO.png'), u'Hide/Show on ndviewer and waveform')
         #~ act.triggered.connect(self.hideOrShowClusters)
         
@@ -341,8 +353,10 @@ class UnitList(SpikeSortingWidgetBase):
             act = menu.addAction(QIcon(':/TODO.png'), u'Set name/color/score of this unit')
             act.triggered.connect(self.setUnitNameColorScore)
         
-        if menu.exec_(self.cursor().pos()):
-            pass
+        #~ if menu.exec_(self.cursor().pos()):
+        menu.popup(self.cursor().pos())
+            #~ pass
+            #~ print 'yep'
         
     
     def deleteSelection(self):
@@ -471,5 +485,30 @@ class UnitList(SpikeSortingWidgetBase):
             self.refresh()
             self.clusters_color_changed.emit()
             
+    
+    def recolorizeCluster(self):
+        self.spikesorter.refresh_colors(reset = True)
+        self.refresh()
+        self.clusters_color_changed.emit()
+    
+    def sortCluster(self):
+        apply_descending_sort_with_waveform(self.spikesorter)
+        self.spikesorter.refresh_colors(reset = True)
+        self.refresh()
+        self.spike_clusters_changed.emit()
+    
+    def showHideAll(self, state):
+        sps = self.spikesorter
+        for c in sps.cluster_names:
+            sps.active_cluster[c] = state
+        self.refresh()
+        self.clusters_activation_changed.emit()
         
+    
+    def showAll(self):
+        self.showHideAll(True)
+    
+    def hideAll(self):
+        self.showHideAll(False)
+
 
