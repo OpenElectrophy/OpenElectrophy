@@ -36,6 +36,8 @@ def remove_limit_spikes(spikesorter, swl, swr):
     big_mask = np.concatenate(big_mask)
     
     spikesorter.init_seg_spike_slices()
+    if spikesorter.spike_clusters is not None:
+        spikesorter.set_attr_no_check('spike_clusters', spikesorter.spike_clusters[big_mask])
     if spikesorter.spike_waveforms is not None:
         spikesorter.set_attr_no_check('spike_waveforms', spikesorter.spike_waveforms[big_mask,:])
     if spikesorter.waveform_features is not None:

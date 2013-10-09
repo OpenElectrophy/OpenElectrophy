@@ -42,7 +42,6 @@ class AlignWaveformOnPeak(object):
         # clean
         remove_limit_spikes(spikesorter, swl, swr*3)
         
-        
         # Initialize
         spike_waveforms = initialize_waveform(spikesorter, wsize)
         sps.wf_sampling_rate = sps.sig_sampling_rate
@@ -58,7 +57,7 @@ class AlignWaveformOnPeak(object):
             for ind in peak_indexes :
                 for c in range(len(sps.rcs)):
                     sig = sps.filtered_sigs[c, s]
-                    sps.spike_waveforms[n,c, :] = sig[ind-swl:ind+swr+1]
+                    spike_waveforms[n,c, :] = sig[ind-swl:ind+swr+1]
                 n += 1
         
         sps.spike_waveforms = spike_waveforms

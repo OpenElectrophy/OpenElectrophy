@@ -321,6 +321,7 @@ class UnitList(SpikeSortingWidgetBase):
     def contextMenuNeuron(self, point):
         n = len(self.tableNeuron.selectedIndexes())/self.tableNeuron.columnCount ()
         self.menu = menu = QMenu()
+        #~ print 'n', n
         if n>=0: 
             act = menu.addAction(QIcon(':/applications-graphics.png'), u'Recolorize all cluster')
             act.triggered.connect(self.recolorizeCluster)
@@ -331,7 +332,7 @@ class UnitList(SpikeSortingWidgetBase):
             act = menu.addAction(QIcon(':/TODO.png'), u'Hide all')
             act.triggered.connect(self.hideAll)
             
-        if n>1:
+        if n>=1:
             act = menu.addAction(QIcon(':/window-close.png'),u'Delete selection forever')
             act.triggered.connect(self.deleteSelection)
             act = menu.addAction(QIcon(':/user-trash.png'), u'Move selection to trash')

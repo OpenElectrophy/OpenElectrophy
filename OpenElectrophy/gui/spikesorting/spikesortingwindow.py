@@ -194,7 +194,12 @@ class SpikeSortingWindow(QMainWindow):
         for dock, w in zip(self.list_dock,self.list_widget):
             if w == self.sender(): continue
             if dock.isVisible() :#and 'spike_clusters' in w.refresh_on:
+                t1 = time.time()
                 w.refresh()
+                t2 = time.time()
+                print 'refresh ', w.name, t2-t1
+                
+                #~ w.refresh()
 
     def on_spike_subset_changed(self):
         self.refresh_all( shuffle = False)

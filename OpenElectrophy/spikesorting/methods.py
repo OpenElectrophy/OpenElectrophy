@@ -44,6 +44,7 @@ from sorting.gmm_em import SklearnGaussianMixtureEm
 from sorting.kmeans import SklearnKMeans
 from sorting.minibatchkmeans import SklearnMiniBatchKMeans
 from sorting.meanshift import SklearnMeanShift
+from clean.outtemplate import OutsideTemplateCleaning
 
 
 all_methods = [ ButterworthFilter,
@@ -65,6 +66,7 @@ all_methods = [ ButterworthFilter,
                 SklearnKMeans,
                 SklearnMiniBatchKMeans,
                 SklearnMeanShift,
+                OutsideTemplateCleaning,
                 ]
 
 

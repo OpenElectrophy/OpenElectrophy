@@ -34,6 +34,7 @@ detections = [  RelativeThresholdDetection, ManualThresholdDetection, MTEODetect
 waveforms = [ AlignWaveformOnDetection, AlignWaveformOnPeak, AlignWaveformOnCentralWaveform ]
 features = [ PcaFeature, IcaFeature,CombineFeature, AllPeak, PeakToValley, HaarWaveletFeature]
 sorting = [SklearnGaussianMixtureEm, SklearnKMeans, SklearnMiniBatchKMeans, SklearnMeanShift ]
+clean = [OutsideTemplateCleaning, ]
 
 
 
@@ -46,6 +47,18 @@ class FromFullBandSignalToClustered(SpikeSortingToolChain):
                                             [ 'features', features],
                                             [ 'sorting', sorting],
                                             ])
+
+class FromFullBandSignalToClusteredClean(SpikeSortingToolChain):
+    name = 'from full band signal to clustered spike with clean'
+    chain = OrderedDict([
+                                            [ 'filters', filters],
+                                            [ 'detections', detections],
+                                            [ 'waveforms', waveforms],
+                                            [ 'features', features],
+                                            [ 'sorting', sorting],
+                                            [ 'clean', clean],
+                                            ])
+
 
 class FromFilteredBandSignalToClustered(SpikeSortingToolChain):
     name = 'from filtered band signal to clustered spike'
@@ -75,16 +88,7 @@ class FromFeatureToClustered(SpikeSortingToolChain):
 
 
 class FromFullBandSignalToDetection(SpikeSortingToolChain):
-    name = 'from full band signal to detected spike'    
-            
-            
-        
-        
-        
-
-
-
-
+    name = 'from full band signal to detected spike'
     chain = OrderedDict([
                                             [ 'filters', filters],
                                             [ 'detections', detections],
@@ -92,7 +96,7 @@ class FromFullBandSignalToDetection(SpikeSortingToolChain):
 
     
 
-all_toolchain = [FromFullBandSignalToClustered, FromFilteredBandSignalToClustered,
+all_toolchain = [FromFullBandSignalToClustered, FromFullBandSignalToClusteredClean, FromFilteredBandSignalToClustered,
                             FromWaveformToClustered, FromFeatureToClustered, FromFullBandSignalToDetection,
                             ]
 
