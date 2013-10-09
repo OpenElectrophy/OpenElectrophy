@@ -22,7 +22,7 @@ else:
 install_requires=[
                 'numpy>=1.3.0',
                 'quantities>=0.9.0',
-                'neo>=0.2',
+                'neo>=0.3',
                 'scipy>=0.9.0',
                 'matplotlib>=1.1.0',
                 'sqlalchemy>=0.7',
