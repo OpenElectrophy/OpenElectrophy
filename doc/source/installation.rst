@@ -100,33 +100,34 @@ For that I used homebrew : http://brew.sh/
 It is a ruby script that help you to install many things (include python)
 
 Open a terminal and run theses command:
-    1. ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
-    2. export PATH=/usr/local/bin:$PATH
-    3. brew install python
-    4. brew install pyqt
-    5. brew install hdf5
-    6. brew install gfortran
-    7. pip install numpy
-    8. pip install scipy
-    9. pip install matplotlib
-    10. pip install pyqtgraph
-    11. pip install quantities
-    12. pip install neo
-    13. pip install joblib
-    14. pip install cython
-    15. pip install sqlalchemy
-    16. pip install sqlalchemy-migrate
-    17. pip install numexpr
-    18. pip install tables
-    19. pip install scikit-learn
-    20. pip install pywavelets
-    21. pip install guidata
-    22. pip install docutils
-    23. pip inistall scikits-image
-    24. pip install blosc
-    25. pip install pandas
-    26. pip install xlwt
-    27. Dowload OPenElectrophy (http://pypi.python.org/pypi/OpenElectrophy) and install it.
+    * ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
+    * export PATH=/usr/local/bin:$PATH
+    * brew install python
+    * brew install pyqt
+    * brew install hdf5
+    * brew install gfortran
+    * brew install pip
+    * pip install numpy
+    * pip install scipy
+    * pip install matplotlib
+    * pip install pyqtgraph
+    * pip install quantities
+    * pip install neo
+    * pip install joblib
+    * pip install cython
+    * pip install sqlalchemy
+    * pip install sqlalchemy-migrate
+    * pip install numexpr
+    * pip install tables
+    * pip install scikit-learn
+    * pip install pywavelets
+    * pip install guidata
+    * pip install docutils
+    * pip inistall scikits-image
+    * pip install blosc
+    * pip install pandas
+    * pip install xlwt
+    * Dowload OPenElectrophy (http://pypi.python.org/pypi/OpenElectrophy) and install it.
 
 Notes some points need compilation and lot of times (pyqt, scipy, ...).
 
