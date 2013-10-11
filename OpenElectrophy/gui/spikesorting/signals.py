@@ -151,9 +151,10 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         
         # ylims
         self.ylims = [0.,0.]
-        for sig in self.sigs.reshape(-1).tolist():
-            self.ylims[0] = min(self.ylims[0], sig.min())
-            self.ylims[1] = max(self.ylims[1], sig.max())
+        if self.sigs is not None:
+            for sig in self.sigs.reshape(-1).tolist():
+                self.ylims[0] = min(self.ylims[0], sig.min())
+                self.ylims[1] = max(self.ylims[1], sig.max())
         
         tb.addWidget(QLabel(u'Y limits'))
         
@@ -183,7 +184,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
 
     def seek(self, t):
         #~ self.act_enable_spike_selection.setChecked(False)
-        
+        if self.sigs is  None: return
         sps = self.spikesorter
         s =  self.combo.currentIndex()
         if sps.spike_index_array is not None:
