@@ -20,12 +20,12 @@ from ..guiutil.myguidata import *
 from ..guiutil.mymatplotlib import *
 
 
-
+import matplotlib
 from matplotlib.pyplot import get_cmap
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon, Circle
 from matplotlib.widgets import Lasso
-from matplotlib.nxutils import points_inside_poly
+#~ from matplotlib.nxutils import points_inside_poly
 from matplotlib.cm import get_cmap
 
 
@@ -487,7 +487,9 @@ class NDViewer(QWidget):
         self.canvas.widgetlock(self.lasso)
         
     def stopLasso(self, verts):
-        self.actualSelection  = points_inside_poly(np.dot( self.data, self.projection ), verts)
+        #~ self.actualSelection  = points_inside_poly(np.dot( self.data, self.projection ), verts)
+        self.actualSelection  = matplotlib.path.Path(verts).contains_points(np.dot( self.data, self.projection ))
+        
         self.canvas.widgetlock.release(self.lasso)
         del self.lasso
         self.selection_changed.emit()
