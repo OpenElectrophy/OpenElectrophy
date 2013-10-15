@@ -42,7 +42,7 @@ class AlignWaveformOnCentralWaveform(object):
                             
                             {'name': 'shift_method', 'type': 'list' , 'value' : 'sinc', 'values' : ['sinc', 'spline', 'lanczos'] },
                             
-                            {'name': 'max_iter', 'type': 'int', 'value': 4 },
+                            {'name': 'max_iter', 'type': 'int', 'value': 1 },
                             
                             ]
     
@@ -53,7 +53,7 @@ class AlignWaveformOnCentralWaveform(object):
                             sweep_factor_for_interpolation = 3,
                             shift_estimation_method = 'taylor order1',
                             shift_method = 'sinc',
-                            max_iter= 4,
+                            max_iter= 1,
                             
                             ):
         sps = spikesorter

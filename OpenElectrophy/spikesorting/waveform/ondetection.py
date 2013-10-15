@@ -25,13 +25,18 @@ class AlignWaveformOnDetection(object):
     
     """
     name = 'Align waveform on detection'
-    params = [  {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
+    params = [  
+                            #~ {'name': 'sign', 'type': 'list', 'value': '-', 'values' : ['-', '+'] },
                             {'name': 'left_sweep', 'type': 'quantity', 'value': 1.*pq.ms, 'step' : 100*pq.us },
                             {'name': 'right_sweep', 'type': 'quantity', 'value': 1.*pq.ms,'step' : 100*pq.us },
+                            
+                            {'name': 'waveform_from', 'type': 'list' , 'values' : ['filtered signals', 'full band signals'] },
+
                             ]
 
 
-    def run(self, spikesorter, sign = '-', left_sweep = 1*pq.ms, right_sweep = 1*pq.ms):
+    #~ def run(self, spikesorter, sign = '-', left_sweep = 1*pq.ms, right_sweep = 1*pq.ms):
+    def run(self, spikesorter, left_sweep = 1*pq.ms, right_sweep = 1*pq.ms, waveform_from = 'filtered signals'):
         sps = spikesorter
 
         sr = sps.sig_sampling_rate
@@ -54,7 +59,10 @@ class AlignWaveformOnDetection(object):
         for s, indexes in enumerate(sps.spike_index_array):
             for ind in indexes :
                 for c in range(len(sps.rcs)):
-                    sig = sps.filtered_sigs[c, s]
+                    if waveform_from=='filtered signals':
+                        sig = sps.filtered_sigs[c, s]
+                    elif waveform_from=='full band signals':
+                        sig = sps.full_band_sigs[c, s]
                     spike_waveforms[n,c, :] = sig[ind-swl:ind+swr+1]
                 n += 1
         
