@@ -132,6 +132,13 @@ Open a terminal and run theses command:
 Notes some points need compilation and lot of times (pyqt, scipy, ...).
 
 
+.. warning::
+    Many new python users on OSX suffer of the double (tripple) python installation. The method above use homebrew.
+    Read this https://github.com/mxcl/homebrew/wiki/Homebrew-and-Python
+    Be sure that when you do "which python" in a terminal it give you the good path.
+    
+    
+
 
 
 Test your installation
