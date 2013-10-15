@@ -80,6 +80,7 @@ class AverageWaveforms(SpikeSortingWidgetBase):
         coeff = self.plot_parameters['deviation_coeff']
         #~ print sps.cluster_names.keys()
         #~ print sps.median_centers.keys()
+        _max  = 0.
         for c in sps.cluster_names:
             #~ print c
             if not sps.active_cluster[c]: continue
@@ -100,13 +101,17 @@ class AverageWaveforms(SpikeSortingWidgetBase):
                 self.axs[i].axvline(0, color = 'r', ls = '--', alpha = .7)
                 self.ax2s[i].axvline(0, color = 'r', ls = '--', alpha = .7)
                 
+                _max = max(_max, max(sd))
+                
         self.axs[0].set_xlim(times[0], times[-1])
         
         for i in range(sps.trodness):
             self.ax2s[i].set_xticks(np.arange(-10,10))
             self.ax2s[i].set_xticklabels(['']*20)
 
-
+        self.axs[0].set_xlim(times[0], times[-1])
+        #~ self.ax2s[0].set_xlim(times[0], times[-1])
+        self.ax2s[0].set_ylim(0, _max*1.1)
         
         #~ for i in range(sps.trodness):
             #~ ax = self.axs[i]

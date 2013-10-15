@@ -498,7 +498,10 @@ class BetweenSpikeNoiseEstimation(SpikeSortingWidgetBase):
             self.axs[i].axvline(0, color = 'r', ls = '--', alpha = .7)
             self.ax2s[i].axvline(0, color = 'r', ls = '--', alpha = .7)
                 
+        
         self.axs[0].set_xlim(times[0], times[-1])
+        #~ self.ax2s[0].set_xlim(times[0], times[-1])
+        self.ax2s[0].set_ylim(0, max([max(sps.interspike_noise_mad[i,:])*1.1 for i in range(sps.trodness)]))
 
         self.canvas.draw()
         
