@@ -21,7 +21,7 @@ import time
 
 
 vt = view_templates = OrderedDict()
-vt['Good ensemble'] =  ['UnitList', 'SpikeList', 'FilteredBandSignal', 'FeaturesNDViewer']
+vt['Good ensemble'] =  ['UnitList', 'SpikeList', 'FilteredBandSignal', 'FeaturesNDViewer', 'AverageWaveforms', ]
 vt['Nothing'] = [ ]
 vt['One cell detection'] = [ 'UnitList', 'SpikeList', 'FullBandSignal', 'FilteredBandSignal', 'AllWaveforms', 'AverageWaveforms', ]
 
@@ -121,8 +121,17 @@ class SpikeSortingWindow(QMainWindow):
             if friend is not None:
                 self.tabifyDockWidget ( friend, dock)
             else:
-                if W.prefered_position == 'AboveToolChain':
-                    self.splitDockWidget(self.dockToolChain, dock, Qt.Vertical)
+                if ' of ' in W.prefered_position:
+                    relative_pos = W.prefered_position.split(' ')[0]
+                    relative_to = W.prefered_position.split(' ')[2]
+                    direction = Qt.Horizontal if relative_pos in ['left', 'right'] else Qt.Vertical
+                    if relative_pos == 'above' and relative_to == 'ToolChain':
+                        self.splitDockWidget(self.dockToolChain, dock, Qt.Vertical)
+                    else:
+                        for relative_to_dock in self.list_dock:
+                            if relative_to_dock.widget().__class__.__name__ == relative_to:
+                                break
+                        self.splitDockWidget(relative_to_dock, dock, direction)
                 elif W.prefered_position == 'UpperRight':
                     self.addDockWidget(Qt.RightDockWidgetArea, dock)
             

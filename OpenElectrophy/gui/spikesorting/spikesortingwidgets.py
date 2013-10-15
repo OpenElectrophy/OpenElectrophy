@@ -7,11 +7,13 @@ from .lists import SpikeList, UnitList
 from .misc import Summary, PlotIsi, PlotCrossCorrelogram
 from .signals import FullBandSignal, FilteredBandSignal, SignalStatistics, BetweenSpikeNoiseEstimation
 
-spikesorting_widget_list = [ AverageWaveforms, AllWaveforms, BetweenSpikeNoiseEstimation,
-                                                    FeaturesNDViewer, FeaturesParallelPlot, FeaturesWilsonPlot, Features3D,FeaturesEvolutionInTime,
-                                                    SpikeList, UnitList, 
-                                                    Summary, PlotIsi, PlotCrossCorrelogram,
-                                                    FullBandSignal, FilteredBandSignal, SignalStatistics, 
+spikesorting_widget_list = [ SpikeList, UnitList, 
+                                            FeaturesNDViewer, AverageWaveforms,
+                                            
+                                            FeaturesParallelPlot, FeaturesWilsonPlot, Features3D,FeaturesEvolutionInTime,
+                                             AllWaveforms, BetweenSpikeNoiseEstimation,
+                                            Summary, PlotIsi, PlotCrossCorrelogram,
+                                            FullBandSignal, FilteredBandSignal, SignalStatistics, 
                                                 ]
 
 for w in spikesorting_widget_list:
@@ -19,8 +21,9 @@ for w in spikesorting_widget_list:
     w.tabified_with =[ ]
 
 
-SpikeList.prefered_position = 'AboveToolChain'
-UnitList.prefered_position = 'AboveToolChain'
+SpikeList.prefered_position = 'above of ToolChain'
+UnitList.prefered_position = 'above of ToolChain'
+AverageWaveforms.prefered_position = 'right of FeaturesNDViewer'
 
 
 
