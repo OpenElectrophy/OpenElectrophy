@@ -92,6 +92,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         self.scatters = [ {} for i in range(sps.trodness) ]
         
         self.timerSeeker.fast_time_changed.connect(self.seek)
+        self.timerSeeker.fast_time_changed.connect(self.on_time_changed)
         
 
         self.time_by_seg = np.zeros(len(sps.segs), dtype = float)
@@ -119,6 +120,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         self.mainLayout.addWidget(self.view)
         self.mainLayout.addWidget(self.timerSeeker)
         
+        self.shared_view_with = None
 
     
     def createToolBar(self):
@@ -137,6 +139,7 @@ class SignalAndSpike(SpikeSortingWidgetBase):
         tb.addWidget(but)
         self.num_seg = 0
         self.combo.currentIndexChanged.connect(self.refresh)
+        self.combo.currentIndexChanged.connect(self.on_combo_changed)
         tb.addSeparator()
         
         # winsize
@@ -177,6 +180,11 @@ class SignalAndSpike(SpikeSortingWidgetBase):
     
     def xsize_changed(self):
         self.xsize = self.xsize_changer.value()
+        if self.shared_view_with is not None and self.shared_view_with.isVisible():
+            self.shared_view_with.xsize_changer.setValue(self.xsize)
+            self.shared_view_with.xsize = self.xsize
+            self.shared_view_with.refresh()
+        
     
     def ylims_changed(self):
         self.ylims = self.ylims_changer.value()
@@ -335,6 +343,20 @@ class SignalAndSpike(SpikeSortingWidgetBase):
             self.num_seg = 0
         self.combo.setCurrentIndex(self.num_seg)
     
+    def on_combo_changed(self):
+        if self.shared_view_with is not None and self.shared_view_with.isVisible():
+            s =  self.combo.currentIndex()
+            self.shared_view_with.combo.setCurrentIndex(s)
+            
+        
+    def on_time_changed(self):
+        if self.shared_view_with is not None and self.shared_view_with.isVisible():
+            s =  self.combo.currentIndex()
+            self.shared_view_with.timerSeeker.fast_time_changed.disconnect(self.shared_view_with.on_time_changed)
+            self.shared_view_with.timerSeeker.seek(self.time_by_seg[s])
+            self.shared_view_with.timerSeeker.fast_time_changed.connect(self.shared_view_with.on_time_changed)
+        
+        
     def yzoom(self, factor):
         if self.ylims[0]<0 and self.ylims[1]>0:
             self.ylims[0] = factor*self.ylims[0]

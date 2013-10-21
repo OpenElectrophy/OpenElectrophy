@@ -47,7 +47,7 @@ Linux
     **Step 1, dependencies**::
     
             sudo apt-get install python python-scipy python-numpy python-matplotlib python-qt4 python-mysqldb python-pip python-psycopg2 python-dev gfortran python-pywt python-sqlalchemy python-migrate python-tables python-joblib  python-guidata python-sklearn python-pandas python-xlwt python-joblib cython
-            pip install quantities neo pyqtgraph
+            sudo pip install quantities neo pyqtgraph
 
 
     **Step 2, OpenElectrophy**:
