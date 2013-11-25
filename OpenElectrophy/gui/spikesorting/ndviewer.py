@@ -25,8 +25,11 @@ from matplotlib.pyplot import get_cmap
 from matplotlib.lines import Line2D
 from matplotlib.patches import Polygon, Circle
 from matplotlib.widgets import Lasso
-#~ from matplotlib.nxutils import points_inside_poly
 from matplotlib.cm import get_cmap
+if (matplotlib.__version__ < '1.2'):
+    from matplotlib.nxutils import points_inside_poly
+else:
+    from matplotlib.path import Path as mpl_path
 
 
 
@@ -487,9 +490,8 @@ class NDViewer(QWidget):
         self.canvas.widgetlock(self.lasso)
         
     def stopLasso(self, verts):
-        #~ self.actualSelection  = points_inside_poly(np.dot( self.data, self.projection ), verts)
-        self.actualSelection  = matplotlib.path.Path(verts).contains_points(np.dot( self.data, self.projection ))
-        
+        self.actualSelection = inside_poly(np.dot( self.data, self.projection ), verts)
+
         self.canvas.widgetlock.release(self.lasso)
         del self.lasso
         self.selection_changed.emit()
@@ -529,8 +531,8 @@ class NDViewer(QWidget):
             self.line.set_xdata( np.array(list(self.line.get_xdata()) + [ event.xdata]) )
             self.line.set_ydata( np.array(list(self.line.get_ydata()) + [ event.ydata]) )
             self.redraw()
-        
-        self.actualSelection = points_inside_poly(np.dot( self.data, self.projection ), self.poly.xy)
+
+        self.actualSelection = inside_poly(np.dot( self.data, self.projection ), self.poly.xy)
         self.selection_changed.emit()
     
     
@@ -547,8 +549,8 @@ class NDViewer(QWidget):
         self.poly.xy[self._ind] = x,y
         self.line.set_data(zip(*self.poly.xy))
         self.redraw()
-        
-        self.actualSelection = points_inside_poly(np.dot( self.data, self.projection ), self.poly.xy)
+
+        self.actualSelection = inside_poly(np.dot( self.data, self.projection ), self.poly.xy)
         self.selection_changed.emit()
     
     def redrawSelection(self):
@@ -611,4 +613,9 @@ def ComputeIndexLda(proj, data, data_labels):
         
     lda = 1 -  np.linalg.det(A.T*W*A) / np.linalg.det(A.T*(W+B)*A)
     return lda
+
+def inside_poly(data, vertices):
+    if(matplotlib.__version__ < '1.2'):
+        return points_inside_poly(data, vertices)
+    return mpl_path(vertices).contains_points(data)
 
