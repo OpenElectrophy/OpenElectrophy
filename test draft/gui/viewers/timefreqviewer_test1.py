@@ -23,7 +23,12 @@ def test1():
     #~ print analogsignals[0].t_start, analogsignals[0].t_stop
     s.set_start_stop(t_start= analogsignals[0].t_start.magnitude-2, t_stop = analogsignals[0].t_stop.magnitude+2)
     
-    w = TimeFreqViewer(analogsignals = analogsignals, )
+    w = TimeFreqViewer(analogsignals = analogsignals, xsize = 12.)
+    visibles = np.zeros(len(analogsignals))
+    visibles[0] =True
+    visibles[-1] =True
+    #~ time.sleep(2.)
+    w.set_params(visibles = visibles)
     w.show()
     s.time_changed.connect(w.seek)
     s.fast_time_changed.connect(w.fast_seek)
@@ -46,6 +51,6 @@ def test2():
 
 
 if __name__ == '__main__' :
-    #~ test1()
-    test2()
+    test1()
+    #~ test2()
 

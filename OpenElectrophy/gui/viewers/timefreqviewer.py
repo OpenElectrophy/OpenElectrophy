@@ -89,6 +89,7 @@ class TimeFreqViewer(ViewerBase):
                             analogsignals = None,
                             with_time_seeker = False,
                             max_visible_on_open = 16,
+                            **kargs
                             ):
                             
         super(TimeFreqViewer,self).__init__(parent)
@@ -136,14 +137,17 @@ class TimeFreqViewer(ViewerBase):
         
         self.paramControler = TimefreqViewerControler(viewer = self)
         
+        self.set_params(**kargs)
+        
         self.graphicsviews = [ ]
-        self.grid_changing =False
+        #~ self.grid_changing =False
+        self.grid_changing =0
         self.create_grid()
         
         self.thread_initialize_tfr = None
         self.need_recreate_thread = True
         
-        self.initialize_time_freq()
+        self.initialize_time_freq(threaded = False)
         self.initialize_tfr_finished.connect(self.refresh)
         
         # this signal is used when trying to change many time tfr params
@@ -153,14 +157,21 @@ class TimeFreqViewer(ViewerBase):
         # this signal is a hack when many signal are emited at the same time
         # only the first is taken
         self.need_change_grid.connect(self.do_change_grid, type = Qt.QueuedConnection)
+        #~ proxy = pg.SignalProxy(self.need_change_grid, delay=0.2, slot=self.do_change_grid)
         
-        self.paramGlobal.param('xsize').sigValueChanged.connect(self.initialize_time_freq)
-        self.paramGlobal.param('nb_column').sigValueChanged.connect(self.change_grid)
-        self.paramGlobal.param('colormap').sigValueChanged.connect(self.initialize_time_freq)
+        self.paramGlobal.sigTreeStateChanged.connect(self.on_param_change)
         self.paramTimeFreq.sigTreeStateChanged.connect(self.initialize_time_freq)
         for p in self.paramSignals.children():
             p.param('visible').sigValueChanged.connect(self.change_grid)
-            p.param('clim').sigValueChanged.connect(self.clim_changed)
+            p.param('clim').sigValueChanged.connect(self.clim_changed)        
+        
+        #~ self.paramGlobal.param('xsize').sigValueChanged.connect(self.initialize_time_freq)
+        #~ self.paramGlobal.param('nb_column').sigValueChanged.connect(self.change_grid)
+        #~ self.paramGlobal.param('colormap').sigValueChanged.connect(self.initialize_time_freq)
+        #~ self.paramTimeFreq.sigTreeStateChanged.connect(self.initialize_time_freq)
+        #~ for p in self.paramSignals.children():
+            #~ p.param('visible').sigValueChanged.connect(self.change_grid)
+            #~ p.param('clim').sigValueChanged.connect(self.clim_changed)
 
         if with_time_seeker:
             self.timeseeker = TimeSeeker()
@@ -175,21 +186,94 @@ class TimeFreqViewer(ViewerBase):
     def set_xsize(self, xsize):
         self.paramGlobal.param('xsize').setValue(xsize)
     xsize = property(get_xsize, set_xsize)
+
+    def set_params(self, **kargs):
+        pglobal = [ p['name'] for p in param_global]
+        pchan = [ p['name']+'s' for p in param_by_channel]
+        ptimefreq = [ p['name']+'s' for p in param_timefreq]
+        
+        nb_channel = len(self.analogsignals)
+        for k, v in kargs.items():
+            if k in pglobal:
+                self.paramGlobal.param(k).setValue(v)
+            elif k in pchan:
+                for channel in range(nb_channel):
+                    p  = self.paramSignals.children()[channel]
+                    p.param(k[:-1]).setValue(v[channel])
+            elif k in ptimefreq:
+                self.paramTimeFreq.param(k).setValue(v)
+        
+    def get_params(self):
+        nb_channel = len(self.analogsignals)
+        params = { }
+        for p in param_global:
+            v = self.paramGlobal[p['name']]
+            if 'color' in p['name']:
+                v = str(v.name())
+            params[p['name']] = v
+        for p in param_by_channel:
+            values = [ ]
+            for channel in range(nb_channel):
+                v= self.paramSignals.children()[channel][p['name']]
+                if 'color' in p['name']:
+                    v = str(v.name())
+                values.append(v)
+            params[p['name']+'s'] = values
+        for p in param_timefreq:
+            v = self.paramTimeFreq[p['name']]
+            #~ if 'color' in p['name']:
+                #~ v = str(v.name())
+            params[p['name']] = v
+        
+        return params
+
+    def on_param_change(self, params, changes):
+        for param, change, data in changes:
+            if change != 'value': continue
+            if param.name()=='background_color':
+                color = data
+                for graphicsview in self.graphicsviews:
+                    if graphicsview is not None:
+                        graphicsview.setBackground(color)
+            if param.name()=='xsize':
+                self.initialize_time_freq()
+            if param.name()=='colormap':
+                self.initialize_time_freq()
+            if param.name()=='nb_column':
+                self.change_grid()
+            #~ if param.name()=='refresh_interval':
+                #~ self.timer.setInterval(data)
+    
+    def open_configure_dialog(self):
+        self.paramControler.setWindowFlags(Qt.Window)
+        self.paramControler.show()
+    
     
     need_change_grid = pyqtSignal()
     def change_grid(self, param):
-        if not self.grid_changing:
+        #~ print 'change_grid', self.grid_changing
+        #~ if not self.grid_changing:
+            #~ self.grid_changing = True
+            #~ self.need_change_grid.emit()
+        self.grid_changing += 1
+        if self.grid_changing==1:
             self.need_change_grid.emit()
+            #~ print 'emit'
+            #~ pass
         
     def do_change_grid(self):
-        self.grid_changing = True
+        #~ print 'do_change_grid'
+        time.sleep(.2)
+        self.grid_changing = 0
         self.create_grid()
-        self.initialize_time_freq()
-        self.initialize_tfr_finished.connect(self.grid_changed_done)
+        self.initialize_plots()
+        #~ self.initialize_time_freq()
+        #~ self.initialize_tfr_finished.connect(self.grid_changed_done)
         
     def grid_changed_done(self):
+        #~ print 'grid_changed_done'
         self.initialize_tfr_finished.disconnect(self.grid_changed_done)
-        self.grid_changing = False
+        #~ self.grid_changing = False
         
     def clim_changed(self, param):
         i = self.paramSignals.children().index( param.parent())
@@ -197,11 +281,9 @@ class TimeFreqViewer(ViewerBase):
         if self.images[i] is not None:
             self.images[i].setImage(self.maps[i], lut = self.jet_lut, levels = [0,clim])
         
-    def open_configure_dialog(self):
-        self.paramControler.setWindowFlags(Qt.Window)
-        self.paramControler.show()
         
     def create_grid(self):
+        #~ print 'create_grid'
         color = self.paramGlobal.param('background_color').value()
         #~ self.graphicsview.setBackground(color)
 
@@ -241,12 +323,14 @@ class TimeFreqViewer(ViewerBase):
         self.threads = [ None for i in range(n)]
         
     
-    def initialize_time_freq(self):
-        if self.thread_initialize_tfr is not None or self.is_computing.any():
-            # needd to come back later ...
-            if not self.timer_back_initialize.isActive():
-                self.timer_back_initialize.start()
-            return
+    def initialize_time_freq(self, threaded = True):
+        #~ print 'initialize_time_freq', threaded
+        if threaded:
+            if self.thread_initialize_tfr is not None or self.is_computing.any():
+                # needd to come back later ...
+                if not self.timer_back_initialize.isActive():
+                    self.timer_back_initialize.start()
+                return
         
         # create self.params_time_freq
         p = self.params_time_freq = { }
@@ -264,13 +348,29 @@ class TimeFreqViewer(ViewerBase):
         self.xsize2 = self.xsize
         self.len_wavelet = int(self.xsize2*p['sampling_rate'])
         self.win = fftpack.ifftshift(np.hamming(self.len_wavelet))
-        self.thread_initialize_tfr = ThreadInitializeWavelet(len_wavelet = self.len_wavelet, 
-                                                            params_time_freq = p, parent = self )
-        self.thread_initialize_tfr.finished.connect(self.initialize_tfr_done)
-        self.thread_initialize_tfr.start()
+        
+        if threaded:
+            self.thread_initialize_tfr = ThreadInitializeWavelet(len_wavelet = self.len_wavelet, 
+                                                                params_time_freq = p, parent = self )
+            self.thread_initialize_tfr.finished.connect(self.initialize_tfr_done)
+            self.thread_initialize_tfr.start()
+        else:
+            self.wf = generate_wavelet_fourier(len_wavelet= self.len_wavelet, ** self.params_time_freq)
+            self.initialize_plots()
         
     
     def initialize_tfr_done(self):
+        #~ print 'initialize_tfr_done'
+        
+        self.wf = self.thread_initialize_tfr.wf
+        
+        self.initialize_plots()
+        
+        self.thread_initialize_tfr = None
+        self.initialize_tfr_finished.emit()
+    
+    def initialize_plots(self):
+        #~ print 'initialize_plots'
         colormap = self.paramGlobal.param('colormap').value()
         lut = [ ]
         cmap = cm.get_cmap(colormap , 10000)
@@ -278,10 +378,7 @@ class TimeFreqViewer(ViewerBase):
             r,g,b =  ColorConverter().to_rgb(cmap(i) )
             lut.append([r*255,g*255,b*255])
         self.jet_lut = np.array(lut, dtype = np.uint8)
-
-
         
-        self.wf = self.thread_initialize_tfr.wf
         p = self.params_time_freq
         for i, anasig in enumerate(self.analogsignals):
             if not self.paramSignals.children()[i].param('visible').value(): continue
@@ -305,9 +402,7 @@ class TimeFreqViewer(ViewerBase):
         
         self.freqs = np.arange(p['f_start'],p['f_stop'],p['deltafreq'])
         self.need_recreate_thread = True
-        
-        self.thread_initialize_tfr = None
-        self.initialize_tfr_finished.emit()
+    
     
     
     def refresh(self, fast = False):
@@ -371,6 +466,8 @@ class ThreadComputeTF(QThread):
         self.factor = factor # this compensate subsampling
         
     def run(self):
+        #~ print 'run', self.n, self.wf.shape, self.sig.shape
+        t1 = time.time()
         sigf=fftpack.fft(self.sig)
         n = self.wf.shape[0]
         sigf = np.concatenate([sigf[0:(n+1)/2],  sigf[-(n-1)/2:]])*self.factor
@@ -379,6 +476,8 @@ class ThreadComputeTF(QThread):
         wt = fftpack.fftshift(wt_tmp,axes=[0])
         
         self.parent().maps[self.n] = np.abs(wt)
+        t2 = time.time()
+        #~ print 'run', self.n, self.wf.shape, self.sig.shape, t2-t1
         self.finished.emit(self.n)
 
 class ThreadInitializeWavelet(QThread):
