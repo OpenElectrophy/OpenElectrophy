@@ -245,6 +245,7 @@ except ImportError:
     DEFAULT_COMPRESS_LIB = 'zlib'
 import zlib
 
+
 import tables
 
 from base import OEBase
@@ -678,14 +679,19 @@ class SQL_NumpyArrayPropertyLoader():
         
         if self.compress == 'blosc':
             blob = blosc.compress(value.tostring(), typesize = value.dtype.itemsize, clevel= 9)
-        elif self.compress == 'zlib':
-            blob = zlib.compress(np.getbuffer(value))
-        elif self.compress == 'lz4':
-            blob = lz4.compress(np.getbuffer(value))
-        elif self.compress == 'snappy':
-            blob = snappy.compress(np.getbuffer(value))
-        else :
-            blob = np.getbuffer(value)
+        else:
+            if not value.flags['C_CONTIGUOUS']:
+                buf = np.getbuffer(np.array(value, copy = True))
+            else:     
+                buf = np.getbuffer(value)
+            if self.compress == 'zlib':
+                blob = zlib.compress(buf)
+            elif self.compress == 'lz4':
+                blob = lz4.compress(buf)
+            elif self.compress == 'snappy':
+                blob = snappy.compress(buf)
+            else :
+                blob = buf
         nprow.compress = self.compress
         nprow.blob = blob
         

@@ -258,7 +258,7 @@ class SpikeSortingOnRCs(MenuItem):
         session.add(rcg)
         for rc in rcs:
             rcg.recordingchannels.append(rc)
-        bl = session.query(Block).get(block_ids[0])
+        bl = session.query(Block).get(int(block_ids[0]))
         bl.recordingchannelgroups.append(rcg)
         session.commit()
         explorer.refresh()

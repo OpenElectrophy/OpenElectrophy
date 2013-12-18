@@ -280,7 +280,7 @@ def read_and_import(name, ioclass,io_kargs, dbinfo, options):
         
     for neo_block in neo_blocks:
         if options['populate_recordingchannel'] and neo.RecordingChannelGroup not in reader.supported_objects:
-            print 'populate_RecordingChannel'
+            #~ print 'populate_RecordingChannel'
             populate_RecordingChannel(neo_block, remove_from_annotation = False)
         
         oe_block = OEBase.from_neo(neo_block, dbinfo.mapped_classes, cascade = True)
