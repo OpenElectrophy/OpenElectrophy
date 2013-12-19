@@ -64,7 +64,10 @@ class RelativeThresholdDetection(object):
             elif noise_estimation=='STD':
                 centers[c, s] = np.mean(sig)
                 noises[c, s] = np.std(sig)
-                
+        
+        #~ print centers
+        #~ print noises
+        
         if sign == '+':
             thresholds = centers + noises*abs(relative_thresh) 
         if sign == '-':
@@ -78,8 +81,11 @@ class RelativeThresholdDetection(object):
         sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
                                 sps.filtered_sigs, thresholds, sign, 
                                 consistent_across_channels,consistent_across_segments,
-                                threshold_mode, peak_span)
+                                threshold_mode, peak_span,
+                                combined_sum = sps.filtered_sigs.shape[0]!=1,
+                                )
         sps.detection_thresholds = thresholds
+        #~ print thresholds
 
 
 

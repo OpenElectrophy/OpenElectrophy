@@ -34,10 +34,11 @@ class ManualThresholdDetection(object):
         peak_span = int((sps.sig_sampling_rate*peak_span).simplified)
         peak_span = (peak_span//2)*2+1
         
-        
         # Detect
         sps.spike_index_array = threshold_detection_multi_channel_multi_segment(
                                 sps.filtered_sigs, thresholds, sign, 
                                 False,False,
-                                threshold_mode, peak_span)
+                                threshold_mode, peak_span,
+                                combined_sum = sps.filtered_sigs.shape[0]!=1,
+                                )
         sps.detection_thresholds = thresholds
