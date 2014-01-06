@@ -190,7 +190,7 @@ class TimeFreqViewer(ViewerBase):
     def set_params(self, **kargs):
         pglobal = [ p['name'] for p in param_global]
         pchan = [ p['name']+'s' for p in param_by_channel]
-        ptimefreq = [ p['name']+'s' for p in param_timefreq]
+        ptimefreq = [ p['name'] for p in param_timefreq]
         
         nb_channel = len(self.analogsignals)
         for k, v in kargs.items():
