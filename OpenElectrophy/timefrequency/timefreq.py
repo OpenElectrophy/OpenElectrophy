@@ -77,13 +77,22 @@ def check_or_get_sampling_rate(ana, f_stop, sampling_rate = None):
     assert sampling_rate>=2*f_stop
     return sampling_rate
 
-def convolve_scalogram(ana, wf, sampling_rate):
+def convolve_scalogram(ana, wf, sampling_rate,optimize_fft):
     n = wf.shape[0]
     sig  = ana.magnitude
-    sigf=fftpack.fft(sig)
+    if optimize_fft:
+        sig-=sig.mean()
+        sigf=fftpack.fft(sig,n=2**np.ceil(np.log(sig.size)/np.log(2)))
+    else:
+        sigf=fftpack.fft(sig)
+    
     # subsampling in fft domain (attention factor)
     factor = (sampling_rate/ana.sampling_rate).simplified.magnitude
-    sigf = np.concatenate([sigf[0:(n+1)/2],  sigf[-(n-1)/2:]])*factor
+    x=np.divide(n-1,2)
+    if np.mod(n,2)==0:
+        sigf = np.concatenate([sigf[0:x+2],  sigf[-x:]])*factor
+    else:
+        sigf = np.concatenate([sigf[0:x+1],  sigf[-x:]])*factor
     
     # windowing ???
     #win = fftpack.ifftshift(np.hamming(n))
@@ -92,7 +101,7 @@ def convolve_scalogram(ana, wf, sampling_rate):
     # Convolve (mult. in Fourier space)
     wt_tmp=fftpack.ifft(sigf[:,np.newaxis]*wf,axis=0)
     # and shift
-    wt = fftpack.fftshift(wt_tmp,axes=[0])    
+    wt = fftpack.fftshift(wt_tmp,axes=[0])
     return wt
 
 
@@ -116,6 +125,8 @@ class TimeFreq():
         It is also used as the wavelet characteristic frequency.
         Low f0 favors time precision of the scalogram while high f0 favors frequency precision
     normalisation : positive value favors low frequency components
+    optimize_fft : if True pad signal with 0. until next power of 2 before computing FFTs. In this case,
+    the sampling rate has to be recalculated (always in the more precise direction) to always keep power of 2 in FFt calculations
     
     wf: pre computed wavelet coeef in furrier domain
         if it is not None (by default), it will ignore all other parameters and compute the map 
@@ -140,6 +151,7 @@ class TimeFreq():
             t_stop = None,
             f0=2.5, 
             normalisation = 0.,
+            optimize_fft=False,
             wf=None,
             use_joblib = True):
 
@@ -152,14 +164,27 @@ class TimeFreq():
         self.deltafreq = deltafreq
         self.f0 = f0
         self.normalisation = normalisation
+        self.optimize_fft=optimize_fft
         
         self.orignal_ana = ana
         self.ana = ana = reduce_signal(ana, t_start, t_stop )
         self.sampling_rate = sr = check_or_get_sampling_rate(ana, f_stop, sampling_rate)
         
-        
-        n = int(ana.size*sr/ana.sampling_rate)
-        if n>0:
+        if ana.size>0:
+            if self.optimize_fft:
+                # First compute next power of 2 for initial signal
+                n_2=2**np.ceil(np.log(ana.size)/np.log(2))
+                # Second compute next power of 2 for subsampled signal
+                n = int(n_2*sr/ana.sampling_rate) # normal number of points for extended signal, after subsampling
+                n=2**np.ceil(np.log(n)/np.log(2)) # extension to next power of  2 of previous number
+                # Recompute sampling rate, knowing that both number of points must cover the same time
+                t_2=n_2/ana.sampling_rate # time of the extended signal
+                self.sampling_rate= sr =1./(t_2/n) # new sampling rate
+                n_init=np.divide(n*ana.size,n_2) # proportion of points (in subsampled signal to keep at the end)
+                print "Use of optimize FFT in time freq"
+                print "=> timefreq sampling rate has been recomputed : ",sr
+            else:
+                n = int(ana.size*sr/ana.sampling_rate)
             if wf is None:
                 if use_joblib:
                     global memory
@@ -172,7 +197,9 @@ class TimeFreq():
                 wf = func(n, f_start.magnitude, f_stop.magnitude, deltafreq.magnitude,
                                 sr.magnitude, f0, normalisation)
             assert wf.shape[0] == n
-            wt = convolve_scalogram(ana, wf, sr)
+            wt = convolve_scalogram(ana, wf, sr,self.optimize_fft)
+            if optimize_fft:
+                wt=wt[:n_init,:]
         else:
             wt = empty((0,scales.size),dtype='complex')
         
