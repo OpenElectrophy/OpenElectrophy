@@ -7,6 +7,7 @@ import numpy as np
 import quantities as pq
 
 from scipy import fftpack
+from scipy.signal import resample
 #~ import numpy.fft as fftpack
 
 import joblib
@@ -80,20 +81,23 @@ def check_or_get_sampling_rate(ana, f_stop, sampling_rate = None):
 def convolve_scalogram(ana, wf, sampling_rate,optimize_fft):
     n = wf.shape[0]
     sig  = ana.magnitude
+    ana_sr=ana.sampling_rate.rescale('Hz').magnitude
     if optimize_fft:
-        sig-=sig.mean()
-        sigf=fftpack.fft(sig,n=2**np.ceil(np.log(sig.size)/np.log(2)))
-    else:
+        sig-=sig.mean() # Remove mean before padding
+        nfft=2**np.ceil(np.log(sig.size)/np.log(2))
+        sig=np.r_[sig,np.zeros(nfft-sig.size)] # pad signal with 0 to a power of 2 length
+        sig=resample(sig,int(sig.size*sampling_rate/ana_sr)) # resample in time domain 
+        sigf=fftpack.fft(sig,n) # Compute fft with a power of 2 length        
+    else:        
         sigf=fftpack.fft(sig)
-    
-    # subsampling in fft domain (attention factor)
-    factor = (sampling_rate/ana.sampling_rate).simplified.magnitude
-    x=np.divide(n-1,2)
-    if np.mod(n,2)==0:
-        sigf = np.concatenate([sigf[0:x+2],  sigf[-x:]])*factor
-    else:
-        sigf = np.concatenate([sigf[0:x+1],  sigf[-x:]])*factor
-    
+        # subsampling in fft domain (attention factor)
+        factor = (sampling_rate/ana.sampling_rate).simplified.magnitude
+        x=(n-1)//2
+        if np.mod(n,2)==0:
+            sigf = np.concatenate([sigf[0:x+2],  sigf[-x:]])*factor
+        else:
+            sigf = np.concatenate([sigf[0:x+1],  sigf[-x:]])*factor
+            
     # windowing ???
     #win = fftpack.ifftshift(np.hamming(n))
     #sigf *= win
@@ -158,6 +162,7 @@ class TimeFreq():
         f_start = assume_quantity(f_start, units = 'Hz')
         f_stop = assume_quantity(f_stop, units = 'Hz')
         deltafreq = assume_quantity(deltafreq, units = 'Hz')
+        sampling_rate = assume_quantity(sampling_rate, units = 'Hz')
         
         self.f_start = f_start
         self.f_stop = f_stop
@@ -172,17 +177,10 @@ class TimeFreq():
         
         if ana.size>0:
             if self.optimize_fft:
-                # First compute next power of 2 for initial signal
-                n_2=2**np.ceil(np.log(ana.size)/np.log(2))
-                # Second compute next power of 2 for subsampled signal
-                n = int(n_2*sr/ana.sampling_rate) # normal number of points for extended signal, after subsampling
-                n=2**np.ceil(np.log(n)/np.log(2)) # extension to next power of  2 of previous number
-                # Recompute sampling rate, knowing that both number of points must cover the same time
-                t_2=n_2/ana.sampling_rate # time of the extended signal
-                self.sampling_rate= sr =1./(t_2/n) # new sampling rate
-                n_init=np.divide(n*ana.size,n_2) # proportion of points (in subsampled signal to keep at the end)
                 print "Use of optimize FFT in time freq"
-                print "=> timefreq sampling rate has been recomputed : ",sr
+                # Compute next power of 2 for subsampled signal
+                n_init = int(ana.size*sr/ana.sampling_rate) # normal number of points for signal, after subsampling
+                n=2**np.ceil(np.log(n_init)/np.log(2)) # extension to next power of  2 of previous number
             else:
                 n = int(ana.size*sr/ana.sampling_rate)
             if wf is None:
@@ -201,7 +199,7 @@ class TimeFreq():
             if optimize_fft:
                 wt=wt[:n_init,:]
         else:
-            wt = empty((0,scales.size),dtype='complex')
+            wt = np.empty((0,),dtype='complex')
         
         self.map = wt
         
