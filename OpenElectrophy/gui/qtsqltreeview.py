@@ -181,12 +181,12 @@ class MyModel(QAbstractItemModel):
         self.maxColumn = 0
         for fieldnames in self.td.columns_to_show.values() :
             if len(fieldnames)>self.maxColumn:
-                self.maxColumn = len(fieldnames)
+                self.maxColumn = len(fieldnames)+1
         
         
         #~ self.total_time = {'rowCount':0.,'index':0., 'parent' : 0., 'data':0. , 'getinst' : 0., '??' : 0.}
         
-        
+        #~ print 'self.maxColumn', self.maxColumn
     
     def columnCount(self , parentIndex):
         #~ print '##columnCount', parentIndex, parentIndex.isValid()
