@@ -7,6 +7,7 @@ import numpy as np
 import quantities as pq
 
 from scipy import fftpack
+from scipy.signal import resample
 #~ import numpy.fft as fftpack
 
 import joblib
@@ -77,14 +78,26 @@ def check_or_get_sampling_rate(ana, f_stop, sampling_rate = None):
     assert sampling_rate>=2*f_stop
     return sampling_rate
 
-def convolve_scalogram(ana, wf, sampling_rate):
+def convolve_scalogram(ana, wf, sampling_rate,optimize_fft):
     n = wf.shape[0]
     sig  = ana.magnitude
-    sigf=fftpack.fft(sig)
-    # subsampling in fft domain (attention factor)
-    factor = (sampling_rate/ana.sampling_rate).simplified.magnitude
-    sigf = np.concatenate([sigf[0:(n+1)/2],  sigf[-(n-1)/2:]])*factor
-    
+    ana_sr=ana.sampling_rate.rescale('Hz').magnitude
+    if optimize_fft:
+        sig-=sig.mean() # Remove mean before padding
+        nfft=2**np.ceil(np.log(sig.size)/np.log(2))
+        sig=np.r_[sig,np.zeros(nfft-sig.size)] # pad signal with 0 to a power of 2 length
+        sig=resample(sig,int(sig.size*sampling_rate/ana_sr)) # resample in time domain 
+        sigf=fftpack.fft(sig,n) # Compute fft with a power of 2 length        
+    else:        
+        sigf=fftpack.fft(sig)
+        # subsampling in fft domain (attention factor)
+        factor = (sampling_rate/ana.sampling_rate).simplified.magnitude
+        x=(n-1)//2
+        if np.mod(n,2)==0:
+            sigf = np.concatenate([sigf[0:x+2],  sigf[-x:]])*factor
+        else:
+            sigf = np.concatenate([sigf[0:x+1],  sigf[-x:]])*factor
+            
     # windowing ???
     #win = fftpack.ifftshift(np.hamming(n))
     #sigf *= win
@@ -92,7 +105,7 @@ def convolve_scalogram(ana, wf, sampling_rate):
     # Convolve (mult. in Fourier space)
     wt_tmp=fftpack.ifft(sigf[:,np.newaxis]*wf,axis=0)
     # and shift
-    wt = fftpack.fftshift(wt_tmp,axes=[0])    
+    wt = fftpack.fftshift(wt_tmp,axes=[0])
     return wt
 
 
@@ -116,6 +129,8 @@ class TimeFreq():
         It is also used as the wavelet characteristic frequency.
         Low f0 favors time precision of the scalogram while high f0 favors frequency precision
     normalisation : positive value favors low frequency components
+    optimize_fft : if True pad signal with 0. until next power of 2 before computing FFTs. In this case,
+    the sampling rate has to be recalculated (always in the more precise direction) to always keep power of 2 in FFt calculations
     
     wf: pre computed wavelet coeef in furrier domain
         if it is not None (by default), it will ignore all other parameters and compute the map 
@@ -140,26 +155,34 @@ class TimeFreq():
             t_stop = None,
             f0=2.5, 
             normalisation = 0.,
+            optimize_fft=False,
             wf=None,
             use_joblib = True):
 
         f_start = assume_quantity(f_start, units = 'Hz')
         f_stop = assume_quantity(f_stop, units = 'Hz')
         deltafreq = assume_quantity(deltafreq, units = 'Hz')
+        sampling_rate = assume_quantity(sampling_rate, units = 'Hz')
         
         self.f_start = f_start
         self.f_stop = f_stop
         self.deltafreq = deltafreq
         self.f0 = f0
         self.normalisation = normalisation
+        self.optimize_fft=optimize_fft
         
         self.orignal_ana = ana
         self.ana = ana = reduce_signal(ana, t_start, t_stop )
         self.sampling_rate = sr = check_or_get_sampling_rate(ana, f_stop, sampling_rate)
         
-        
-        n = int(ana.size*sr/ana.sampling_rate)
-        if n>0:
+        if ana.size>0:
+            if self.optimize_fft:
+                print "Use of optimize FFT in time freq"
+                # Compute next power of 2 for subsampled signal
+                n_init = int(ana.size*sr/ana.sampling_rate) # normal number of points for signal, after subsampling
+                n=2**np.ceil(np.log(n_init)/np.log(2)) # extension to next power of  2 of previous number
+            else:
+                n = int(ana.size*sr/ana.sampling_rate)
             if wf is None:
                 if use_joblib:
                     global memory
@@ -172,9 +195,11 @@ class TimeFreq():
                 wf = func(n, f_start.magnitude, f_stop.magnitude, deltafreq.magnitude,
                                 sr.magnitude, f0, normalisation)
             assert wf.shape[0] == n
-            wt = convolve_scalogram(ana, wf, sr)
+            wt = convolve_scalogram(ana, wf, sr,self.optimize_fft)
+            if optimize_fft:
+                wt=wt[:n_init,:]
         else:
-            wt = empty((0,scales.size),dtype='complex')
+            wt = np.empty((0,),dtype='complex')
         
         self.map = wt
         
