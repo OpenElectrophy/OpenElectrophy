@@ -10,7 +10,7 @@ import numpy as np
 import quantities as pq
 
 
-bl = TryItIO().read(nb_segment=1, duration = 10)
+bl = TryItIO().read_block(nb_segment=1, duration = 10)
 ana = bl.segments[0].analogsignals[0]
 
 from matplotlib import pyplot
@@ -40,7 +40,8 @@ def test1():
         print osci.time_max, osci.freq_max
     
     
-    tfr = TimeFreq(ana)
+    tfr = TimeFreq(ana,f_start=5.,f_stop=100.,
+                 deltafreq = 1.,sampling_rate = 400.)
     fig = pyplot.figure()
     ax = fig.add_subplot(1,1,1)
     tfr.plot(ax, clim = [0,2.8])

@@ -104,10 +104,12 @@ def detect_oscillations(map,
         for (max_t,max_f) in zip(list_max_t,list_max_f):
             known = False
             for osc in list_osc:
-                if (t_start+1.*max_t/sampling_rate,f_start+1.*max_f*deltafreq) in zip(osc.time_line,osc.freq_line):
+                # this is really dirty...
+                if (t_start+1.*max_t/sampling_rate,f_start+1.*max_f*deltafreq) in zip(osc.time_line.rescale('s').magnitude,osc.freq_line.rescale('Hz').magnitude):
                     if osc.amplitude_max>map[max_t,max_f]:
                         known = True # Max already detected on one oscillation and lower => can be skipped
                         break
+
             if not(known):
                 line_t,line_f=detect_one_line_from_max(abs(map),max_t,max_f,threshold)
                 osc=Oscillation()
@@ -126,5 +128,6 @@ def detect_oscillations(map,
                 osc.time_stop=float(osc.time_line[-1])
                 osc.freq_stop=float(osc.freq_line[-1])
                 list_osc.append(osc)
+    
     return list_osc
 

@@ -9,7 +9,7 @@ from OpenElectrophy.gui.oscillationdetection import OscillationDetection
 from OpenElectrophy import *
 from OpenElectrophy.gui.guiutil.picklesettings import PickleSettings
 
-bl = TryItIO().read(nb_segment=1, duration = 10)
+bl = TryItIO().read_block(nb_segment=1, duration = 10)
 neoana = bl.segments[0].analogsignals[0]
 
 

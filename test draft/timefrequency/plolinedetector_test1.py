@@ -10,7 +10,7 @@ import neo
 import numpy as np
 import quantities as pq
 
-bl = TryItIO().read(nb_segment=1, duration = 10)
+bl = TryItIO().read_block(nb_segment=1, duration = 10)
 ana = bl.segments[0].analogsignals[0]
 
 

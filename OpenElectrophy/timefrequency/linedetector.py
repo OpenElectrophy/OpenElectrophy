@@ -297,7 +297,6 @@ class LineDetector():
         new_f = f[ (f>=f1) & (f<f2)]
         
         self.computeThreshold()
-
         self.list_oscillation = detect_oscillations(subMap,
             new_t[0].rescale('s').magnitude,   #self.detection_zone[0],
             self.sampling_rate.rescale('Hz').magnitude,
