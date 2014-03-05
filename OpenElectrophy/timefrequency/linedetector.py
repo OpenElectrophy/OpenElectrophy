@@ -282,8 +282,8 @@ class LineDetector():
         
         ind_t,ind_f = numpy.array(max_detection(abs(subMap),threshold= self.threshold))
         self.list_max = numpy.recarray(ind_t.size , formats = ['f8', 'f8'], names=['time', 'freq'] , )
-        self.list_max.time  = new_t[ind_t]
-        self.list_max.freq  = new_f[ind_f]
+        self.list_max.time  = new_t[ind_t].rescale('s').magnitude
+        self.list_max.freq  = new_f[ind_f].rescale('Hz').magnitude
         
         
     def detectLine(self):
