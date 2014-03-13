@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from sklearn.cluster import KMeans
@@ -34,7 +33,7 @@ class SklearnKMeans(object):
                             max_iter=300, descending_sort_with_waveform = True):
         sps = spikesorter
         
-        classifier = KMeans( k = n_cluster , init = init, 
+        classifier = KMeans( n_clusters = n_cluster , init = init, 
                                             n_init = n_init, max_iter = max_iter)
         
         classifier.fit( sps.waveform_features)
