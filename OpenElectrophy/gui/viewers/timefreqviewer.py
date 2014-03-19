@@ -477,7 +477,7 @@ class ThreadComputeTF(QThread):
         
         self.parent().maps[self.n] = np.abs(wt)
         t2 = time.time()
-        print 'run', self.n, self.wf.shape, self.sig.shape, t2-t1
+        #~ print 'run', self.n, self.wf.shape, self.sig.shape, t2-t1
         self.finished.emit(self.n)
 
 class ThreadInitializeWavelet(QThread):
