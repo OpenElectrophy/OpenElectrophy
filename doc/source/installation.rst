@@ -100,7 +100,7 @@ For that I used homebrew : http://brew.sh/
 It is a ruby script that help you to install many things (include python)
 
 Open a terminal and run theses command:
-    * ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
+    * ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
     * export PATH=/usr/local/bin:$PATH
     * brew install python
     * brew install pyqt
