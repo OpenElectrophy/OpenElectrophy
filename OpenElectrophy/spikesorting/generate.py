@@ -63,7 +63,7 @@ def generate_block_for_sorting(
     # generate signal = noise + spike waveform
     for i, seg in enumerate(bl.segments):
         for j,rc in enumerate(rcg.recordingchannels):
-            sig_size = (duration*sampling_rate).simplified
+            sig_size = int((duration*sampling_rate).simplified)
             
             if use_memmap_path:
                 filename = os.path.join(use_memmap_path, 'signal {} {}'.format(i ,j))
