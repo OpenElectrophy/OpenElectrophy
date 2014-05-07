@@ -91,6 +91,9 @@ The following list of examples are in the directory OpenElectrophy/examples. You
 6 - Vierwers for neo object
 ===========================
 
+.. automodule:: viewer_segment
+.. literalinclude:: ../../examples/viewer_segment.py
+
 .. automodule:: viewer_timefreq
 .. literalinclude:: ../../examples/viewer_timefreq.py
 
