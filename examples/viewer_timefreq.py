@@ -23,7 +23,7 @@ if __name__== '__main__':
     from PyQt4.QtGui import QApplication
     app = QApplication([ ])
     
-    bl = TryItIO().read(nb_segment=1, duration = 100)
+    bl = TryItIO().read(nb_segment=1, duration = 100)[0]
     w = TimeFreqViewer(analogsignals = bl.segments[0].analogsignals, with_time_seeker = True)
     w.show()
     

@@ -240,7 +240,7 @@ class TimeFreqViewer(ViewerBase):
             if param.name()=='colormap':
                 self.initialize_time_freq()
             if param.name()=='nb_column':
-                self.change_grid()
+                self.change_grid(None)
             #~ if param.name()=='refresh_interval':
                 #~ self.timer.setInterval(data)
     
