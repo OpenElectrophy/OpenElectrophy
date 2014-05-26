@@ -250,7 +250,7 @@ class TimeFreqViewer(ViewerBase):
     
     
     need_change_grid = pyqtSignal()
-    def change_grid(self, param):
+    def change_grid(self, param=None):
         #~ print 'change_grid', self.grid_changing
         #~ if not self.grid_changing:
             #~ self.grid_changing = True
