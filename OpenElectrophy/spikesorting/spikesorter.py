@@ -915,6 +915,9 @@ class SpikeSorter(object):
                 
                 unit.spiketrains.append(sptr)
                 seg.spiketrains.append(sptr)
+                sptr.unit = unit
+                sptr.segment= seg
+                
         
         return rcg
 
@@ -926,10 +929,9 @@ class SpikeSorter(object):
         
         for u, unit in enumerate(rcg.units):
             for s, seg in enumerate(bl.segments):
-                #~ seg.neoinstance = None
                 for sptr in unit.spiketrains:
-                    #~ if sptr in seg.spiketrains:
-                        #~ seg.spiketrains.remove(sptr)
+                 #   if sptr in seg.spiketrains:
+                        #seg.spiketrains.remove(sptr)
                     if list_contains(seg.spiketrains, sptr):
                         sptr.neoinstance.OEinstance = None
                         list_remove(seg.spiketrains, sptr)
@@ -937,15 +939,14 @@ class SpikeSorter(object):
             unit.neoinstance.OEinstance = None
             session.delete(unit)
         session.commit()
-        #~ bl.neoinstance = None
-        
         
         neorcg = self.populate_recordingchannelgroup()
         for u, neounit in enumerate(neorcg.units):
             unit = OEBase.from_neo(neounit, dbinfo.mapped_classes, cascade = False)
             rcg.units.append(unit)
             for s, neoseg in enumerate(neorcg.block.segments):
-                neosptr = neoseg.spiketrains[u]
+                neosptr = neounit.spiketrains[s]
+                assert neosptr.segment is neoseg, 'bug spiketrain in save'
                 sptr = OEBase.from_neo(neosptr, dbinfo.mapped_classes, cascade = False)
                 unit.spiketrains.append(sptr)
                 neoseg.OEinstance.spiketrains.append(sptr)

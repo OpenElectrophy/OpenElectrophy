@@ -84,8 +84,12 @@ def generate_block_for_sorting(
             anasig = neo.AnalogSignal(signal = signal, units = 'mV', sampling_rate = sampling_rate, t_start = t_start, channel_index = j)
             seg.analogsignals.append(anasig)
             rc.analogsignals.append(anasig)
-            
-    neo.io.tools.create_many_to_one_relationship(bl)
+    
+    try:
+        neo.io.tools.create_many_to_one_relationship(bl)
+    except:
+        bl.create_many_to_one_relationship()
+        
     return bl
     
     
