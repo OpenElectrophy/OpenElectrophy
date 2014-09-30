@@ -7,13 +7,18 @@ This file extend neo.description :
 
 """
 
+
+import neo
+
 from collections import OrderedDict
 import quantities as pq
 from datetime import datetime
 import numpy as np
 
+from distutils import version
+
 import neo
-from neo import description as neod
+
 from base import OEBase
 
 
@@ -33,58 +38,110 @@ class Block(OEBase):
 """
 
 
-
-
-
-class_names = neod.class_by_name.keys()
 not_in_OE = [ 'Spike', 'Epoch', 'Event', 'IrregularlySampledSignal' ]
-for e in not_in_OE:
-    class_names.remove(e)
-
 with_color = ['AnalogSignal', 'SpikeTrain', 'EventArray', 'EpochArray', 'Unit']
 
-oeclasses = [ ]
-for name in class_names:
-    if name in neod.one_to_many_relationship:
-        one_to_many = list(neod.one_to_many_relationship[name])
-        for e in not_in_OE:
-            if e in one_to_many:
-                one_to_many.remove(e)
-    else:
+if  '0.4'>version.LooseVersion(neo.__version__)>='0.3':
+    from neo import description as neod
+    class_names = neod.class_by_name.keys()
+    
+    for e in not_in_OE:
+        class_names.remove(e)
+
+    oeclasses = [ ]
+    for name in class_names:
+        if name in neod.one_to_many_relationship:
+            one_to_many = list(neod.one_to_many_relationship[name])
+            for e in not_in_OE:
+                if e in one_to_many:
+                    one_to_many.remove(e)
+        else:
+            one_to_many = [ ]
+        
+        if name in neod.many_to_many_relationship:
+            many_to_many = list(neod.many_to_many_relationship[name])
+            for e in not_in_OE:
+                if e in many_to_many:
+                    many_to_many_relationship[name].remove(e)
+        else:
+            many_to_many = [ ]
+        
+        if name in neod.classes_inheriting_quantities:
+            inheriting_quantities = neod.classes_inheriting_quantities[name]
+        else:
+            inheriting_quantities = None
+        
+        usable_attributes = OrderedDict()
+        attributes = neod.classes_necessary_attributes[name] + neod.classes_recommended_attributes[name]
+        for attribute in attributes:
+            attrname, attrtype = attribute[0], attribute[1]
+            usable_attributes[attrname] = attrtype
+        
+        if name in with_color and 'color' not in usable_attributes:
+            usable_attributes['color'] = str
+        
+        classattr = dict(tablename = name,
+                                neoclass = neod.class_by_name[name],
+                                attributes = attributes,
+                                usable_attributes = usable_attributes,
+                                one_to_many_relationship  = one_to_many,
+                                many_to_one_relationship =[ ],
+                                many_to_many_relationship  = many_to_many,
+                                inheriting_quantities = inheriting_quantities,
+                                )
+        oeclasses.append(type(name, (OEBase,), classattr))
+    
+elif version.LooseVersion(neo.__version__)=='0.4.0dev':
+    print 'OE3 with neo0.4 : Experimentale!!!'
+    oeclasses = [ ]
+    for neoname, neoclass in neo.class_by_name.items():
+        if neoname in not_in_OE:
+            continue
+        
         one_to_many = [ ]
-    
-    if name in neod.many_to_many_relationship:
-        many_to_many = list(neod.many_to_many_relationship[name])
-        for e in not_in_OE:
-            if e in many_to_many:
-                many_to_many_relationship[name].remove(e)
-    else:
+        if hasattr(neoclass, '_data_child_objects'):
+            for e in neoclass._data_child_objects:
+                if e not in not_in_OE:
+                    one_to_many.append(e)
+        
+        if hasattr(neoclass, '_container_child_objects'):
+            for e in neoclass._container_child_objects:
+                if e not in not_in_OE:
+                    one_to_many.append(e)
+        
         many_to_many = [ ]
-    
-    if name in neod.classes_inheriting_quantities:
-        inheriting_quantities = neod.classes_inheriting_quantities[name]
-    else:
-        inheriting_quantities = None
-    
-    usable_attributes = OrderedDict()
-    attributes = neod.classes_necessary_attributes[name] + neod.classes_recommended_attributes[name]
-    for attribute in attributes:
-        attrname, attrtype = attribute[0], attribute[1]
-        usable_attributes[attrname] = attrtype
-    
-    if name in with_color and 'color' not in usable_attributes:
-        usable_attributes['color'] = str
-    
-    classattr = dict(tablename = name,
-                            neoclass = neod.class_by_name[name],
-                            attributes = attributes,
-                            usable_attributes = usable_attributes,
-                            one_to_many_relationship  = one_to_many,
-                            many_to_one_relationship =[ ],
-                            many_to_many_relationship  = many_to_many,
-                            inheriting_quantities = inheriting_quantities,
-                            )
-    oeclasses.append(type(name, (OEBase,), classattr))
+        for e in neoclass._multi_parent_objects:
+            if e not in not_in_OE:
+                many_to_many.append(e)
+        
+        if hasattr(neoclass, '_quantity_attr'):
+            inheriting_quantities = neoclass._quantity_attr
+        else:
+            inheriting_quantities = None
+        
+        usable_attributes = OrderedDict()
+        attributes = list(neoclass._necessary_attrs) + list(neoclass._recommended_attrs)
+        for attribute in attributes:
+            attrname, attrtype = attribute[0], attribute[1]
+            usable_attributes[attrname] = attrtype
+        
+        if neoname in with_color and 'color' not in usable_attributes:
+            usable_attributes['color'] = str
+        
+        classattr = dict(tablename = neoname,
+                                neoclass = neoclass,
+                                attributes = attributes,
+                                usable_attributes = usable_attributes,
+                                one_to_many_relationship  = one_to_many,
+                                many_to_one_relationship =[ ],
+                                many_to_many_relationship  = many_to_many,
+                                inheriting_quantities = inheriting_quantities,
+                                )
+        oeclasses.append(type(neoname, (OEBase,), classattr))
+        
+        
+        
+        
     
 
 
