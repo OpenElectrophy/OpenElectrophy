@@ -84,7 +84,7 @@ def convolve_scalogram(ana, wf, sampling_rate,optimize_fft):
     ana_sr=ana.sampling_rate.rescale('Hz').magnitude
     if optimize_fft:
         sig-=sig.mean() # Remove mean before padding
-        nfft=2**np.ceil(np.log(sig.size)/np.log(2))
+        nfft=int(2**np.ceil(np.log(sig.size)/np.log(2)))
         sig=np.r_[sig,np.zeros(nfft-sig.size)] # pad signal with 0 to a power of 2 length
         sig=resample(sig,int(sig.size*sampling_rate/ana_sr)) # resample in time domain 
         sigf=fftpack.fft(sig,n) # Compute fft with a power of 2 length        
@@ -177,7 +177,7 @@ class TimeFreq():
         
         if ana.size>0:
             if self.optimize_fft:
-                print "Use of optimize FFT in time freq"
+                #print "Use of optimize FFT in time freq"
                 # Compute next power of 2 for subsampled signal
                 n_init = int(ana.size*sr/ana.sampling_rate) # normal number of points for signal, after subsampling
                 n=2**np.ceil(np.log(n_init)/np.log(2)) # extension to next power of  2 of previous number
