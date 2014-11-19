@@ -157,7 +157,7 @@ class TimeFreq():
             normalisation = 0.,
             optimize_fft=False,
             wf=None,
-            use_joblib = True):
+            use_joblib = False):
 
         f_start = assume_quantity(f_start, units = 'Hz')
         f_stop = assume_quantity(f_stop, units = 'Hz')
