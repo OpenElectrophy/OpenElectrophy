@@ -57,6 +57,7 @@ class LineDetector():
                         t_stop = inf,
                         f0=2.5, 
                         normalisation = 0.,
+                        optimize_fft=False,
                         
                         #~ linedetection_method = 'detect_all_lines',
                         linedetection_method = 'detect_line_from_max',
@@ -105,7 +106,9 @@ class LineDetector():
     normalisation : float, optional
         Normalisation exponent along the frequency dimension. Negative 
         (positive) values stress lower (higher) frequencies.
-        
+    optimize_fft : False, optional
+        Pad signal with 0 to have a size like 2**k before computing the time 
+        frequency map, return the map truncated to original size
     
     Detection parameters
     
@@ -157,6 +160,7 @@ class LineDetector():
         self.t_stop = t_stop
         self.f0= f0
         self.normalisation = normalisation
+        self.optimize_fft = optimize_fft
 
         #~ self.t_start = max(self.t_start , self.anaSig.t_start)
         #~ self.t_stop = min(self.t_stop , self.anaSig.t()[-1] )
@@ -246,6 +250,7 @@ class LineDetector():
                                                     t_stop = self.t_stop,
                                                     f0=self.f0,
                                                     normalisation = self.normalisation,
+                                                    optimize_fft=self.optimize_fft,
                                                 )
     
     def computeThreshold(self):

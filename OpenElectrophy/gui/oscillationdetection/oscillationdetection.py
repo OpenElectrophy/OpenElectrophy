@@ -56,10 +56,12 @@ class OscillationDetection(QWidget) :
                                         {'name': 'f_start', 'type': 'float', 'value': 5.},
                                         {'name': 'f_stop', 'type': 'float', 'value': 90.},
                                         {'name': 'deltafreq', 'type': 'float', 'value': 1.},
-                                        {'name': 't_start', 'type': 'float', 'value': 0.},
-                                        {'name': 't_stop', 'type': 'float', 'value': 10.},
+                                        {'name': 't_start', 'type': 'float', 'value': -np.inf},
+                                        {'name': 't_stop', 'type': 'float', 'value': np.inf},
+                                        {'name': 'sampling_rate', 'type': 'float', 'value': None},
                                         {'name': 'f0', 'type': 'float', 'value': 2.5},
                                         {'name': 'normalisation', 'type': 'float', 'value': 0.},
+                                        {'name': 'optimize_fft', 'type': 'bool', 'value': False},
                                         {'name': 'Compute scalogram', 'type': 'action'},
                                         
                                         ]
