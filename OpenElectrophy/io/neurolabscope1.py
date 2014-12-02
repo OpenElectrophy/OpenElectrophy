@@ -53,10 +53,9 @@ class Neurolabscope1IO(BaseIO):
                 field, value = f.split('=')
                 annotations[field] = value
         
-        sr = annotations.pop('fs')
-        dt = annotations.pop('dtype')
-        nbchannel = annotations.pop('numChannel')
-        print sr, dt, nbchannel
+        sr = float(annotations.pop('fs'))
+        dt = np.dtype(annotations.pop('dtype'))
+        nbchannel = int(annotations.pop('numChannel'))
         reader = neo.RawBinarySignalIO(filename =self.filename)
         seg = reader.read_segment(sampling_rate =sr*pq.Hz,
                                                 t_start = 0.*pq.s,
