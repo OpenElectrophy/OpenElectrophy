@@ -60,6 +60,7 @@ class Neurolabscope2IO(BaseIO):
     def read_segment(self,cascade = True, lazy = False,digital_channels = 'all'):
         json_file = os.path.join(self.dirname, 'info.json')
         info = json.load(open(json_file, 'r'))
+        print info
         
         for stream in info['streams']:
             #~ print stream
@@ -99,7 +100,8 @@ class Neurolabscope2IO(BaseIO):
                                                     channel_index = chan)
                     seg.epocharrays.append(ea)
         
-        seg.annotate(**info['annotations'])
+        if info['annotations'] is not None:
+            seg.annotate(**info['annotations'])
         return seg
 
 
