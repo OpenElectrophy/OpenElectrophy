@@ -65,7 +65,7 @@ def reduce_signal(ana, t_start = None, t_stop = None):
     if t_start is not None:
         ana = ana[ana.times>=t_start]
         ana.t_start = max(t_start, ana.t_start)
-    if t_start is not None:
+    if t_stop is not None:
         ana = ana[ana.times<=t_stop]
     return ana
 
@@ -161,6 +161,10 @@ class TimeFreq():
 
         f_start = assume_quantity(f_start, units = 'Hz')
         f_stop = assume_quantity(f_stop, units = 'Hz')
+        if t_start is not None:
+            t_start = assume_quantity(t_start, units = 'second')
+        if t_stop is not None:
+            t_stop = assume_quantity(t_stop, units = 'second')
         deltafreq = assume_quantity(deltafreq, units = 'Hz')
         sampling_rate = assume_quantity(sampling_rate, units = 'Hz')
         
