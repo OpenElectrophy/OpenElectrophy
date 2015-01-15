@@ -153,7 +153,7 @@ class ImportData(QDialog) :
     def addFiles(self):        
         fd = QFileDialog(acceptMode = QFileDialog.AcceptOpen)
         if self.ioclass.extensions is not None and len(self.ioclass.extensions)>0:
-            filter = '{} files ( ){}'.format(self.name, ', '.join('*.{}'.format(ext) for ext in self.ioclass.extensions))
+            filter = '{} files ({})'.format(self.name, ', '.join('*.{}'.format(ext) for ext in self.ioclass.extensions))
             #~ filter = '{} files ('.format(self.name)
             #~ for ext in self.ioclass.extensions:
                 #~ filter += '*.{}'.format(ext)
