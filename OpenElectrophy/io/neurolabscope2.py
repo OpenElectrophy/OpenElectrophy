@@ -74,10 +74,7 @@ class Neurolabscope2IO(BaseIO):
                                                         )
                 for i, anasig in enumerate(seg.analogsignals):
                     anasig.annotations['channel_name'] = anasig.name = stream['channel_names'][i]
-                    anasig.annotations['channel_index'] = stream['channel_indexes'][i]
-                    
-                    
-                    
+                    anasig.channel_index = stream['channel_indexes'][i]
                 
             elif stream['stream_type'] == 'DigitalSignalSharedMemStream':
                 dim1 = int(np.ceil(stream['nb_channel']/8.))
