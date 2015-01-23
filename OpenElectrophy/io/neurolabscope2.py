@@ -60,7 +60,7 @@ class Neurolabscope2IO(BaseIO):
     def read_segment(self,cascade = True, lazy = False,digital_channels = 'all'):
         json_file = os.path.join(self.dirname, 'info.json')
         info = json.load(open(json_file, 'r'))
-        print info
+        #~ print info
         
         for stream in info['streams']:
             #~ print stream
