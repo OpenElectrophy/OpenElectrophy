@@ -60,7 +60,7 @@ class Neurolabscope2IO(BaseIO):
     def read_segment(self,cascade = True, lazy = False,digital_channels = 'all'):
         json_file = os.path.join(self.dirname, 'info.json')
         info = json.load(open(json_file, 'r'))
-        print info
+        #~ print info
         
         for stream in info['streams']:
             #~ print stream
@@ -74,10 +74,7 @@ class Neurolabscope2IO(BaseIO):
                                                         )
                 for i, anasig in enumerate(seg.analogsignals):
                     anasig.annotations['channel_name'] = anasig.name = stream['channel_names'][i]
-                    anasig.annotations['channel_index'] = stream['channel_indexes'][i]
-                    
-                    
-                    
+                    anasig.channel_index = stream['channel_indexes'][i]
                 
             elif stream['stream_type'] == 'DigitalSignalSharedMemStream':
                 dim1 = int(np.ceil(stream['nb_channel']/8.))
