@@ -35,7 +35,7 @@ def detect_one_line_from_max(powermap,
             # current point on time limit
             if (cur_t>=powermap.shape[0]-abs(direction))or(cur_t<abs(direction)):
                 break
-
+            
             # find next point
             cur_t+=direction
             deriv=ediff1d(powermap[cur_t,cur_f-1:cur_f+2])
