@@ -140,10 +140,10 @@ class OEBase(object):
             #~ delattr(neoinstance, 'OEinstance')
         return OEinstance
 
-    def to_neo(self, cascade = False):
+    def to_neo(self, cascade = False, with_many_to_many = True,
+                with_one_to_many = True, with_many_to_one = True):
         # TODO ?
-        # cascade_m2m  casacde_o2m cascade_m2o
-        
+        # with_many_to_many  with_one_to_many with_many_to_one
         if self.neoclass is not None:
             
             # attributes
@@ -158,34 +158,37 @@ class OEBase(object):
                 self.neoinstance.OEinstance = self
             # cascade relationships
             if cascade:
-                for childname in self.many_to_many_relationship:
-                    for child in getattr(self, childname.lower()+'s'):
-                        neochild = child.neoinstance
-                        if neochild is None:
+                if with_many_to_many:
+                    for childname in self.many_to_many_relationship:
+                        for child in getattr(self, childname.lower()+'s'):
+                            neochild = child.neoinstance
+                            if neochild is None:
+                                neochild = child.to_neo(cascade = True)
+                            #~ if neochild is not None and neochild not in getattr(self.neoinstance, childname.lower()+'s'):
+                            if neochild is not None and not list_contains(getattr(self.neoinstance, childname.lower()+'s'), neochild):
+                                getattr(self.neoinstance, childname.lower()+'s').append( neochild )
+                                getattr(neochild, self.tablename.lower()+'s').append( self.neoinstance )
+                if with_one_to_many:
+                    for childname in self.one_to_many_relationship:
+                        for child in getattr(self, childname.lower()+'s'):
                             neochild = child.to_neo(cascade = True)
-                        #~ if neochild is not None and neochild not in getattr(self.neoinstance, childname.lower()+'s'):
-                        if neochild is not None and not list_contains(getattr(self.neoinstance, childname.lower()+'s'), neochild):
-                            getattr(self.neoinstance, childname.lower()+'s').append( neochild )
-                            getattr(neochild, self.tablename.lower()+'s').append( self.neoinstance )
-                for childname in self.one_to_many_relationship:
-                    for child in getattr(self, childname.lower()+'s'):
-                        neochild = child.to_neo(cascade = True)
-                        if neochild is None: continue
-                        neochildren = getattr(self.neoinstance, childname.lower()+'s')
-                        if not list_contains(neochildren, neochild):
-                            neochildren.append(neochild)
-                        #~ if neochild is not None and neochild not in neochildren:
-                            #~ neochildren.append(neochild)
-                for parentname in self.many_to_one_relationship:
-                    if hasattr(self, parentname.lower()):
-                        OEparent = getattr(self, parentname.lower())
-                        if OEparent is None: continue
-                        neoparent = OEparent.neoinstance
-                        if neoparent is None:
-                            neoparent = OEparent.to_neo(cascade=True)
-                            #~ neoparent = OEparent.to_neo(cascade=False)
-                        if neoparent is not None:
-                            setattr(self.neoinstance, parentname.lower(), neoparent)
+                            if neochild is None: continue
+                            neochildren = getattr(self.neoinstance, childname.lower()+'s')
+                            if not list_contains(neochildren, neochild):
+                                neochildren.append(neochild)
+                            #~ if neochild is not None and neochild not in neochildren:
+                                #~ neochildren.append(neochild)
+                if with_many_to_one:
+                    for parentname in self.many_to_one_relationship:
+                        if hasattr(self, parentname.lower()):
+                            OEparent = getattr(self, parentname.lower())
+                            if OEparent is None: continue
+                            neoparent = OEparent.neoinstance
+                            if neoparent is None:
+                                neoparent = OEparent.to_neo(cascade=True)
+                                #~ neoparent = OEparent.to_neo(cascade=False)
+                            if neoparent is not None:
+                                setattr(self.neoinstance, parentname.lower(), neoparent)
             
             return self.neoinstance
 
