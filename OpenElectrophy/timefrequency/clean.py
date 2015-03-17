@@ -39,8 +39,8 @@ def clean_oscillations_list(list_oscillation,
                 if (osci1.freq_line[ind_i] == osci2.freq_line[ind_j]).all() and regroup_full_overlap :
                     # the 2 lines have same absisse and same freq for some point : we regroup them
                     ind_keep_j = where( ~in1d(osci2.time_line,osci1.time_line) )
-                    osci1.time_line = r_[osci1.time_line , osci2.time_line[ind_keep_j]]
-                    osci1.freq_line = r_[osci1.freq_line , osci2.freq_line[ind_keep_j]]
+                    osci1.time_line = r_[osci1.time_line , osci2.time_line[ind_keep_j].rescale(osci1.time_line.units)]*osci1.time_line.units
+                    osci1.freq_line = r_[osci1.freq_line , osci2.freq_line[ind_keep_j].rescale(osci1.freq_line.units)]*osci1.freq_line.units
                     osci1.value_line = r_[osci1.value_line , osci2.value_line[ind_keep_j]]
                     ind_sort = argsort(osci1.time_line )
                     osci1.time_line = osci1.time_line[ind_sort]

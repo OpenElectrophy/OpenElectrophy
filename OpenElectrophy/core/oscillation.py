@@ -59,8 +59,8 @@ class Oscillation(OEBase):
         # Before resampling, in order to avoid slow down due the use of ifft in scipy.resample
         # y is padded with 0 proportionnally to the distance from x.size to the next 2**N 
         # QUESTION: does it lead to some strange edge effects???
-        N=np.ceil(np.log2(x.size))
-        vv=np.r_[v,np.zeros(np.floor(v.size*(2**N-x.size)/x.size))]
+        N=int(np.ceil(np.log2(x.size)))
+        vv=np.r_[v,np.zeros(v.size*(2**N-x.size)//x.size)]
         vv = scipy.signal.resample( vv, 2**N)
         v = vv[:x.size]
 
@@ -99,8 +99,8 @@ class Oscillation(OEBase):
             # Before resampling, in order to avoid slow down due the use of ifft in scipy.resample
             # y is padded with 0 proportionnally to the distance from x.size to the next 2**N 
             # QUESTION: does it lead to some strange edge effects???
-            N=np.ceil(np.log2(x.size))
-            yy=np.r_[y,np.zeros(np.floor(y.size*(2**N-x.size)/x.size))]
+            N=int(np.ceil(np.log2(x.size)))
+            yy=np.r_[y,np.zeros(y.size*(2**N-x.size)//x.size)]
             yy = scipy.signal.resample( yy, 2**N)
             y = yy[:x.size]
         

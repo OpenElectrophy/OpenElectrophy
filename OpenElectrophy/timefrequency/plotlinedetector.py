@@ -89,6 +89,9 @@ class PlotLineDetector():
 
     def plotMap(self):
         """ Plot the scalogram. """
+        if len(self.axMap.get_images())==1:
+            self.axMap.get_images()[0].remove()
+            
         self.im = self.lineDetector.timeFreq.plot(self.axMap,  cax = self.ax_colorbar, colorbar = True)
         #~ self.fig.colorbar(im,ax = self.axMap, cax = self.ax_colorbar ,orientation='horizontal')
         

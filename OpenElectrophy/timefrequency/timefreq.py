@@ -225,7 +225,7 @@ class TimeFreq():
                                     interpolation='nearest', 
                                     extent=(self.ana.t_start, self.ana.t_stop, self.f_start-self.deltafreq/2., self.f_stop-self.deltafreq/2.),
                                     origin ='lower' ,
-                                    aspect = 'normal')
+                                    aspect = 'auto')
         if clim is not None:
             im.set_clim(clim)
         if colorbar:
