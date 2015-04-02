@@ -163,7 +163,8 @@ class OEBase(object):
                         for child in getattr(self, childname.lower()+'s'):
                             neochild = child.neoinstance
                             if neochild is None:
-                                neochild = child.to_neo(cascade = True)
+                                neochild = child.to_neo(cascade = True, with_many_to_many = with_many_to_many,
+                                                            with_one_to_many = with_one_to_many, with_many_to_one = with_many_to_one)
                             #~ if neochild is not None and neochild not in getattr(self.neoinstance, childname.lower()+'s'):
                             if neochild is not None and not list_contains(getattr(self.neoinstance, childname.lower()+'s'), neochild):
                                 getattr(self.neoinstance, childname.lower()+'s').append( neochild )
@@ -171,7 +172,8 @@ class OEBase(object):
                 if with_one_to_many:
                     for childname in self.one_to_many_relationship:
                         for child in getattr(self, childname.lower()+'s'):
-                            neochild = child.to_neo(cascade = True)
+                            neochild = child.to_neo(cascade = True, with_many_to_many = with_many_to_many,
+                                                            with_one_to_many = with_one_to_many, with_many_to_one = with_many_to_one)
                             if neochild is None: continue
                             neochildren = getattr(self.neoinstance, childname.lower()+'s')
                             if not list_contains(neochildren, neochild):
@@ -185,7 +187,8 @@ class OEBase(object):
                             if OEparent is None: continue
                             neoparent = OEparent.neoinstance
                             if neoparent is None:
-                                neoparent = OEparent.to_neo(cascade=True)
+                                neoparent = OEparent.to_neo(cascade=True, with_many_to_many = with_many_to_many,
+                                                            with_one_to_many = with_one_to_many, with_many_to_one = with_many_to_one)
                                 #~ neoparent = OEparent.to_neo(cascade=False)
                             if neoparent is not None:
                                 setattr(self.neoinstance, parentname.lower(), neoparent)
