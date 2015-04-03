@@ -217,6 +217,26 @@ class EditOscillation(MenuItem):
 from .spikesorting import SpikeSortingWindow
 from ..spikesorting import SpikeSorter
 
+
+def create_neo_rcg_for_sorting(rcg):
+    # FIXED: this use to load load every in a block because of cascade = True
+    #~ neo_rcg = rcg.to_neo(cascade = True)#, propagate_many_to_many = True)
+    #~ return neo_rcg
+    
+    neo_rcg = rcg.to_neo(cascade = True, with_many_to_many = True,
+            with_one_to_many = True, with_many_to_one = False,
+            propagate_many_to_many = False)
+    neo_rcg.block = rcg.block.to_neo(cascade = False)
+    for seg in rcg.block.segments:
+        neo_seg = seg.to_neo(cascade=False)
+        neo_rcg.block.segments.append(neo_seg)
+        for anasig in seg.analogsignals:
+            if anasig.recordingchannel in rcg.recordingchannels:
+                neo_seg.analogsignals.append(anasig.to_neo(cascade = False))
+                anasig.neoclass.segment = neo_seg
+    return neo_rcg
+    
+    
 class SpikeSortingOnRCG(MenuItem):
     name = 'Spike sorting'
     table = 'RecordingChannelGroup'
@@ -225,10 +245,7 @@ class SpikeSortingOnRCG(MenuItem):
     def execute(self, session,explorer,tablename,  id, treedescription,settings,  **kargs):
         class_ = treedescription.tablename_to_class[tablename]
         rcg = session.query(class_).get(id)
-       
-        # FIXME: this load every in a block because of cascade = True
-        # do a hack for loading only the rcg and related units, signals and segment not everything in the block
-        neo_rcg = rcg.to_neo(cascade = True)
+        neo_rcg = create_neo_rcg_for_sorting(rcg)
         
         spikesorter = SpikeSorter(neo_rcg)
         w= SpikeSortingWindow(spikesorter = spikesorter, session = session, dbinfo = treedescription.dbinfo, settings =settings)
@@ -263,9 +280,7 @@ class SpikeSortingOnRCs(MenuItem):
         session.commit()
         explorer.refresh()
         
-        # FIXME: this load every in a block because of cascade = True
-        # do a hack for loading only the rcg and related units, signals and segment not everything in the block
-        neo_rcg = rcg.to_neo(cascade = True)
+        neo_rcg = create_neo_rcg_for_sorting(rcg)
         
         spikesorter = SpikeSorter(neo_rcg)
         w= SpikeSortingWindow(spikesorter = spikesorter, session = session, dbinfo = treedescription.dbinfo, settings =settings)
