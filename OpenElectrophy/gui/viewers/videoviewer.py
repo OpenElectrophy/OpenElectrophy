@@ -11,7 +11,16 @@ import os
 
 #~ import cv2
 
-import skimage.io
+try :
+    import imageio
+    mode = 'imageio'
+except:
+    print 'no imageio'
+    import skimage.io
+    if 'Video' in dir(skimage.io):
+        mode = 'skimage'
+print mode
+
 
 
 param_global = [
@@ -62,7 +71,7 @@ class VideoViewer(ViewerBase):
         for i, vid in enumerate(self.videofiles):
             name = '{} {}'.format(i, os.path.basename(vid))
             all.append({ 'name': name, 'type' : 'group', 'children' : param_by_channel})
-        self.paramVideos = pg.parametertree.Parameter.create(name='EpochArrays', type='group', children=all)
+        self.paramVideos = pg.parametertree.Parameter.create(name='Videos', type='group', children=all)
         
         self.allParams = pg.parametertree.Parameter.create(name = 'all param', type = 'group', children = [self.paramGlobal,self.paramVideos  ])
         
@@ -79,12 +88,18 @@ class VideoViewer(ViewerBase):
             #~ self.video_length.append(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
             #~ self.video_fps.append(cap.get(cv2.cv.CV_CAP_PROP_FPS))
             
-            #~ v  = skimage.io.Video(source = vid, backend = 'gstreamer')
-            v  = skimage.io.Video(source = vid, backend = 'opencv')
-            self.videos.append(v)
-            self.video_length.append(v.frame_count())
-            #~ self.video_fps.append(25.)
-            self.video_fps.append(float(v.duration())/v.frame_count())
+            if mode =='imageio':
+                v  = imageio.get_reader(vid, format = 'avi', mode = 'I')
+                self.videos.append(v)
+                self.video_length.append(v.get_meta_data()['nframes'])
+                self.video_fps.append(v.get_meta_data()['fps'])
+            elif mode =='skimage':
+                #~ v  = skimage.io.Video(source = vid, backend = 'gstreamer')
+                v  = skimage.io.Video(source = vid, backend = 'opencv')
+                self.videos.append(v)
+                self.video_length.append(v.frame_count())
+                #~ self.video_fps.append(25.)
+                self.video_fps.append(float(v.duration())/v.frame_count())
             
             
             
@@ -144,24 +159,36 @@ class VideoViewer(ViewerBase):
                 else:
                     #~ frame = self.videotimes[i].size-1
                     frame = 0
-                
-            if 0<frame<self.video_length[i] and frame !=self.frames[i]:
-                # opencv is bad for seek in a video stream so we cache the last image
-                if 0<(frame-self.frames[i])<self.video_fps[i]+2:
-                    # until one seconde we read in loop
-                    for f in range(frame-self.frames[i]):
-                        #~ ret, im = self.captures[i].read()
-                        im = self.videos[i].get()
+            
+            if mode =='imageio':
+                if 0<=frame<self.video_length[i]:
+                    im = self.videos[i].get_data(frame)
                 else:
-                    # otherwise a long seek but this flash
-                    #~ print 'long seek',i,  self.frames[i], frame
-                    #~ self.captures[i].set(cv2.cv.CV_CAP_PROP_POS_FRAMES, frame)
-                    #~ ret, im = self.captures[i].read()
-                    im = self.videos[i].get_index_frame(frame)
+                    im = None
                 self.frames[i] = frame
-                #~ print i, im.shape
                 if im is not None:
                     self.cv_image_widgets[i].set_image(im)
+            
+            elif mode =='skimage':
+                if 0<frame<self.video_length[i] and frame !=self.frames[i]:
+                    # opencv is bad for seek in a video stream so we cache the last image
+                    if 0<(frame-self.frames[i])<self.video_fps[i]+2:
+                        # until one seconde we read in loop
+                        for f in range(frame-self.frames[i]):
+                            #~ ret, im = self.captures[i].read()
+                            im = self.videos[i].get()
+                    else:
+                        # otherwise a long seek but this flash
+                        #~ print 'long seek',i,  self.frames[i], frame
+                        #~ self.captures[i].set(cv2.cv.CV_CAP_PROP_POS_FRAMES, frame)
+                        #~ ret, im = self.captures[i].read()
+                        im = self.videos[i].get_index_frame(frame)
+                    self.frames[i] = frame
+                    #~ print i, im.shape
+                    if im is not None:
+                        self.cv_image_widgets[i].set_image(im)
+        
+        
         self.is_refreshing = False
         
         
