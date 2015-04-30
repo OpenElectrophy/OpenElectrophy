@@ -11,6 +11,7 @@ import os
 
 #~ import cv2
 
+mode = None
 try :
     import imageio
     mode = 'imageio'
@@ -19,7 +20,8 @@ except:
     import skimage.io
     if 'Video' in dir(skimage.io):
         mode = 'skimage'
-print mode
+        
+
 
 
 
