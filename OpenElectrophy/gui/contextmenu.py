@@ -218,6 +218,13 @@ from .spikesorting import SpikeSortingWindow
 from ..spikesorting import SpikeSorter
 
 
+# some hack for python list when contain numpy.array
+def list_contains(l, e):
+    # should be
+    # return s in l
+    return np.any([ e is e2 for e2 in l ])
+
+
 def create_neo_rcg_for_sorting(rcg):
     # FIXED: this use to load load every in a block because of cascade = True
     #~ neo_rcg = rcg.to_neo(cascade = True)#, propagate_many_to_many = True)
@@ -229,11 +236,15 @@ def create_neo_rcg_for_sorting(rcg):
     neo_rcg.block = rcg.block.to_neo(cascade = False)
     for seg in rcg.block.segments:
         neo_seg = seg.to_neo(cascade=False)
-        neo_rcg.block.segments.append(neo_seg)
-        for anasig in seg.analogsignals:
-            if anasig.recordingchannel in rcg.recordingchannels:
-                neo_seg.analogsignals.append(anasig.to_neo(cascade = False))
-                anasig.neoclass.segment = neo_seg
+        if neo_seg not in neo_rcg.block.segments:
+            neo_rcg.block.segments.append(neo_seg)
+            for anasig in seg.analogsignals:
+                if anasig.recordingchannel in rcg.recordingchannels:
+                    neo_sig = anasig.to_neo(cascade = False)
+                    #~ if neo_sig not in neo_seg.analogsignals:
+                    if not list_contains(neo_seg.analogsignals, neo_sig):
+                        neo_seg.analogsignals.append(neo_sig)
+                        neo_sig.segment = neo_seg
     return neo_rcg
     
     
