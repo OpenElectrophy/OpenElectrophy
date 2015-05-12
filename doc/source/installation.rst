@@ -149,7 +149,7 @@ If you want to test the UI of OpenElectrophy :
 
  * Linux : open a console (terminal) type::
      
-     startOpenElectrophy
+     startOpenElectrophy.py
      
  * Windows : click (or make a shortcut on your desktop) on::
      
