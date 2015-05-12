@@ -54,7 +54,7 @@ Linux
         You have two choices:
             1. From pypi (this is the latest stable release)::
                 
-                sudo pip OpenElectrophy
+                sudo pip install OpenElectrophy
          
             2. From source (this includes up-to-date features and bugfixes as they are added)::
                 
