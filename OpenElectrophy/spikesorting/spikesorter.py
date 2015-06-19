@@ -516,7 +516,7 @@ class SpikeSorter(object):
                 for i, rc in enumerate(self.rcs):
                     self.full_band_sigs[i,j] = self.rcs[i].analogsignals[j].magnitude
                     
-            self.sig_sampling_rate = self.rcs[0].analogsignals[0].sampling_rate
+            self.sig_sampling_rate = float(self.rcs[0].analogsignals[0].sampling_rate.rescale('Hz').magnitude)*pq.Hz
             self.filtered_sigs = self.full_band_sigs.copy()
             self.wf_units = self.rcs[0].analogsignals[0].units
         
