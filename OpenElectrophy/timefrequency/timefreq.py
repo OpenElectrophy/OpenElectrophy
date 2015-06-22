@@ -83,7 +83,7 @@ def convolve_scalogram(ana, wf, sampling_rate,optimize_fft):
     sig  = ana.magnitude
     ana_sr=ana.sampling_rate.rescale('Hz').magnitude
     if optimize_fft:
-        sig-=sig.mean() # Remove mean before padding
+        sig=sig-sig.mean() # Remove mean before padding
         nfft=int(2**np.ceil(np.log(sig.size)/np.log(2)))
         sig=np.r_[sig,np.zeros(nfft-sig.size)] # pad signal with 0 to a power of 2 length
         sig=resample(sig,int(sig.size*sampling_rate/ana_sr)) # resample in time domain 
