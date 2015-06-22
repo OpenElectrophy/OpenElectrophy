@@ -272,7 +272,7 @@ def get_analogsignal_slice(ana, t_start, t_stop,
                             clip = True):
     if t_start>=ana.t_stop or t_stop<ana.t_start:
         if return_t_vect:
-            return np.array([ ], dtype = 'f'), slice(0,0)
+            return np.array([ ], dtype = 'float64'), slice(0,0)
         else:
             return slice(0,0)
     else:
@@ -298,7 +298,7 @@ def get_analogsignal_slice(ana, t_start, t_stop,
                 ind_stop=ana.size
         
         if return_t_vect:
-            t_vect = (np.arange(0,ind_stop-ind_start, step, dtype='f')/ana.sampling_rate+t_start).rescale('s').magnitude
+            t_vect = (np.arange(0,ind_stop-ind_start, step, dtype='float64')/ana.sampling_rate+t_start).rescale('s').magnitude
             return t_vect, slice(ind_start, ind_stop, step)
         else:
             return slice(ind_start, ind_stop, step)
