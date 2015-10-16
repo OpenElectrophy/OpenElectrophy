@@ -64,6 +64,7 @@ class Neurolabscope2IO(BaseIO):
         
         for stream in info['streams']:
             #~ print stream
+
             if stream['stream_type'] == 'AnalogSignalSharedMemStream':
                 reader = neo.RawBinarySignalIO(filename = os.path.join(self.dirname,stream['name']+'.raw'))
                 seg = reader.read_segment(sampling_rate = stream['sampling_rate']*pq.Hz,
@@ -75,6 +76,11 @@ class Neurolabscope2IO(BaseIO):
                 for i, anasig in enumerate(seg.analogsignals):
                     anasig.annotations['channel_name'] = anasig.name = stream['channel_names'][i]
                     anasig.channel_index = stream['channel_indexes'][i]
+                
+                    if 'first_pos' in info and stream['name'] in info['first_pos']:
+                        anasig._nls2_first_pos = info['first_pos'][stream['name']]
+                     
+                    
                 
             elif stream['stream_type'] == 'DigitalSignalSharedMemStream':
                 dim1 = int(np.ceil(stream['nb_channel']/8.))
