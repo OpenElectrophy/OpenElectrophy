@@ -51,7 +51,7 @@ def perform_haar_wavelet(wf2,n_components, level, std_restrict):
     ks_score = np.zeros((coeffs.shape[1]))
     for j in range(coeffs.shape[1]):
         # keep only coeff inside m +- restrict std
-        s = np.std(coeffs[:,j], axis=0)*3
+        s = np.std(coeffs[:,j], axis=0)*std_restrict
         m = np.mean(coeffs[:,j], axis=0)
         ind_selected = (coeffs[:,j]>=m-s) & (coeffs[:,j]<=m+s)
         if np.sum(ind_selected) >= 10:
