@@ -21,6 +21,8 @@ import quantities as pq
 from guiutil.icons import icons
 
 from sqlalchemy.sql import select
+import sqlalchemy as sa
+
 
 from operator import itemgetter, attrgetter
 
@@ -120,8 +122,8 @@ class TreeItem(object):
                 else:
                     order_by = None
                 if self.is_root:
-                    q = select(columns = [ childname+'.id'],
-                                    from_obj = [childname],
+                    q = select(columns =  [ sa.text('`'+childname+'`.`id`')],
+                                    from_obj = [sa.text(childname)],
                                     order_by = order_by,
                                     )
                 elif childname in treedescription.tablename_to_class[self.tablename].many_to_many_relationship:
@@ -129,19 +131,20 @@ class TreeItem(object):
                     xref = self.tablename+'XREF'+childname
                     if xref not in treedescription.dbinfo.metadata.tables:
                         xref =childname+'XREF'+self.tablename
-                    q = select(columns = [ childname+'.id'],
-                                    whereclause = '{}.id = {}.{}_id AND {}.{}_id = {}'.format(childname, xref,childname.lower(), xref, self.tablename.lower(), self.id),
-                                    from_obj = [childname, xref],
+                    q = select(columns = [ sa.text('`'+childname+'`.`id`')],
+                                    whereclause = '`{}`.`id` = `{}`.`{}_id` AND `{}`.`{}_id` = {}'.format(childname, xref,childname.lower(), xref, self.tablename.lower(), self.id),
+                                    from_obj = [sa.text(childname), sa.text(xref)],
                                     order_by = order_by,
                                     )
                 else:
                     # one to many
-                    q = select(columns = [ childname+'.id'],
-                                    whereclause = '{}.{}_id = {}'.format(childname, self.tablename.lower(), self.id),
-                                    from_obj = [childname],
+                    q = select(columns = [ sa.text('`'+childname+'`.`id`')],
+                                    whereclause = '`{}`.`{}_id` = {}'.format(childname, self.tablename.lower(), self.id),
+                                    from_obj = [sa.text(childname)],
                                     order_by = order_by,
                                     )
                 
+                #~ print q
                 #~ for id, in session.execute(q):
                 for id, in session.bind.execute(q):
                     self.children.append(TreeItem(childname, id, self, row))
