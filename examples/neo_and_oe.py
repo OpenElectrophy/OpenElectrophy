@@ -51,7 +51,7 @@ if __name__== '__main__':
     #create a reader
     reader = neo.io.PlexonIO(filename = 'File_plexon_3.plx')
     # read the block
-    neo_bl = reader.read(cascade = True, lazy = False)
+    neo_bl = reader.read(cascade = True, lazy = False)[0]
 
     #transform to mapped class
     oe_bl = neo_to_oe(neo_bl, cascade = True)
