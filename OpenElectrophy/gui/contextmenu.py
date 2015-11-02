@@ -245,6 +245,10 @@ def create_neo_rcg_for_sorting(rcg):
                     if not list_contains(neo_seg.analogsignals, neo_sig):
                         neo_seg.analogsignals.append(neo_sig)
                         neo_sig.segment = neo_seg
+            for spiketrain in seg.spiketrains:
+                neo_spiketrain = spiketrain.to_neo(cascade=False)
+                neo_spiketrain.unit = spiketrain.unit.to_neo(cascade=False)
+                neo_seg.spiketrains.append(neo_spiketrain)
     return neo_rcg
     
     
