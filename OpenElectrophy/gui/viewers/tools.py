@@ -320,9 +320,16 @@ def find_best_start_stop(segment = None,
     for anasig in analogsignals:
         t_start = min(anasig.t_start, t_start)
         t_stop = max(anasig.t_stop, t_stop)
+    
+    if segment is not None:
+        for ea in segment.epocharrays:
+            t_start = min(np.min(ea.times), t_start)
+            t_stop = max(np.max(ea.times+ea.durations), t_stop)
+
+        for ev in segment.eventarrays:
+            t_start = min(np.min(ev.times), t_start)
+            t_stop = max(np.max(ev.times), t_stop)
+    
     eps = (t_stop-t_start).magnitude/200.
     
     return t_start.magnitude-eps, t_stop.magnitude+eps
-
-
-
