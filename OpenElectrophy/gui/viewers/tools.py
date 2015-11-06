@@ -323,12 +323,14 @@ def find_best_start_stop(segment = None,
     
     if segment is not None:
         for ea in segment.epocharrays:
-            t_start = min(np.min(ea.times), t_start)
-            t_stop = max(np.max(ea.times+ea.durations), t_stop)
+            if ea.times.size>0:
+                t_start = min(np.min(ea.times), t_start)
+                t_stop = max(np.max(ea.times+ea.durations), t_stop)
 
         for ev in segment.eventarrays:
-            t_start = min(np.min(ev.times), t_start)
-            t_stop = max(np.max(ev.times), t_stop)
+            if ev.times.size>0:
+                t_start = min(np.min(ev.times), t_start)
+                t_stop = max(np.max(ev.times), t_stop)
     
     eps = (t_stop-t_start).magnitude/200.
     
