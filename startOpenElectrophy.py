@@ -3,6 +3,9 @@
 
 import sys
 import os.path
+
+import guidata #this force sip api 2
+
 from PyQt4.QtGui import QApplication
 from OpenElectrophy.gui.mainwindow import MainWindow
 
