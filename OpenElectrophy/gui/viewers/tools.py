@@ -97,8 +97,9 @@ class TimeSeeker(QWidget) :
         if show_spinbox:
             #~ self.spinbox = QDoubleSpinBox(decimals = 3., minimum = -np.inf, maximum = np.inf, 
                                                                 #~ singleStep = 0.05, minimumWidth = 60)
-            self.spinbox =pg.SpinBox(decimals = 3., minimum = -np.inf, maximum = np.inf, 
-                                                                singleStep = 0.05, minimumWidth = 60)
+            self.spinbox =pg.SpinBox(decimals = 3, bounds = (-np.inf, np.inf),step = 0.05)
+            
+
             t.addWidget(self.spinbox)
             t.addSeparator()
             self.spinbox.valueChanged.connect(self.spinBoxChanged)

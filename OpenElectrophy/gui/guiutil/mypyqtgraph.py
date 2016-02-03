@@ -129,8 +129,8 @@ class SpinAndSliderWidget(QWidget):
         
         #~ self.spinbox = QDoubleSpinBox(decimals = 4, singleStep = .1,
                                                         #~ minimum = self.limits[0], maximum = self.limits[1])
-        self.spinbox = pg.SpinBox(decimals = 4, singleStep = .1,
-                                                        minimum = self.limits[0], maximum = self.limits[1])
+        self.spinbox = pg.SpinBox(decimals = 4, step = .1, bounds=self.limits)
+
         self.mainlayout.addWidget(self.spinbox)
         self.slider = QSlider(Qt.Horizontal, minimum =0, maximum = 100)
         self.mainlayout.addWidget(self.slider)
