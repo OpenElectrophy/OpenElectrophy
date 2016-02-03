@@ -3,14 +3,8 @@
 .. autoclass: NDViewer
 
 """
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..qt import *
 
-import numpy as np
-
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
 
 import quantities as pq
 import numpy as np

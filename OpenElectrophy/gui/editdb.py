@@ -7,9 +7,7 @@ This modules provide dialogs for databse edition:
   * edit recordingchannelgroup
 """
 
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
 
 import quantities as pq
 import numpy as np
@@ -18,7 +16,7 @@ from datetime import datetime
 
 import re
 
-from guiutil import *
+from .guiutil import *
 
 
 

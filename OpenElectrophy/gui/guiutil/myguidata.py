@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .qt import *
+from ..qt import *
 
 from guidata.dataset.datatypes import DataSet 
 from guidata.dataset.qtwidgets import DataSetShowGroupBox, DataSetEditGroupBox, DataSetEditLayout

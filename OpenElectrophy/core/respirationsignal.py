@@ -10,7 +10,7 @@ import quantities as pq
 from datetime import datetime
 import numpy as np
 
-from base import OEBase
+from .base import OEBase
 
 
 class RespirationSignal(OEBase):

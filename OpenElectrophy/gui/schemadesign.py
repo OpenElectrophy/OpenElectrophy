@@ -7,9 +7,7 @@ Dialog to design or modify a schema:
 """
 
 
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
 
 import numpy as np
 import quantities as pq

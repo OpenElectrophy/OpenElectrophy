@@ -3,7 +3,7 @@
 TimeFreqViewer
 """
 
-from tools import *
+from .tools import *
 
 from scipy import fftpack
 #~ import numpy.fft as fftpack

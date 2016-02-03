@@ -12,7 +12,8 @@ from OpenElectrophy.gui.guiutil.mypyqtgraph import get_dict_from_group_param
 
 from ..guiutil.mymatplotlib import *
 
-from PyQt4.QtWebKit import QWebView
+#~ from PyQt4.QtWebKit import QWebView
+from ..qt import QWebView
 
 class SpikeSortingToolChain(object):
     """

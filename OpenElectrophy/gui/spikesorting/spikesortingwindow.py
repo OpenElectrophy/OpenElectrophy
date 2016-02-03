@@ -6,8 +6,7 @@ Note that spikesorting widgets can be used independently.
 
 """
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..qt import *
 
 from .spikesortingwidgets import spikesorting_widget_list
 from .toolchain import all_toolchain, ToolChainWidget

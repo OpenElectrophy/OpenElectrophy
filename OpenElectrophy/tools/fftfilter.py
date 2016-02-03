@@ -23,7 +23,7 @@ def fft_passband_filter(sig,
     n_low = int(np.floor((N-1)*f_low/2)+1)
     fract_low = 1-((N-1)*f_low/2-np.floor((N-1)*f_low/2))
     n_high = int(np.floor((N-1)*f_high/2)+1)
-    fract_high = 1-((N-1)*f_high/2-np.floor((N-1)*f_high/2));
+    fract_high = 1-((N-1)*f_high/2-np.floor((N-1)*f_high/2))
 
     s = [ slice(None) for i in range(sig.ndim) ]
     if f_low >0 :

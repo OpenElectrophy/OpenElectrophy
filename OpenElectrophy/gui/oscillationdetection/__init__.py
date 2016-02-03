@@ -1,2 +1,1 @@
- 
-from oscillationdetection import OscillationDetection
+from .oscillationdetection import OscillationDetection

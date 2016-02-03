@@ -25,26 +25,26 @@ Here a wish list of what we plan to implement:
 
 
 
-from filter.butterworth import ButterworthFilter
-from filter.derivative import DerivativeFilter
-from filter.slidingmedian import SlidingMedianFilter
-from detection.relativethreshold import RelativeThresholdDetection
-from detection.manualthreshold import ManualThresholdDetection
-from detection.mteo import MTEODetection
-from waveform.ondetection import AlignWaveformOnDetection
-from waveform.onpeak import AlignWaveformOnPeak
-from waveform.oncentralwaveform import AlignWaveformOnCentralWaveform
-from feature.pcafeature import PcaFeature
-from feature.icafeature import IcaFeature
-from feature.combine import CombineFeature
-from feature.allpeak import AllPeak
-from feature.peaktovalley import PeakToValley
-from feature.haarwavelet import HaarWaveletFeature
-from sorting.gmm_em import SklearnGaussianMixtureEm
-from sorting.kmeans import SklearnKMeans
-from sorting.minibatchkmeans import SklearnMiniBatchKMeans
-from sorting.meanshift import SklearnMeanShift
-from clean.outtemplate import OutsideTemplateCleaning
+from .filter.butterworth import ButterworthFilter
+from .filter.derivative import DerivativeFilter
+from .filter.slidingmedian import SlidingMedianFilter
+from .detection.relativethreshold import RelativeThresholdDetection
+from .detection.manualthreshold import ManualThresholdDetection
+from .detection.mteo import MTEODetection
+from .waveform.ondetection import AlignWaveformOnDetection
+from .waveform.onpeak import AlignWaveformOnPeak
+from .waveform.oncentralwaveform import AlignWaveformOnCentralWaveform
+from .feature.pcafeature import PcaFeature
+from .feature.icafeature import IcaFeature
+from .feature.combine import CombineFeature
+from .feature.allpeak import AllPeak
+from .feature.peaktovalley import PeakToValley
+from .feature.haarwavelet import HaarWaveletFeature
+from .sorting.gmm_em import SklearnGaussianMixtureEm
+from .sorting.kmeans import SklearnKMeans
+from .sorting.minibatchkmeans import SklearnMiniBatchKMeans
+from .sorting.meanshift import SklearnMeanShift
+from .clean.outtemplate import OutsideTemplateCleaning
 
 
 all_methods = [ ButterworthFilter,

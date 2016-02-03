@@ -4,27 +4,20 @@
 """
 This modules provide a widget able to display a treeview of a SQL schema
 
-
-TODO : context menu
-TODO : filter and order
-
 """
 
-
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
 
 import numpy as np
 import quantities as pq
 
-from guiutil.icons import icons
+from .guiutil.icons import icons
 
 from sqlalchemy.sql import select
 import sqlalchemy as sa
 
 
-from operator import itemgetter, attrgetter
+#~ from operator import itemgetter, attrgetter
 
 import time
 

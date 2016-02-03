@@ -4,7 +4,7 @@ Signal viewers
 """
 
 
-from tools import *
+from .tools import *
 import pyqtgraph as pg
 
 from .multichannelparam import MultiChannelParam

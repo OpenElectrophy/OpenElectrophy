@@ -3,11 +3,7 @@
 widget for creating a db
 """
 
-
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
+from .qt import *
 
 from .guiutil.icons import icons
 from .guiutil.myguidata import *

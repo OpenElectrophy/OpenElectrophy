@@ -1,12 +1,13 @@
 #!python
 # -*- coding: utf-8 -*-
 
+import guidata #this force sip api 2
+
 import sys
 import os.path
 
-import guidata #this force sip api 2
 
-from PyQt4.QtGui import QApplication
+from  OpenElectrophy.gui.qt import QApplication
 from OpenElectrophy.gui.mainwindow import MainWindow
 
 applicationname = 'OpenElectrophy_0_3'

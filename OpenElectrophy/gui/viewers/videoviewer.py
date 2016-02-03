@@ -4,7 +4,7 @@ This is a multiple video viewers.
 """
 
 
-from tools import *
+from .tools import *
 
 
 import os
@@ -16,12 +16,10 @@ try :
     import imageio
     mode = 'imageio'
 except:
-    print 'no imageio'
+    #~ print 'no imageio'
     import skimage.io
     if 'Video' in dir(skimage.io):
         mode = 'skimage'
-        
-
 
 
 

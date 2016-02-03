@@ -534,13 +534,13 @@ class SpikeSorter(object):
                 spike_index =  [ ]
                 for u, unit in enumerate(self.rcg.units):
                     cluster_names[u] = unit.name
-                    #~ print unit.name
+                    #~ print 'u', u, unit.name, len(seg.spiketrains)
                     #~ sptr = seg.spiketrains[u]
                     # LE bug est dans to_neo car pas de spiketrain unit
                     sptr = None
                     for sptr2 in seg.spiketrains:
                         #~ print sptr2.unit, unit
-                        #~ print 'init', u, sptr2.size, sptr2.OEinstance.id, unit.OEinstance.id
+                        #~ print 'init', u,  sptr2.OEinstance.id, unit.OEinstance.id
                         if sptr2.unit == unit:
                             sptr = sptr2
                             break

@@ -4,19 +4,15 @@ widget for importing data into a db
     
 """
 
-# TODO : populate_RecordingChannel
 
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
 
 import distutils.version
 
-from guiutil.icons import icons
-from guiutil.myguidata import *
+from .guiutil.icons import icons
+from .guiutil.myguidata import *
 
 import os
-
 
 
 from collections import OrderedDict

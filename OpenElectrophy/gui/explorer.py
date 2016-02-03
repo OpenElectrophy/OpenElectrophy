@@ -5,17 +5,16 @@
 This modules provide a explorer for managing treeviews
 """
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
 
 from .qtsqltreeview import TreeDescription, QtSqlTreeView
 from .contextmenu import context_menu
 from guiutil.icons import icons
 
 
-from viewdesigner import ViewDesigner
-from schemadesign import SchemaDesign
-from importdata import ImportData
+from .viewdesigner import ViewDesigner
+from .schemadesign import SchemaDesign
+from .importdata import ImportData
 
 
 

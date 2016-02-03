@@ -19,8 +19,9 @@ API for SpikeSortingWidget:
 
 
 """
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+
+
+from ..qt import *
 
 import quantities as pq
 import numpy as np

@@ -3,19 +3,19 @@
 This is the mainwindow!!
 """
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
+
 import sys, os
 
 from collections import deque
 
 
-from guiutil.icons import icons
+from .guiutil.icons import icons
 from .guiutil.picklesettings import PickleSettings
 
-from opendb import OpenDB, CreateDB
-from explorer import MainExplorer
-from importdata import ImportData
+from .opendb import OpenDB, CreateDB
+from .explorer import MainExplorer
+from .importdata import ImportData
 
 
 from ..core.sqlmapper import open_db, MAX_BINARY_SIZE

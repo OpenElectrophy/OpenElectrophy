@@ -7,8 +7,7 @@
 # TODO integrate quantities in pyqtgraph and deal directly with units
 
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from ..qt import *
 
 import numpy as np
 import quantities as pq

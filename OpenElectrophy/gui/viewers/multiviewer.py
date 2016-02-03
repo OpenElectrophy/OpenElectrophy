@@ -3,7 +3,7 @@
 Widget for viewing segment and/or block.
 """
 
-from tools import *
+from .tools import *
 
 from .signalviewer import *
 from .timefreqviewer import *

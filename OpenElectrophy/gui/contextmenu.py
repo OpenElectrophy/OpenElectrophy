@@ -4,8 +4,8 @@
 This modules provide context menu classes for qtsqltreview.
 """
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
+
 
 from .editdb import EditFieldsDialog, ChangeParentDialog, EditRecordingChannelGroupsDialog
 

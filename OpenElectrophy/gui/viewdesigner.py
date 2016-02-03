@@ -9,10 +9,9 @@ in a qtsqltreeview
 
 import copy
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from .qt import *
 
-from guiutil import *
+from .guiutil import *
 
 from .qtsqltreeview import TreeDescription, QtSqlTreeView
 
