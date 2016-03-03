@@ -28,6 +28,7 @@ from guiutil.myguidata import *
 
 from sqlalchemy import Table, Column, Integer, String, Float, ForeignKey, Binary, Text, LargeBinary, DateTime
 import sqlalchemy
+
 #~ import migrate.changeset
 #~ from sqlalchemy.orm import sessionmaker , create_session
 
@@ -182,7 +183,7 @@ class SchemaDesign(QDialog) :
                     t = 'unknown'
                 item = QTableWidgetItem(t)
                 self.listFields.setItem(r, 1 , item)
-                item.setBackground(QBrush('red'))
+                #~ item.setBackground(QBrush(QColor('red')))
                 r+=1
         
         for name, d in self.relationships.items():
@@ -256,6 +257,10 @@ class SchemaDesign(QDialog) :
             self.reopen_database()
     
     def apply_changes(self):
+        
+        #~ session = self.dbinfo.Session()
+        #~ session.begin()
+        
         cl = self.genclass
         tablename_to_class = dict( [(c.tablename, c) for c in self.dbinfo.mapped_classes ] )
         tables = self.dbinfo.metadata.tables
@@ -276,7 +281,17 @@ class SchemaDesign(QDialog) :
         
         for attrname, attrtype in self.new_fields.items():
             create_column_if_not_exists(tables[self.tablename], attrname,attrtype)
-            
+        
+        #TODO drop columns
+        #~ for attrname in self.removed_fields:
+            #~ print attrname, tables[self.tablename], tables[self.tablename].c[attrname]
+        
+        
+        #commit
+        #~ sqlalchemy.inspect(pub_obj).session.commit()
+        
+        #~ session.commit()
+        
         self.reopen_database()
 
     

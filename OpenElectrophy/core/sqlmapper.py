@@ -214,7 +214,7 @@ Reference
 from collections import OrderedDict, deque
 
 import sqlalchemy
-import migrate.changeset
+import migrate.changeset #this add column create
 from sqlalchemy import orm
 
 from sqlalchemy import create_engine  , MetaData
