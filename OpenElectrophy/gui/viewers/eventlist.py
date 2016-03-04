@@ -41,11 +41,11 @@ class EventList(ViewerBase):
         ev = self.eventarrays[ind]
         for i in range(len(self.eventarrays[ind].times)):
             if ev.labels is None:
-                self.list.addItem('{} : {:.3f}'.format(i, float(ev.times[i].rescale('s').magnitude)) )
+                self.list.addItem(u'{} : {:.3f}'.format(i, float(ev.times[i].rescale('s').magnitude)) )
             elif   i>=len(ev.labels):
-                self.list.addItem('{} : {:.3f}'.format(i, float(ev.times[i].rescale('s').magnitude)) )
+                self.list.addItem(u'{} : {:.3f}'.format(i, float(ev.times[i].rescale('s').magnitude)) )
             else:
-                self.list.addItem('{} : {:.3f} {}'.format(i, float(ev.times[i].rescale('s').magnitude), ev.labels[i]) )
+                self.list.addItem(u'{} : {:.3f} {}'.format(i, float(ev.times[i].rescale('s').magnitude), ev.labels[i]) )
 
         
     def select_event(self, i):

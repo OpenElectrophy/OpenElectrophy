@@ -102,9 +102,9 @@ class EpochViewer(ViewerBase):
         all = [ ]
         for i, ep in enumerate(self.epocharrays):
             if 'channel_index' in ep.annotations:
-                name = 'EpochArray {} name={} channel_index={}'.format(i, ep.name, ep.annotations['channel_index'])
+                name = u'EpochArray {} name={} channel_index={}'.format(i, ep.name, ep.annotations['channel_index'])
             else:
-                name = 'EpochArray {} name={}'.format(i, ep.name)
+                name = u'EpochArray {} name={}'.format(i, ep.name)
             all.append({ 'name': name, 'type' : 'group', 'children' : param_by_channel})
         self.paramEpochs = pg.parametertree.Parameter.create(name='EpochArrays', type='group', children=all)
         
