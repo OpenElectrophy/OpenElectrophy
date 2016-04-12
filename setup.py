@@ -4,7 +4,7 @@ import os
 
 from setuptools import setup, find_packages
 
-from OpenElectrophy.version import version
+from OpenElectrophy.version import __version__  as version
 
 long_description = open("README.txt").read()
 
