@@ -336,7 +336,7 @@ class TimeFreqViewer(ViewerBase):
                 chunk2[:]=0
                 i1 = -sl2.start if sl2.start<0 else 0
                 i2 = i1+chunk.size
-                chunk2[i1:i2] = chunk
+                chunk2[i1:i2] = chunk[:, 0]
                 chunk = chunk2
             self.threads[i].sig = chunk
             
