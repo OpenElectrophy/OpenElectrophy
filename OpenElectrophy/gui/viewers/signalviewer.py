@@ -271,7 +271,7 @@ class SignalViewer(ViewerBase):
                 else:
                     g = p.param('gain').value()
                     o = p.param('offset').value()
-                    curve.setData(t_vect, chunk*g+o)
+                    curve.setData(t_vect, (chunk*g+o)[:, 0])
         
         self.vline.setPos(self.t)
         self.plot.setXRange( t_start, t_stop)
