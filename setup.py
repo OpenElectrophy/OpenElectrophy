@@ -20,19 +20,19 @@ else:
 
 
 install_requires=[
-                'numpy>=1.3.0',
-                'quantities>=0.9.0',
-                'neo>=0.3',
-                'scipy>=0.9.0',
-                'matplotlib>=1.1.0',
-                'sqlalchemy>=0.7',
-                'sqlalchemy-migrate>=0.7',
-                'pyqtgraph>=0.9.3',
-                'guidata>=1.4.1',
-                'joblib>=0.6.4',
-                'tables>=2.3.1',
-                'pywavelets>=0.2.2',
-                'scikit-learn>=0.11',
+                'numpy',
+                'quantities',
+                'neo>=0.4,<0.5',
+                'scipy',
+                'matplotlib',
+                'sqlalchemy',
+                'sqlalchemy-migrate',
+                'pyqtgraph',
+                'guidata',
+                'joblib',
+                'tables',
+                'pywavelets',
+                'scikit-learn',
                 'blosc',
                 ]
 
