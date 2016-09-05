@@ -184,17 +184,22 @@ class TypeSQLiteHDF5(DbConnect):
     
     
     icon =  ':/sqlite_hdf5.png'
-    
+
+    def unicode_values_to_str(self, d):
+        for a, v in d.iteritems():
+            if isinstance(v, unicode):
+                d[a] = d[a].encode('utf-8')
+        return d
 
     def get_opendb_kargs(self):
-        p = self.params_open.to_dict()
+        p = self.unicode_values_to_str(self.params_open.to_dict())
         return dict(url = 'sqlite:///'+p['sqlite_filename'],
                                 hdf5_filename = p['hdf5_filename'],
                                 numpy_storage_engine = 'hdf5',
                                 )
         
     def create_a_new_db(self):
-        p = self.params_create.to_dict()
+        p = self.unicode_values_to_str(self.params_create.to_dict())
         url = 'sqlite:///'+p['sqlite_filename']
         engine = create_engine( url )
         engine.connect()
