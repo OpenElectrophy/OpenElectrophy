@@ -72,5 +72,5 @@ class CombineFeature(object):
         
         sps.waveform_features = np.concatenate( all_features, axis = 1)
         if np.any(np.isnan(sps.waveform_features)):
-            print 'nan::::::::::::::::'
+            print('nan::::::::::::::::')
 

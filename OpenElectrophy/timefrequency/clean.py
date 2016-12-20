@@ -21,7 +21,7 @@ def clean_oscillations_list(list_oscillation,
         if where((angle(osci1.value_line[:-1]) <=0)&(angle(osci1.value_line[1:]) >=0))[0].size <minimum_cycle_number :
             list_oscillation.pop(i)
             if DEBUG:
-                print 'too short'
+                print('too short')
             continue
         
         
@@ -32,7 +32,7 @@ def clean_oscillations_list(list_oscillation,
                 #overlap
                 # the 2 lines have same absisse for some point
                 if DEBUG:
-                    print 'probable overlap'
+                    print('probable overlap')
                 ind_i, = where(in1d(osci1.time_line,osci2.time_line))
                 ind_j, = where(in1d(osci2.time_line,osci1.time_line))
                 
@@ -49,7 +49,7 @@ def clean_oscillations_list(list_oscillation,
                     del list_oscillation[j]
                     j=i+1 # to be sure to check the modified and extended oscillation with all the others
                     if DEBUG:
-                        print 'full_overlap'
+                        print('full_overlap')
                     continue
                     
                 if (osci1.freq_line[ind_i] != osci2.freq_line[ind_j]).all() and eliminate_simultaneous :
@@ -62,7 +62,7 @@ def clean_oscillations_list(list_oscillation,
                     else:
                         del list_oscillation[j]
                     if DEBUG:
-                        print 'simultaneous'                    
+                        print('simultaneous'                    )
                     continue
                 
                 
@@ -96,7 +96,7 @@ def clean_oscillations_list(list_oscillation,
                         else:
                             del list_oscillation[j]
                     if DEBUG:
-                        print 'partial_overlap'                            
+                        print('partial_overlap'                            )
                     continue
             j+=1
         i+=1

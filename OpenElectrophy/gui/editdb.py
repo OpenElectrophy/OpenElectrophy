@@ -455,6 +455,6 @@ class EditRecordingChannelGroupsDialog(QDialog):
         self.accept()
 
     def noChange(self):
-        print 'noChange'
+        #~ print 'noChange'
         self.session.rollback()
         self.reject()

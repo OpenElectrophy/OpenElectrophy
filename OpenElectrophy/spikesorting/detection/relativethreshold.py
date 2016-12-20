@@ -73,7 +73,7 @@ class RelativeThresholdDetection(object):
         if sign == '-':
             thresholds = centers - noises*abs(relative_thresh) 
         
-        print thresholds
+        #~ print thresholds
         
         peak_span = int((sps.sig_sampling_rate*peak_span).simplified)
         peak_span = (peak_span//2)*2+1

@@ -3,7 +3,7 @@
 import quantities as pq
 import numpy as np
 
-from tools import initialize_waveform, remove_limit_spikes
+from .tools import initialize_waveform, remove_limit_spikes
 
 from .tools import get_following_peak_multi_channel
 

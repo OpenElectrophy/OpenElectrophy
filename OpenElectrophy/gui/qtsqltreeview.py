@@ -11,7 +11,7 @@ from .qt import *
 import numpy as np
 import quantities as pq
 
-from .guiutil.icons import icons
+from .guiutil import icons
 
 from sqlalchemy.sql import select
 import sqlalchemy as sa

@@ -89,7 +89,10 @@ class VideoViewer(ViewerBase):
             #~ self.video_fps.append(cap.get(cv2.cv.CV_CAP_PROP_FPS))
             
             if mode =='imageio':
-                v  = imageio.get_reader(vid, format = 'avi', mode = 'I')
+                #~ v  = imageio.get_reader(vid, format = 'avi', mode = 'I')
+                #~ v = imageio.read(vid, 'avbin')
+                v = imageio.read(vid, 'ffmpeg')
+                
                 self.videos.append(v)
                 self.video_length.append(v.get_meta_data()['nframes'])
                 self.video_fps.append(v.get_meta_data()['fps'])
@@ -166,6 +169,11 @@ class VideoViewer(ViewerBase):
                 else:
                     im = None
                 self.frames[i] = frame
+                #~ if im is None:
+                    #~ print frame, im, self.video_length[i]
+                #~ else:
+                    #~ print frame, im.shape, self.video_fps[i], np.sum(im)
+                    
                 if im is not None:
                     self.cv_image_widgets[i].set_image(im)
             

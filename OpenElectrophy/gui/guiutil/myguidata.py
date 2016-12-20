@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from ..qt import *
+import sys
 
 from guidata.dataset.datatypes import DataSet 
 from guidata.dataset.qtwidgets import DataSetShowGroupBox, DataSetEditGroupBox, DataSetEditLayout
@@ -231,14 +232,19 @@ def old_params_to_guidata(oldparams):
             - allownone : None is lineedit give a NoneType
             - possible: for a combobox choose list
     """
-    
+
+    if sys.version_info > (3,):
+        unicode=str
+    else:
+        pass
+
     _convert = { int : IntItem,
                             float : FloatItem,
                             str : StringItem,
                             unicode: StringItem,
                             bool : BoolItem,
                             }
-    
+
     
     items = { }
     for name, dictparam in oldparams:

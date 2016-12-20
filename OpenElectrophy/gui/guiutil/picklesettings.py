@@ -9,7 +9,7 @@ This is an alternative to QSettings.
 import sys , os
 import shutil
 import pickle
-import user
+
 
 
 def get_working_dir(applicationname) :
@@ -24,7 +24,7 @@ def get_working_dir(applicationname) :
 
 def get_desktop_dir() :
     if sys.platform =='win32' :
-        desktop_dir = os.path.join(user.home , 'Desktop')
+        desktop_dir = os.path.join(os.environ['HOME'] , 'Desktop')
     if sys.platform[:5] =='linux' :
         desktop_dir = os.path.join(os.environ['HOME'] , 'Desktop')
     if sys.platform== 'darwin' :

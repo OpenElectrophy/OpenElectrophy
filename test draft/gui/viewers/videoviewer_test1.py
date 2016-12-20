@@ -23,10 +23,10 @@ def test1():
     s.set_start_stop(0, 3600)
     
     #~ p = './' 
-    p = '/home/sgarcia/mnt/CRNLDATA/crnldata/cmo/nemo/DATA_MANIP/NRavel201411_episodic_irad3_electrophy_joffrey/data/video/Routine/R1/'
+    p = '/home/samuel/mnt/CRNLDATA/crnldata/cmo/Etudiants/NBuonviso201601_plethysmo_Baptiste/Data/Video/24-03-2016/'
     videofiles = [ 
-                        p+'2014-11-17_10h49m07_rat=RIr8_phase=R_numPhase=1_numEpisode=_conditionTest=beforeepisode_V=1.avi',
-                        p+'2014-11-17_10h49m07_rat=RIr8_phase=R_numPhase=1_numEpisode=_conditionTest=beforeepisode_V=2.avi',
+                        p + '2016-03-24_09h07m22,608395s_animal=R1_phase=E_numphase=3_V=1.avi',
+                        p + '2016-03-24_09h07m22,608395s_animal=R1_phase=E_numphase=3_V=2.avi',
                         ]
     
     w1 = VideoViewer(videofiles = videofiles)
@@ -49,19 +49,25 @@ def test2():
     s.set_start_stop(0, 3600)
     
     #~ p = './' 
-    p = '/home/sgarcia/Documents/projet/script_cmo/AMMouly201012_timing_ratons_julie/A1M8P8/'
+    p = '/home/samuel/mnt/CRNLDATA/crnldata/cmo/Etudiants/NBuonviso201601_plethysmo_Baptiste/Data/Video/24-03-2016/'
     videofiles = [ 
-                        p+'2012-11-15_session=cond_age=22_group=P_sex=2_animal=A1M8P8_run=allV0_total.avi',
-                        p+'2012-11-15_session=cond_age=22_group=P_sex=2_animal=A1M8P8_run=allV1_total.avi',
-                        p+'2012-11-15_session=cond_age=22_group=P_sex=2_animal=A1M8P8_run=allV2_total.avi',
+                        p + '2016-03-24_09h07m22,608395s_animal=R1_phase=E_numphase=3_V=1.avi',
+                        p + '2016-03-24_09h07m22,608395s_animal=R1_phase=E_numphase=3_V=2.avi',
                         ]
     videotimes = [ ]
-    for i in range(3):
-        filename = p + '2012-11-15_session=cond_age=22_group=P_sex=2_animal=A1M8P8_run=allV{}.tps'.format(i)
+    for i in range(2):
+        filename = p + '2016-03-24_09h07m22,608395s_animal=R1_phase=E_numphase=3_V={}.tps'.format(i+1)
         t = np.fromfile(filename, dtype = np.int32).astype(np.float64)/1000.
         videotimes.append(t)
         print t[0]
         print t.shape
+        print t
+        
+        from matplotlib import pyplot
+        fig, ax = pyplot.subplots()
+        
+        
+        
     
     
     w1 = VideoViewer(videofiles = videofiles, videotimes = videotimes)
@@ -78,5 +84,5 @@ def test2():
 
 
 if __name__ == '__main__' :
-    test1()
-    #~ test2()
+    #~ test1()
+    test2()

@@ -24,7 +24,7 @@ from ..core.sqlmapper import open_db
 
 
 
-from guiutil.myguidata import *
+from .guiutil.myguidata import *
 
 from sqlalchemy import Table, Column, Integer, String, Float, ForeignKey, Binary, Text, LargeBinary, DateTime
 import sqlalchemy
@@ -43,7 +43,7 @@ translate1 = {
                     }
 
 translate2 = { }
-for k,v in translate1.iteritems():
+for k,v in translate1.items():
     translate2[v] = k
 
 

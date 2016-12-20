@@ -9,7 +9,7 @@ from .qt import *
 
 import distutils.version
 
-from .guiutil.icons import icons
+from .guiutil import icons
 from .guiutil.myguidata import *
 
 import os
@@ -63,7 +63,7 @@ class ImportData(QDialog) :
         
         
         self.comboNeoIO = QComboBox()
-        self.comboNeoIO.addItems(self.read_io_list.keys())
+        self.comboNeoIO.addItems(list(self.read_io_list.keys()))
         self.mainLayout.addWidget(self.comboNeoIO)
         self.comboNeoIO.currentIndexChanged .connect(self.changeIO)
 
@@ -115,7 +115,7 @@ class ImportData(QDialog) :
 
     
     def changeIO(self, num):
-        self.name = self.read_io_list.keys()[num]
+        self.name = list(self.read_io_list.keys())[num]
         self.ioclass = self.read_io_list[self.name]
         
         if self.inputOptions is not None :
@@ -209,7 +209,7 @@ class ImportData(QDialog) :
     
     
     def promptOneFileDone(self, name):
-        print 'OneFileDone', name
+        print('OneFileDone', name)
     
     def importFinished(self):
         
@@ -232,7 +232,8 @@ class ImportData(QDialog) :
 
         
 class QImportThread(QThread):
-    one_file_done = pyqtSignal(unicode)
+    #~ one_file_done = pyqtSignal(unicode)
+    one_file_done = pyqtSignal(object)
     
     def __init__(self, parent, names, ioclass, io_kargs, dbinfo, options):
         super(QImportThread, self).__init__(parent)
@@ -246,7 +247,7 @@ class QImportThread(QThread):
         
     def run(self):
         for i, name in enumerate(self.names):
-            print 'runnning', name
+            print('runnning', name)
             #try :
             if 1:
                 read_and_import(name, self.ioclass,self.io_kargs, self.dbinfo, self.options)

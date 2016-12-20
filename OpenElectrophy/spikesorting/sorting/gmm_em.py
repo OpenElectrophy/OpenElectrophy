@@ -2,7 +2,11 @@
 import numpy as np
 
 import sklearn
-from sklearn.mixture import GMM
+
+try:
+    from sklearn.mixture import GMM as GaussianMixture
+except ImportError:
+    from sklearn.mixture import GaussianMixture
 
 from distutils import version
 
@@ -31,10 +35,10 @@ class SklearnGaussianMixtureEm(object):
         # FIXME whiten
         
         if version.LooseVersion(sklearn.__version__) <= '0.10':
-            classifier = GMM(n_components=n_cluster, cvtype='full')
+            classifier = GaussianMixture(n_components=n_cluster, cvtype='full')
             classifier.fit( sps.waveform_features , n_iter = n_iter)
         else:
-            classifier = GMM(n_components=n_cluster, covariance_type='full', n_iter = n_iter)
+            classifier = GaussianMixture(n_components=n_cluster, covariance_type='full', n_iter = n_iter)
             classifier.fit( sps.waveform_features)
         
         sps.spike_clusters = classifier.predict(sps.waveform_features)

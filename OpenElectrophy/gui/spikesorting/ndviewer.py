@@ -320,7 +320,7 @@ class NDViewer(QWidget):
         
         if start:
             if self.show_select_tools:
-                for name, but in self.selectButton.iteritems():
+                for name, but in self.selectButton.items():
                     but.setChecked(False)
                     but.setEnabled(False)
                 self.clearSelectBut.setEnabled(False)
@@ -338,7 +338,7 @@ class NDViewer(QWidget):
                 self.tour_running = True
         else:
             if self.show_select_tools:
-                for name, but in self.selectButton.iteritems():
+                for name, but in self.selectButton.items():
                     but.setEnabled(True)
                 self.clearSelectBut.setEnabled(True)
                 self.changeSelectMode()

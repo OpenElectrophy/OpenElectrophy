@@ -9,7 +9,7 @@ from .qt import *
 
 from .qtsqltreeview import TreeDescription, QtSqlTreeView
 from .contextmenu import context_menu
-from guiutil.icons import icons
+from .guiutil import icons
 
 
 from .viewdesigner import ViewDesigner

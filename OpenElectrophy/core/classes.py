@@ -17,7 +17,7 @@ import numpy as np
 
 import neo
 
-from base import OEBase
+from .base import OEBase
 
 
 """
@@ -90,11 +90,11 @@ for neoname, neoclass in neo.class_by_name.items():
 
 
 # extend with other classes
-from oscillation import Oscillation
-from licktrain import LickTrain
-from respirationsignal import RespirationSignal
-from imageserie import ImageSerie
-from imagemask import ImageMask
+from .oscillation import Oscillation
+from .licktrain import LickTrain
+from .respirationsignal import RespirationSignal
+from .imageserie import ImageSerie
+from .imagemask import ImageMask
 
 extention_classes =  [ Oscillation, LickTrain, RespirationSignal, ImageSerie, ImageMask]
 

@@ -10,7 +10,7 @@ import sys, os
 from collections import deque
 
 
-from .guiutil.icons import icons
+from .guiutil import icons
 from .guiutil.picklesettings import PickleSettings
 
 from .opendb import OpenDB, CreateDB

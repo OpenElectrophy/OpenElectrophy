@@ -89,7 +89,7 @@ import datetime
 import numpy as np
 import quantities as pq
 
-from methods import all_methods
+from .methods import all_methods
 all_method_names = dict([ (method.__name__, method) for method in all_methods ])
 
 from matplotlib.cm import get_cmap
@@ -640,7 +640,7 @@ class SpikeSorter(object):
         
     def apply_history_to_other(self, other):
         for step in self.history:
-            print step
+            #~ print step
             other.run_step(step['methodInstance'].__class__, **step['arguments'])
     
     
@@ -773,7 +773,7 @@ class SpikeSorter(object):
         self.std_deviation = { }
         
         if self.spike_waveforms is None: return
-        print 'recompute_cluster_center'
+        #~ print 'recompute_cluster_center'
         for c in self.cluster_names:
             ind = c==self.spike_clusters
             self.median_centers[c]= np.median(self.spike_waveforms[ind,:,:], axis=0)
@@ -805,7 +805,7 @@ class SpikeSorter(object):
             self.cluster_names = { }
             return
         clusters = np.unique(self.spike_clusters)
-        for c in np.setdiff1d(self.cluster_names.keys(), clusters):
+        for c in np.setdiff1d(list(self.cluster_names.keys()), clusters):
             self.cluster_names.pop(c)
         
         if reset:
@@ -825,7 +825,7 @@ class SpikeSorter(object):
             return
         
         clusters = self.cluster_names.keys()
-        for c in np.setdiff1d(self.cluster_colors.keys(), clusters):
+        for c in np.setdiff1d(list(self.cluster_colors.keys()), clusters):
             self.cluster_colors.pop(c)
         
         if reset:

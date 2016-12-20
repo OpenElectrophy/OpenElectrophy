@@ -31,7 +31,7 @@ __ http://docutils.sf.net/rst.html
 - item 3
 
 """
-    print rest_to_html(test)
+    print( rest_to_html(test))
 
 if __name__ == '__main__':
     test1()

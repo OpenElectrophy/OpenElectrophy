@@ -67,7 +67,7 @@ class OutsideTemplateCleaning(object):
             #~ print ((wfs<limit1) | (wfs>limit2)).shape
             to_remove = np.any((wfs<limit1) | (wfs>limit2), axis = 1)
             #~ print to_remove.shape
-            print to_remove
+            #~ print to_remove
             ind_remove = np.where(ind)[0][to_remove]
             #~ print ind_remove
             

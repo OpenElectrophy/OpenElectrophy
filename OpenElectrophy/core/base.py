@@ -30,15 +30,16 @@ class OEBase(object):
 
     
     def __repr__(self):
-        t = super(OEBase, self).__repr__()
-        t += '\n'
+        #~ t = super(OEBase, self).__repr__()
+        t = u''
+        t += u'\n'
         if hasattr(self, 'id'):
-            t += '  id: {}\n'.format(self.id)
+            t += u'  id: {}\n'.format(self.id)
         #~ else:
             
         for attrname, attrtype in self.usable_attributes.items():
             #~ if attrtype not in [ np.ndarray ,pq.Quantity ]:
-                t += '  {}: {}\n'.format(attrname,getattr(self,attrname))
+                t += u'  {}: {}\n'.format(attrname,getattr(self,attrname))
             #~ else:
                 #~ t += '  {} shape: {} \n'.format(attrname,getattr(self,attrname+'_shape'))
         return t

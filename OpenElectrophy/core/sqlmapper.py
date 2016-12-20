@@ -248,13 +248,16 @@ import zlib
 
 import tables
 
-from base import OEBase
+from .base import OEBase
 
 
 
 
 MAX_BINARY_SIZE = 2**30
 
+import sys
+if sys.version_info > (3,):
+    buffer = memoryview
 
 python_to_sa_conversion = { 
                                                         str : Text,
@@ -681,9 +684,11 @@ class SQL_NumpyArrayPropertyLoader():
             blob = blosc.compress(value.tostring(), typesize = value.dtype.itemsize, clevel= 9)
         else:
             if not value.flags['C_CONTIGUOUS']:
-                buf = np.getbuffer(np.array(value, copy = True))
+                #~ buf = np.getbuffer(np.array(value, copy = True))
+                buf = np.array(value, copy=True).data
             else:     
-                buf = np.getbuffer(value)
+                #~ buf = np.getbuffer(value)
+                buf = value.data
             if self.compress == 'zlib':
                 blob = zlib.compress(buf)
             elif self.compress == 'lz4':
@@ -840,7 +845,7 @@ class EventOnHdf5AfterDelete:
     def __init__(self, hfile = None):
         self.hfile = hfile
     def __call__(self, mapper, connection, target):
-        print 'EventOnHdf5AfterDelete', target.tablename, target.id, 'TODO'
+        print('EventOnHdf5AfterDelete', target.tablename, target.id, 'TODO')
 
 
 

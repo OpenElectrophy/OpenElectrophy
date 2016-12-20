@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 from ..qt import *
 
-from .icons import icons 
+import sys
+
+
+if sys.version_info > (3,):
+    from .icons import icons_py3 as icons 
+else:
+    from .icons import icons 
+
 
 from .myguidata import *
 from .mymatplotlib import *

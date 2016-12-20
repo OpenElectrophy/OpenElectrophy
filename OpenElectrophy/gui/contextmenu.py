@@ -22,8 +22,9 @@ class MenuItem(object):
     mode = 'all' # or all unique homogeneous empty
     icon = ''
     def execute(self, **kargs):
-        print 'Not implemented', self.name
-        print kargs
+        pass
+        #~ print 'Not implemented', self.name
+        #~ print kargs
 
 
 class Delete(MenuItem):
@@ -89,7 +90,8 @@ class CreateTop(MenuItem):
         explorer.refresh()
     
     
-from importdata import ImportData
+from .importdata import ImportData
+
 class MenuImportData(MenuItem):
     name = 'Import data in this db'
     table = None
@@ -327,7 +329,7 @@ class MergeBlock(MenuItem):
         block_list = [ ]
         for id in ids:
             block_list.append(session.query(class_).get(id))
-        print block_list
+        #~ print block_list
         new_bl = merge_blocks(block_list, session = session, dbinfo = treedescription.dbinfo)
         explorer.refresh()
 

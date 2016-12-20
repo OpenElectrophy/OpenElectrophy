@@ -179,7 +179,7 @@ class SpikeSortingWindow(QMainWindow):
             w.spike_subset_changed.connect(self.on_spike_subset_changed)
             w.clusters_activation_changed.connect(self.on_clusters_activation_changed)
             w.clusters_color_changed.connect(self.on_clusters_color_changed)            
-        self.changeTemplate(view_templates.keys()[0])
+        self.changeTemplate(list(view_templates.keys())[0])
     
     ## Event and refresh
     def refresh_all(self, shuffle = True):
@@ -189,10 +189,10 @@ class SpikeSortingWindow(QMainWindow):
         
         for w,dock in zip(self.list_widget, self.list_dock):
             if dock.isVisible():
-                t1 = time.time()
+                #~ t1 = time.time()
                 w.refresh()
-                t2 = time.time()
-                print 'refresh ', w.name, t2-t1
+                #~ t2 = time.time()
+                #~ print('refresh ', w.name, t2-t1)
 
     def on_spike_clusters_changed(self):
         self.spikesorter.refresh_colors(reset = False)
@@ -202,10 +202,10 @@ class SpikeSortingWindow(QMainWindow):
         for dock, w in zip(self.list_dock,self.list_widget):
             if w == self.sender(): continue
             if dock.isVisible() :#and 'spike_clusters' in w.refresh_on:
-                t1 = time.time()
+                #~ t1 = time.time()
                 w.refresh()
-                t2 = time.time()
-                print 'refresh ', w.name, t2-t1
+                #~ t2 = time.time()
+                #~ print 'refresh ', w.name, t2-t1
                 
                 #~ w.refresh()
 
@@ -257,10 +257,10 @@ class SpikeSortingWindow(QMainWindow):
             if self.list_dock[j].isVisible() and self.list_widget[j].__class__ in self.list_widget[i].tabified_with:
                 self.tabifyDockWidget( self.list_dock[j], self.list_dock[i])
 
-        t1 = time.time()
+        #~ t1 = time.time()
         self.list_widget[i].refresh()
-        t2 = time.time()
-        print'refresh oneDockChangeToVisible',  self.list_dock[i].widget().name, t2-t1
+        #~ t2 = time.time()
+        #~ print'refresh oneDockChangeToVisible',  self.list_dock[i].widget().name, t2-t1
         
         dock.visibilityChanged.connect(self.oneDockVisibilityChanged)
 

@@ -7,7 +7,7 @@ widget for openning a existing db
 from .qt import *
 
 
-from .guiutil.icons import icons
+from .guiutil import icons
 from .guiutil.myguidata import *
 
 from sqlalchemy import create_engine

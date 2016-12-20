@@ -16,6 +16,9 @@ License: CeCILL v2 (GPL v2 compatible)
 """
 
 import os
+import sys
+
+
 
 #------------------------------------------------------------------------------
 def make_ressoureces_icons():
@@ -34,7 +37,10 @@ def make_ressoureces_icons():
 """			)
 
 	fid.close()
-	os.popen('pyrcc4 icons.qrc > icons.py')
+	if sys.version_info > (3,):
+		os.popen('pyrcc4 -py3 icons.qrc > icons_py3.py')        
+	else:
+		os.popen('pyrcc4 icons.qrc > icons.py')
 	
 
 #------------------------------------------------------------------------------

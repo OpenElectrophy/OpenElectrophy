@@ -195,7 +195,7 @@ class MultiMethodsParamWidget(QWidget):
         self.helpview.setVisible(True)
         
     def open_figure(self):
-        print 'open_figure'
+        #~ print 'open_figure'
         sps = self.spikesorter
         
         step = None
@@ -290,11 +290,11 @@ class ToolChainWidget(QWidget):
         mparams = self.sender()
         kargs = mparams.get_dict()
         method =  mparams.get_method()
-        print 'run method', method
-        print self.spikesorter
+        #~ print 'run method', method
+        #~ print self.spikesorter
         self.spikesorter.run_step(method, **kargs)
-        print self.spikesorter
-        print self.spikesorter.history[-1]
+        #~ print self.spikesorter
+        #~ print self.spikesorter.history[-1]
         
         if  method in sorting:
             self.spikesorter.cluster_colors = { }
@@ -302,7 +302,7 @@ class ToolChainWidget(QWidget):
     
     def run_all_chain(self):
         for name, mparams in self.all_params.items():
-            print name
+            #~ print name
             kargs = mparams.get_dict()
             method =  mparams.get_method()
             self.spikesorter.run_step(method, **kargs)

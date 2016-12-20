@@ -250,10 +250,10 @@ class ViewerBase(QWidget):
     def refresh(self, fast = False):
         # Implement in subclass
         if fast:
-            print 'fast refresh'
+            print('fast refresh')
         else:
             time.sleep(.5)
-            print 'slow refresh'
+            print('slow refresh')
         self.is_refreshing = False
     
     def delayed_refresh(self, interval = 50):

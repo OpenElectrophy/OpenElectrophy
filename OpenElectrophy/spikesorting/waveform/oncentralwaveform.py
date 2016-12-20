@@ -3,17 +3,11 @@
 import quantities as pq
 import numpy as np
 
-from tools import initialize_waveform, remove_limit_spikes
+from .tools import initialize_waveform, remove_limit_spikes
 
 from .tools import get_following_peak_multi_channel
 
-
-# FIXME!!!!!
-try:
-    from scipy.optimize import minimize
-except:
-    print 'no scipy.optimize.minimize'
-
+import scipy.optimize
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 
@@ -105,7 +99,7 @@ class AlignWaveformOnCentralWaveform(object):
         
         
         for iter in range(max_iter):
-            print iter
+            #~ print iter
             # TODO : sctop criterium
             flat_wfs = wfs.reshape(n_spike, -1)
            
@@ -136,7 +130,7 @@ class AlignWaveformOnCentralWaveform(object):
                     for i in np.where(ind):
                         def error(delta):
                             return np.sum((flat_wfs[i,:]-centers[c]-delta*center_D-delta**2*center_DD/2)**2)
-                        res = minimize(error,[0.], method = 'BFGS')
+                        res = scipy.optimize.minimize(error,[0.], method = 'BFGS')
                         new_deltas[i] = res.x
 
             

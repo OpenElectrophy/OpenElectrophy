@@ -163,7 +163,7 @@ def test1():
 
 def test2():
     bl = generate_block_for_sorting()
-    print bl.recordingchannelgroups
+    #~ print bl.recordingchannelgroups
     
 
 if __name__ == '__main__':
