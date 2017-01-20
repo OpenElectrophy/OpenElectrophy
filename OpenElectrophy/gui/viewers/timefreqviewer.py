@@ -472,7 +472,7 @@ class ThreadComputeTF(QThread):
         t1 = time.time()
         sigf=fftpack.fft(self.sig)
         n = self.wf.shape[0]
-        sigf = np.concatenate([sigf[0:(n+1)/2],  sigf[-(n-1)/2:]])*self.factor
+        sigf = np.concatenate([sigf[0:(n+1)//2],  sigf[-(n-1)//2:]])*self.factor
         #~ sigf *= self.win
         wt_tmp=fftpack.ifft(sigf[:,np.newaxis]*self.wf,axis=0)
         wt = fftpack.fftshift(wt_tmp,axes=[0])
