@@ -1134,10 +1134,11 @@ def open_db(url, myglobals = None, suffix_for_class_name = '', use_global_sessio
     
     Session = orm.scoped_session(orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True))
     #~ Session = orm.sessionmaker(bind=metadata.bind , autocommit=False, autoflush=True)
+    print('oiuoiuoiu')
     
-    
-    dbinfo = DataBaseConnectionInfo( url =url,mapped_classes = generated_classes,Session = Session,
-                                                metadata = metadata, cache = cache, numpy_storage_engine = numpy_storage_engine,
+    dbinfo = DataBaseConnectionInfo( url =url, mapped_classes = generated_classes,Session = Session,
+                                                engine=engine, metadata = metadata, 
+                                                cache = cache, numpy_storage_engine = numpy_storage_engine,
                                                 compress = compress)
 
     if use_global_session:
