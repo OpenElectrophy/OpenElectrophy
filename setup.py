@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 from OpenElectrophy.version import __version__  as version
 
-long_description = open("README.txt").read()
+long_description = open("old_readme.txt").read()
 
 
 if os.name == 'nt':
@@ -68,8 +68,8 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Programming Language :: Python :: 2',
-        'Topic :: Scientific/Engineering :: Bio-Informatics'
         ],
 )
 
