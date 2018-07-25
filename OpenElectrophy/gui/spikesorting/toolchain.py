@@ -13,7 +13,7 @@ from OpenElectrophy.gui.guiutil.mypyqtgraph import get_dict_from_group_param
 from ..guiutil.mymatplotlib import *
 
 #~ from PyQt4.QtWebKit import QWebView
-from ..qt import QWebView
+# from ..qt import QWebView
 
 class SpikeSortingToolChain(object):
     """
@@ -188,11 +188,12 @@ class MultiMethodsParamWidget(QWidget):
             #~ return {}
     
     def open_info(self):
-        if not hasattr(self, 'helpview'):
-            self.helpview = QWebView()
-            self.helpview.setWindowFlags(Qt.SubWindow)
-        self.helpview.setHtml(rest_to_html(self.method.__doc__))
-        self.helpview.setVisible(True)
+        pass
+        #~ if not hasattr(self, 'helpview'):
+            #~ self.helpview = QWebView()
+            #~ self.helpview.setWindowFlags(Qt.SubWindow)
+        #~ self.helpview.setHtml(rest_to_html(self.method.__doc__))
+        #~ self.helpview.setVisible(True)
         
     def open_figure(self):
         #~ print 'open_figure'
